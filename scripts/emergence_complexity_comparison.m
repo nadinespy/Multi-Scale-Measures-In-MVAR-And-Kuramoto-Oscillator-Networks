@@ -10,13 +10,20 @@ addpath '/media/nadinespy/NewVolume/my_stuff/work/toolboxes_matlab'
 PATHOUT = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/results/';
 javaaddpath('infodynamics.jar');
 
+% choose simulation method (options: statdata_corr_errors1(), statdata_corr_errors2())
+sim_method = @statdata_corr_errors1;
+
+% save plots & matrices according to simulation method (options: '1' (for statdata_corr_errors1()), '2' (for statdata_corr_errors2()))
+sim_index = '1';
+
+
 %% calculating information atoms
 
-% System size, coupling matrix, and vector of noise values
+% System size, coupling matrix, time-lag, and vector of noise values
 nvar = 2;
 npoints = 2000;
 tau = 1;
-error_vec   = linspace(0.01, 0.99, 100);
+error_vec   = linspace(0.01, 0.9, 100);
 coupling_vec = linspace(0.01,0.45, 100);
 
 phiid_all_err_coup_mmi = zeros(16, size(coupling_vec,2), size(error_vec, 2));
@@ -29,9 +36,8 @@ for i = 1:length(coupling_vec)
 	for j = 1:length(error_vec)
 		err = error_vec(j);
 		spectral_radius = max(abs(eig(A)));
-		%X = statdata_corr_errors(A, npoints, err);
-		X = statdata_corr_errors2(A, npoints, err);
-		%X = statdata_corr_errors3(A, npoints, err);
+		%X = statdata_corr_errors(A, npoints, tau, err);
+		X = sim_method(A, npoints, tau, err);
 		phiid_all_err_coup_mmi(:,i,j) = struct2array(PhiIDFull(X, tau, 'MMI'))';
 		phiid_all_err_coup_ccs(:,i,j) = struct2array(PhiIDFull(X, tau, 'ccs'))';
 		
@@ -40,76 +46,86 @@ for i = 1:length(coupling_vec)
 	%spectral_radius
 end 
 
-save([PATHOUT 'phiid_all_err_coup_ccs2.mat'],'phiid_all_err_coup_ccs');
-save([PATHOUT 'phiid_all_err_coup_mmi2.mat'],'phiid_all_err_coup_mmi');
+% allocating variable names for the atoms in a struct
+all_atoms_err_coup_mmi = [];
+all_atoms_err_coup_mmi.rtr = phiid_all_err_coup_mmi(1,:,:);
+all_atoms_err_coup_mmi.rtx = phiid_all_err_coup_mmi(2,:,:);
+all_atoms_err_coup_mmi.rty = phiid_all_err_coup_mmi(3,:,:);
+all_atoms_err_coup_mmi.rts = phiid_all_err_coup_mmi(4,:,:);
+all_atoms_err_coup_mmi.xtr = phiid_all_err_coup_mmi(5,:,:);
+all_atoms_err_coup_mmi.xtx = phiid_all_err_coup_mmi(6,:,:);
+all_atoms_err_coup_mmi.xty = phiid_all_err_coup_mmi(7,:,:);
+all_atoms_err_coup_mmi.xts = phiid_all_err_coup_mmi(8,:,:);
+all_atoms_err_coup_mmi.ytr = phiid_all_err_coup_mmi(9,:,:);
+all_atoms_err_coup_mmi.ytx = phiid_all_err_coup_mmi(10,:,:);
+all_atoms_err_coup_mmi.yty = phiid_all_err_coup_mmi(11,:,:);
+all_atoms_err_coup_mmi.yts = phiid_all_err_coup_mmi(12,:,:);
+all_atoms_err_coup_mmi.str = phiid_all_err_coup_mmi(13,:,:);
+all_atoms_err_coup_mmi.stx = phiid_all_err_coup_mmi(14,:,:);
+all_atoms_err_coup_mmi.sty = phiid_all_err_coup_mmi(15,:,:);
+all_atoms_err_coup_mmi.sts = phiid_all_err_coup_mmi(16,:,:);
 
-% save([PATHOUT 'phiid_all_err_coup_ccs_rtr.mat'],'phiid_all_err_coup_ccs_rtr');
-% save([PATHOUT 'phiid_all_err_coup_ccs_sts.mat'],'phiid_all_err_coup_ccs_sts');
-% save([PATHOUT 'phiid_all_err_coup_mmi_rtr.mat'],'phiid_all_err_coup_ccs_mmi');
-% save([PATHOUT 'phiid_all_err_coup_mmi_sts.mat'],'phiid_all_err_coup_ccs_mmi');
+all_atoms_err_coup_ccs = [];
+all_atoms_err_coup_ccs.rtr = phiid_all_err_coup_ccs(1,:,:);
+all_atoms_err_coup_ccs.rtx = phiid_all_err_coup_ccs(2,:,:);
+all_atoms_err_coup_ccs.rty = phiid_all_err_coup_ccs(3,:,:);
+all_atoms_err_coup_ccs.rts = phiid_all_err_coup_ccs(4,:,:);
+all_atoms_err_coup_ccs.xtr = phiid_all_err_coup_ccs(5,:,:);
+all_atoms_err_coup_ccs.xtx = phiid_all_err_coup_ccs(6,:,:);
+all_atoms_err_coup_ccs.xty = phiid_all_err_coup_ccs(7,:,:);
+all_atoms_err_coup_ccs.xts = phiid_all_err_coup_ccs(8,:,:);
+all_atoms_err_coup_ccs.ytr = phiid_all_err_coup_ccs(9,:,:);
+all_atoms_err_coup_ccs.ytx = phiid_all_err_coup_ccs(10,:,:);
+all_atoms_err_coup_ccs.yty = phiid_all_err_coup_ccs(11,:,:);
+all_atoms_err_coup_ccs.yts = phiid_all_err_coup_ccs(12,:,:);
+all_atoms_err_coup_ccs.str = phiid_all_err_coup_ccs(13,:,:);
+all_atoms_err_coup_ccs.stx = phiid_all_err_coup_ccs(14,:,:);
+all_atoms_err_coup_ccs.sty = phiid_all_err_coup_ccs(15,:,:);
+all_atoms_err_coup_ccs.sts = phiid_all_err_coup_ccs(16,:,:);
+
+save([PATHOUT 'all_atoms_err_coup_ccs' sim_index '.mat'],'all_atoms_err_coup_ccs');
+save([PATHOUT 'all_atoms_err_coup_mmi' sim_index '.mat'],'all_atoms_err_coup_mmi');
 
 %% double-redundancy & double-synergy
 
-% extract double-redundancy & synergy term
-% rows: couplings; errors: columns
-phiid_all_err_coup_ccs_rtr = squeeze(phiid_all_err_coup_ccs(1,:,:));			% coupling vector will now be in the rows, and error vector in the columns
-phiid_all_err_coup_ccs_sts = squeeze(phiid_all_err_coup_ccs(16,:,:));
+% extract single atoms (double-redundancy & synergy term)
+% such that rows are the couplings, and columns the errors
+all_err_coup_ccs_rtr = squeeze(all_atoms_err_coup_ccs.rtr(1,:,:));			% coupling vector will now be in the rows, and error vector in the columns
+all_err_coup_ccs_sts = squeeze(all_atoms_err_coup_ccs.sts(1,:,:));
 
-phiid_all_err_coup_mmi_rtr = squeeze(phiid_all_err_coup_mmi(1,:,:));
-phiid_all_err_coup_mmi_sts = squeeze(phiid_all_err_coup_mmi(16,:,:));
+all_err_coup_mmi_rtr = squeeze(all_atoms_err_coup_mmi.rtr(1,:,:));			% coupling vector will now be in the rows, and error vector in the columns
+all_err_coup_mmi_sts = squeeze(all_atoms_err_coup_mmi.sts(1,:,:));
 
 % heatmaps
-x_axis = {'0.01', '', '', '', '', '', '', '', '', '0.1', '', '', '', '', '', '', '', '', '', '0.2', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', '', '', '', ... 
-	'0.4', '', '', '', '', '', '', '', '', '', '0.5', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '0.7', '', '', '', '', '', '', '', '', '', ... 
-	'0.8', '', '', '', '', '', '', '', '', '', '0.9', '', '', '', '', '', '', '', '', '0.99', ''}; 
-y_axis = {'0.01', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '',  '', '0.1',  '', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', ... 
-	'0.2', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '',  '', '0.3', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '', ... 
-	'0.4', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '',  '0.5'};
+x_axis = {'0.09', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', ... 
+	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '', '', '', '', ... 
+	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.9', ''}; 
+y_axis = {'0.0045', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '',  '', '0.09',  '', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', ... 
+	'0.18', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '',  '', '0.27', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '', ... 
+	'0.36', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '0.45', ''};
 
 % using matlab built-in function for heatmaps:
-figure;
-clf
-h = heatmap(phiid_all_err_coup_mmi_rtr, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('double-redundancy mmi');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_mmi_rtr2.png']);
 
-figure;
-clf
-h = heatmap(phiid_all_err_coup_mmi_sts, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('double-synergy mmi');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_mmi_sts2.png']);
+atoms = {all_err_coup_ccs_rtr, all_err_coup_mmi_rtr, all_err_coup_ccs_sts, all_err_coup_mmi_sts};
+file_names = {'all_err_coup_ccs_rtr', 'all_err_coup_mmi_rtr', 'all_err_coup_ccs_sts', 'all_err_coup_mmi_sts'};
+titles = {'double-redundancy ccs', 'double-redundancy mmi', 'double-synergy ccs', 'double-synergy mmi'};
 
-figure;
-clf
-h = heatmap(phiid_all_err_coup_ccs_rtr, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('double-redundancy ccs');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_ccs_rtr2.png']);
+for i = 1:size(atoms,2)
+	
+	figure;
+	clf
+	h = heatmap(atoms{i}, 'Colormap', parula, 'ColorbarVisible', 'on') ;
+	h.YDisplayLabels = y_axis;
+	h.XDisplayLabels = x_axis;
+	h.XLabel = 'noise correlation';
+	h.YLabel = 'coupling strength';
+	title(titles{i});
+	exportgraphics(gcf, [PATHOUT '2node_' file_names{i} sim_index '.png']);
 
-figure;
-clf
-h = heatmap(phiid_all_err_coup_ccs_sts, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('double-synergy ccs');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_ccs_sts2.png']);
+end
 
-close all;
 
-%% synergistic capacity, downward causation, causal decoupling
+%% synergistic/emergent capacity, downward causation, causal decoupling
 
 % calculate:
 % Syn(X_t;X_t-1) (synergistic capacity of the system) 
@@ -147,117 +163,68 @@ close all;
 % sts: {12}-->{12}
 
 % rows: couplings; errors: columns
-phiid_all_err_coup_ccs_rtx = squeeze(phiid_all_err_coup_ccs(2,:,:));			% coupling vector will now be in the rows, and error vector in the columns
-phiid_all_err_coup_ccs_rty = squeeze(phiid_all_err_coup_ccs(3,:,:));
-phiid_all_err_coup_ccs_rts = squeeze(phiid_all_err_coup_ccs(4,:,:));
-phiid_all_err_coup_ccs_xtr = squeeze(phiid_all_err_coup_ccs(5,:,:));
-phiid_all_err_coup_ccs_xtx = squeeze(phiid_all_err_coup_ccs(6,:,:));
-phiid_all_err_coup_ccs_xty = squeeze(phiid_all_err_coup_ccs(7,:,:));
-phiid_all_err_coup_ccs_xts = squeeze(phiid_all_err_coup_ccs(8,:,:));
-phiid_all_err_coup_ccs_ytr = squeeze(phiid_all_err_coup_ccs(9,:,:));
-phiid_all_err_coup_ccs_ytx = squeeze(phiid_all_err_coup_ccs(10,:,:));
-phiid_all_err_coup_ccs_yty = squeeze(phiid_all_err_coup_ccs(11,:,:));
-phiid_all_err_coup_ccs_yts = squeeze(phiid_all_err_coup_ccs(12,:,:));
-phiid_all_err_coup_ccs_str = squeeze(phiid_all_err_coup_ccs(13,:,:));
-phiid_all_err_coup_ccs_stx = squeeze(phiid_all_err_coup_ccs(14,:,:));
-phiid_all_err_coup_ccs_sty = squeeze(phiid_all_err_coup_ccs(15,:,:));
+all_err_coup_ccs_rtx = squeeze(all_atoms_err_coup_ccs.rtx(1,:,:));			% coupling vector will now be in the rows, and error vector in the columns
+all_err_coup_ccs_rty = squeeze(all_atoms_err_coup_ccs.rty(1,:,:));
+all_err_coup_ccs_rts = squeeze(all_atoms_err_coup_ccs.rts(1,:,:));
+all_err_coup_ccs_xtr = squeeze(all_atoms_err_coup_ccs.xtr(1,:,:));
+all_err_coup_ccs_xtx = squeeze(all_atoms_err_coup_ccs.xtx(1,:,:));
+all_err_coup_ccs_xty = squeeze(all_atoms_err_coup_ccs.xty(1,:,:));
+all_err_coup_ccs_xts = squeeze(all_atoms_err_coup_ccs.xts(1,:,:));
+all_err_coup_ccs_ytr = squeeze(all_atoms_err_coup_ccs.ytr(1,:,:));
+all_err_coup_ccs_ytx = squeeze(all_atoms_err_coup_ccs.ytx(1,:,:));
+all_err_coup_ccs_yty = squeeze(all_atoms_err_coup_ccs.yty(1,:,:));
+all_err_coup_ccs_yts = squeeze(all_atoms_err_coup_ccs.yts(1,:,:));
+all_err_coup_ccs_str = squeeze(all_atoms_err_coup_ccs.str(1,:,:));
+all_err_coup_ccs_stx = squeeze(all_atoms_err_coup_ccs.stx(1,:,:));
+all_err_coup_ccs_sty = squeeze(all_atoms_err_coup_ccs.sty(1,:,:));
 
-phiid_all_err_coup_mmi_rtx = squeeze(phiid_all_err_coup_mmi(2,:,:));			% coupling vector will now be in the rows, and error vector in the columns
-phiid_all_err_coup_mmi_rty = squeeze(phiid_all_err_coup_mmi(3,:,:));
-phiid_all_err_coup_mmi_rts = squeeze(phiid_all_err_coup_mmi(4,:,:));
-phiid_all_err_coup_mmi_xtr = squeeze(phiid_all_err_coup_mmi(5,:,:));
-phiid_all_err_coup_mmi_xtx = squeeze(phiid_all_err_coup_mmi(6,:,:));
-phiid_all_err_coup_mmi_xty = squeeze(phiid_all_err_coup_mmi(7,:,:));
-phiid_all_err_coup_mmi_xts = squeeze(phiid_all_err_coup_mmi(8,:,:));
-phiid_all_err_coup_mmi_ytr = squeeze(phiid_all_err_coup_mmi(9,:,:));
-phiid_all_err_coup_mmi_ytx = squeeze(phiid_all_err_coup_mmi(10,:,:));
-phiid_all_err_coup_mmi_yty = squeeze(phiid_all_err_coup_mmi(11,:,:));
-phiid_all_err_coup_mmi_yts = squeeze(phiid_all_err_coup_mmi(12,:,:));
-phiid_all_err_coup_mmi_str = squeeze(phiid_all_err_coup_mmi(13,:,:));
-phiid_all_err_coup_mmi_stx = squeeze(phiid_all_err_coup_mmi(14,:,:));
-phiid_all_err_coup_mmi_sty = squeeze(phiid_all_err_coup_mmi(15,:,:));
+all_err_coup_mmi_rtx = squeeze(all_atoms_err_coup_mmi.rtx(1,:,:));			% coupling vector will now be in the rows, and error vector in the columns
+all_err_coup_mmi_rty = squeeze(all_atoms_err_coup_mmi.rty(1,:,:));
+all_err_coup_mmi_rts = squeeze(all_atoms_err_coup_mmi.rts(1,:,:));
+all_err_coup_mmi_xtr = squeeze(all_atoms_err_coup_mmi.xtr(1,:,:));
+all_err_coup_mmi_xtx = squeeze(all_atoms_err_coup_mmi.xtx(1,:,:));
+all_err_coup_mmi_xty = squeeze(all_atoms_err_coup_mmi.xty(1,:,:));
+all_err_coup_mmi_xts = squeeze(all_atoms_err_coup_mmi.xts(1,:,:));
+all_err_coup_mmi_ytr = squeeze(all_atoms_err_coup_mmi.ytr(1,:,:));
+all_err_coup_mmi_ytx = squeeze(all_atoms_err_coup_mmi.ytx(1,:,:));
+all_err_coup_mmi_yty = squeeze(all_atoms_err_coup_mmi.yty(1,:,:));
+all_err_coup_mmi_yts = squeeze(all_atoms_err_coup_mmi.yts(1,:,:));
+all_err_coup_mmi_str = squeeze(all_atoms_err_coup_mmi.str(1,:,:));
+all_err_coup_mmi_stx = squeeze(all_atoms_err_coup_mmi.stx(1,:,:));
+all_err_coup_mmi_sty = squeeze(all_atoms_err_coup_mmi.sty(1,:,:));
 
 % synergy
-synergy_capacity_ccs = phiid_all_err_coup_ccs_str + ...
-	phiid_all_err_coup_ccs_stx + phiid_all_err_coup_ccs_sty + phiid_all_err_coup_ccs_sts;
+synergy_capacity_ccs = all_err_coup_ccs_str + ...
+	all_err_coup_ccs_stx + all_err_coup_ccs_sty + all_err_coup_ccs_sts;
 
-downward_causation_ccs = phiid_all_err_coup_ccs_str + phiid_all_err_coup_ccs_stx + phiid_all_err_coup_ccs_sty;
+downward_causation_ccs = all_err_coup_ccs_str + all_err_coup_ccs_stx + all_err_coup_ccs_sty;
 
-synergy_capacity_mmi = phiid_all_err_coup_mmi_str + ...
-	phiid_all_err_coup_mmi_stx + phiid_all_err_coup_mmi_sty + phiid_all_err_coup_mmi_sts;
+synergy_capacity_mmi = all_err_coup_mmi_str + ...
+	all_err_coup_mmi_stx + all_err_coup_mmi_sty + all_err_coup_mmi_sts;
 
-downward_causation_mmi = phiid_all_err_coup_mmi_str + phiid_all_err_coup_mmi_stx + phiid_all_err_coup_mmi_sty;
+downward_causation_mmi = all_err_coup_mmi_str + all_err_coup_mmi_stx + all_err_coup_mmi_sty;
 
 causal_decoupling_ccs = synergy_capacity_ccs - downward_causation_ccs;
 causal_decoupling_mmi = synergy_capacity_mmi - downward_causation_mmi;
 
-% heatmaps
-x_axis = {'0.01', '', '', '', '', '', '', '', '', '0.1', '', '', '', '', '', '', '', '', '', '0.2', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', '', '', '', ... 
-	'0.4', '', '', '', '', '', '', '', '', '', '0.5', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '0.7', '', '', '', '', '', '', '', '', '', ... 
-	'0.8', '', '', '', '', '', '', '', '', '', '0.9', '', '', '', '', '', '', '', '', '0.99', ''}; 
-y_axis = {'0.01', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '',  '', '0.1',  '', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', ... 
-	'0.2', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '',  '', '0.3', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '', ... 
-	'0.4', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '',  '0.5'};
+% heatmaps using matlab built-in function for heatmaps:
 
-% using matlab built-in function for heatmaps:
-figure;
-clf
-h = heatmap(synergy_capacity_ccs, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('synergy capacity ccs');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_ccs_synergy_capacity2.png']);
+atoms = {synergy_capacity_ccs, synergy_capacity_mmi, downward_causation_ccs, downward_causation_mmi, causal_decoupling_ccs, causal_decoupling_mmi};
+file_names = {'all_err_coup_ccs_synergy_capacity', 'all_err_coup_mmi_synergy_capacity', 'all_err_coup_ccs_downward_causation', 'all_err_coup_mmi_downward_causation', 'all_err_coup_ccs_causal_decoupling', 'all_err_coup_mmi_causal_decoupling'};
+titles = {'synergy capacity ccs', 'synergy capacity mmi', 'downward causation ccs', 'downward causation mmi', 'causal decoupling ccs', 'causal decoupling mmi'};
 
-figure;
-clf
-h = heatmap(synergy_capacity_mmi, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('synergy capacity mmi');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_mmi_synergy_capacity2.png']);
+for i = 1:size(atoms,2)
+	
+	figure;
+	clf
+	h = heatmap(atoms{i}, 'Colormap', parula, 'ColorbarVisible', 'on') ;
+	h.YDisplayLabels = y_axis;
+	h.XDisplayLabels = x_axis;
+	h.XLabel = 'noise correlation';
+	h.YLabel = 'coupling strength';
+	title(titles{i});
+	exportgraphics(gcf, [PATHOUT '2node_' file_names{i} sim_index '.png']);
 
-figure;
-clf
-h = heatmap(downward_causation_ccs, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('downward causation ccs');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_ccs_downward_causation2.png']);
-
-figure;
-clf
-h = heatmap(downward_causation_mmi, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('downward causation mmi');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_mmi_downward_causation2.png']);
-
-figure;
-clf
-h = heatmap(causal_decoupling_mmi, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('causal decoupling mmi');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_mmi_causal_decoupling2.png']);
-
-figure;
-clf
-h = heatmap(causal_decoupling_ccs, 'Colormap', parula, 'ColorbarVisible', 'on') ;
-h.YDisplayLabels = y_axis;
-h.XDisplayLabels = x_axis;
-h.XLabel = 'noise correlation';
-h.YLabel = 'coupling strength';
-title('causal decoupling ccs');
-exportgraphics(gcf, [PATHOUT '2node_phiid_all_err_coup_ccs_causal_decoupling2.png']);
+end
 
 close all;
