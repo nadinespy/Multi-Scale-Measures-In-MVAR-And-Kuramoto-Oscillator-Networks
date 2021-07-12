@@ -1,4 +1,4 @@
-function X = statdata(A, npoints, tau, err)
+function X = statdata1(coupling_matrix, npoints, tau, err)
 
 % -----------------------------------------------------------------------
 %   FUNCTION: statdata.m
@@ -14,7 +14,7 @@ function X = statdata(A, npoints, tau, err)
 
 settle=500; %will only keep post-equilibrium data points
 npoints = npoints+settle;
-nvar=size(A,1); 
+nvar=size(coupling_matrix,1); 
 
 %% simulate time-series of correlated error terms
 
@@ -23,7 +23,7 @@ nvar=size(A,1);
 %{
 mu = 0;
 sigma = 1;
-M = mu + sigma*randn(N,size(A,2));
+M = mu + sigma*randn(N,size(coupling_matrix,2));
 R = [1 c; c 1];
 L = chol(R);
 E = (M*L)';
@@ -34,20 +34,23 @@ corr_errors = corrcoef(E(1,:),E(2,:));
 % alternative: simulate errors from correlated multivariate standard normal distribution
 % but: this can yield different actual correlations for them; the chosen correlation will only be yielded, if sample size is large 
 mu = zeros(1, nvar);
-R = [1 err; err 1];
+
+% construct correlation matrix
+R = eye(nvar);
+R(R==0)=err;
 
 % only necessary for non-standard normal distributions, otherwise R = cov_matrix
 standard_dev = ones(1, nvar);							   % vector of standard deviations of the errors
 cov_err = diag(standard_dev)*R*diag(standard_dev);	 % diag() converts std vector to matrix where the diagonal entries are the stds, and all other entries 0
+rng(1);
 E = mvnrnd(mu,cov_err,npoints)';						% simulate correlated errors
 
 corr_errors = corrcoef(E(1,:), E(2,:));					   % check correlation
 
 %% simulate time-series of the network
 
-p=floor(size(A,2)/nvar);								  % time-steps to look into the past
+p=floor(size(coupling_matrix,2)/nvar);								  % time-steps to look into the past
 
-rng(1);
 X = zeros([nvar, npoints]);
 
 % non-vectorized version
@@ -65,12 +68,13 @@ end
 
 % vectorized version
 for t=(1+tau):npoints
-	X(:,t) = A*X(:,t-tau) + E(:,t);
+	X(:,t) = coupling_matrix*X(:,t-tau) + E(:,t);
 end
 	
 % alternative: drawing *at each time-step* error values from a correlated 
 % multi-dimensional Gaussian, and adding it to the A*X_(t-1) term
 %{
+rng(1);
 for t=tau+1:npoints
 	X(:,t) = A*X(:,t-tau) + mvnrnd(zeros([1, size(A,1)]), cov_err)';
 end
