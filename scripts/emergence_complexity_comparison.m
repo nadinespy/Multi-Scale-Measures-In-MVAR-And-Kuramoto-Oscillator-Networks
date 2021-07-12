@@ -29,9 +29,9 @@ sim_method = @statdata_corr_errors2;
 sim_index = '2';
 
 % network (options: '2node' for 2-node network with 100 different coupling strengths & noise correlations, '8node' for 8-node networks with different architectures)
-network = '2node';
+network = '8node';
 % error correlations (options: 100 different values for 2-node network, 6 different values for 8-node network)
-error_vec = linspace(0.01, 0.9, 100); 
+error_vec = linspace(0.01, 0.9, 6); 
 
 %% create coupling matrices depending on the chosen network size
 
