@@ -1,15 +1,19 @@
 %% TO DO
-% - where/how to store model information and parameter values for noise correlation & coupling strength in the saved mat-file?
+% - where/how to store model information and parameter values for noise correlation & coupling matrix in the saved mat-file?
 % - fill struct file in a loop?
 
-%%
+% add macro-variables
+% add integrated information measures?
+
+%% 
+% This script implements synergy capacity for 2-node and 8-node MVAR models with differing connection strengths and noise correlations
 
 clear all;
+clear java;
 close all;
 clc;
 
-cd '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison'
-addpath '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/scripts'
+cd '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/scripts'
 addpath '/media/nadinespy/NewVolume/my_stuff/work/toolboxes_matlab'
 % addpath '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/PhiIDComparison/scripts/heatmaps'
 
@@ -23,44 +27,102 @@ javaaddpath('infodynamics.jar');
 npoints = 2000;
 tau = 1;
 
-% simulation method (options: statdata_corr_errors1(), statdata_corr_errors2())
-sim_method = @statdata_corr_errors2;
-% save plots & matrices according to simulation method (options: '1' (for statdata_corr_errors1()), '2' (for statdata_corr_errors2()))
-sim_index = '2';
+% ------------------------------------------------------------------------------------------------------
+% MODEL
+% ------------------------------------------------------------------------------------------------------
 
-% network (options: '2node' for 2-node network with 100 different coupling strengths & noise correlations, '8node' for 8-node networks with different architectures)
+% MULTIVARIATE AUTOREGRESSIVE TIME-SERIES (MVAR)
+
+% simulation method (options: statdata_coup_errors1(), statdata_coup_errors2(), statdata_random())
+sim_method = @statdata_random;
+
+% save plots & matrices according to simulation method (options: '1' (for statdata_coup_errors1()), '2' (for statdata_coup_errors2()), '3' (for statdata_random())
+sim_index = '3';
+
+% network (options: '2node' for 2-node network with 100 different coupling strengths & noise correlations (if choosing sim_index = 1 or 2) OR random 2-node network with 100 zero couplings & 100 zero noise correlations (if choosing sim_index = 3);
+% '8node' for 8-node networks with 6 different architectures & noise correlations (if choosing sim_index = 1 or 2) OR random 8-node networks with 100 zero couplings & 100 zero correlations (if choosing sim_index = 3))
 network = '8node';
-% error correlations (options: 100 different values for 2-node network, 6 different values for 8-node network)
-error_vec = linspace(0.01, 0.9, 6); 
 
-%% create coupling matrices depending on the chosen network size
+% KURAMOTO OSCILLATORS
 
+
+% ------------------------------------------------------------------------------------------------------
+% MEASURE
+% ------------------------------------------------------------------------------------------------------
+
+
+% ------------------------------------------------------------------------------------------------------
+% MACRO VARIABLE
+% ------------------------------------------------------------------------------------------------------
+
+
+
+%% load files (if already existent, to, e. g., only create plots)
+
+%{
+load([PATHOUT1 network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
+load([PATHOUT1 network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
+load([PATHOUT1 network '_all_atoms_err_coup_ccs' sim_index '.mat'],'all_atoms_err_coup_ccs');
+load([PATHOUT1 network '_all_atoms_err_coup_mmi' sim_index '.mat'],'all_atoms_err_coup_mmi');
+
+synergistic_capacity_mmi = emergence_mmi.synergy_capacity_mmi; 
+downward_causation_mmi = emergence_mmi.downward_causation_mmi; 
+causal_decoupling_mmi = emergence_mmi.causal_decoupling_mmi; 
+%}
+
+%% create coupling matrices & noise correlations depending on the chosen network size
+
+% {
 if network == '2node'
-	coupling_vec = linspace(0.01,0.45, 100);
+	
+	if sim_index == '3' 
+		coupling_vec = linspace(0.0, 0.0, 100);
+		error_vec = linspace(0.0, 0.0, 100); 
+	else coupling_vec = linspace(0.01,0.45, 100);
+		error_vec = linspace(0.01, 0.09, 100); 
+	end 
 
 	coupling_matrices = []; 
 	for i = 1:length(coupling_vec)
 		coupling_matrices(:,:,i) = coupling_vec(i)*ones(2);
 	end 
 	
-else 
-	load('nets.mat');
-	net_names = fields(nets);
-	nb_nets = length(net_names);
+elseif network == '8node' 
+	if sim_index == '3'
 
-	coupling_matrices = [];
-	for i = 1:size(net_names,1);
-		coupling_matrices(:,:,i) = nets.(net_names{i});
-	end 
+		coupling_vec = linspace(0.0, 0.0, 100);
+		error_vec = linspace(0.0, 0.0, 100);
+		
+		coupling_matrices = []; 
+		for i = 1:length(coupling_vec)
+			coupling_matrices(:,:,i) = coupling_vec(i)*ones(8);
+		end 
+	
+	else load('nets.mat');									% phi-optimal binary network, phi-optimal weighted network, small world, fully connected, bidirectional ring, unidirectional ring
+		
+		net_names = fields(nets);
+		nb_nets = length(net_names);
+
+		error_vec = linspace(0.01, 0.09, 6);
+		
+		coupling_matrices = [];
+		for i = 1:size(net_names,1);
+			coupling_matrices(:,:,i) = nets.(net_names{i});
+		end 
+		
+	end
 
 end 
 
+
 %% calculating information atoms
 
+% {
 % instantiate variables to store atoms for different coupling matrices and noise correlations
 phiid_all_err_coup_mmi = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
 phiid_all_err_coup_ccs = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
 
+rng(1);
 for i = 1:size(coupling_matrices,3)
 	
 	coupling_matrix = coupling_matrices(:,:,i);
@@ -138,52 +200,11 @@ all_atoms_err_coup_ccs.sts = squeeze(phiid_all_err_coup_ccs(16,:,:));
 
 save([PATHOUT1 network '_all_atoms_err_coup_ccs' sim_index '.mat'],'all_atoms_err_coup_ccs');
 save([PATHOUT1 network '_all_atoms_err_coup_mmi' sim_index '.mat'],'all_atoms_err_coup_mmi');
-
-%% double-redundancy & double-synergy
-
-% heatmaps
-
-if network == '2node'
-	x_axis = {'0.09', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', ... 
-	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '', '', '', '', ... 
-	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.9', ''};
-	y_axis = {'0.0045', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '',  '', '0.09',  '', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', ... 
-		'0.18', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '',  '', '0.27', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '', ... 
-		'0.36', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '0.45', ''};
-else 
-	x_axis = {'0.15', '0.3', '0.45', '0.6', '0.75', '0.9'};
-	y_axis = {'fully connected', 'optimal A', 'optimal B', 'ring', 'small world', 'uni ring'};
-end 
-
-% using matlab built-in function for heatmaps
-
-atoms = {all_atoms_err_coup_ccs.rtr, all_atoms_err_coup_mmi.rtr, all_atoms_err_coup_ccs.sts, all_atoms_err_coup_mmi.sts};
-file_names = {'_all_err_coup_ccs_rtr', '_all_err_coup_mmi_rtr', '_all_err_coup_ccs_sts', '_all_err_coup_mmi_sts'};
-titles = {'double-redundancy ccs', 'double-redundancy mmi', 'double-synergy ccs', 'double-synergy mmi'};
-
-for i = 1:size(atoms,2)
-	
-	figure;
-	clf
-	h = heatmap(atoms{i}, 'Colormap', parula, 'ColorbarVisible', 'on', 'CellLabelColor', 'none') ;
-	h.YDisplayLabels = y_axis;
-	h.XDisplayLabels = x_axis;
-	h.XLabel = 'noise correlation';
-	
-	if network == '2node'
-		h.YLabel = 'coupling strength';
-	else 
-		h.YLabel = 'network architecture';
-	end
-	
-	title(titles{i});
-	exportgraphics(gcf, [PATHOUT2 network file_names{i} sim_index '.png']);
-
-end
-
+%}
 
 %% synergistic/emergent capacity, downward causation, causal decoupling
 
+% {
 % calculate:
 % Syn(X_t;X_t-1) (synergistic capacity of the system) 
 % Un (Vt;Xt'|Xt) (causal decoupling - the top term in the lattice) 
@@ -221,8 +242,8 @@ emergence_ccs = [];
 emergence_mmi = [];
 
 emergence_ccs.synergy_capacity_ccs = synergy_capacity_ccs;
-emergence_css.causal_decoupling_ccs = causal_decoupling_ccs;
-emergence_css.downward_causation_ccs = downward_causation_ccs;
+emergence_ccs.causal_decoupling_ccs = causal_decoupling_ccs;
+emergence_ccs.downward_causation_ccs = downward_causation_ccs;
 
 emergence_mmi.synergy_capacity_mmi = synergy_capacity_mmi;
 emergence_mmi.causal_decoupling_mmi = causal_decoupling_mmi;
@@ -230,8 +251,71 @@ emergence_mmi.downward_causation_mmi = downward_causation_mmi;
 
 save([PATHOUT1 network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
 save([PATHOUT1 network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
+%}
 
-% heatmaps using matlab built-in function for heatmaps:
+%% plotting 
+
+% axes ticks
+if sim_index == '3'
+	x_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ... 
+		'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
+	y_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ... 
+		'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
+elseif network == '2node'
+	x_axis = {'0.09', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', ... 
+		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '', '', '', '', ... 
+		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.9', ''};
+	y_axis = {'0.0045', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '',  '', '0.09',  '', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', ... 
+		'0.18', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '',  '', '0.27', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '', ... 
+		'0.36', '', '', '', '', '', '', '', '', '',  '', '', '', '', '', '', '', '', '', '0.45', ''};
+	
+elseif network == '8node' 
+	x_axis = {'0.15', '0.3', '0.45', '0.6', '0.75', '0.9'};
+	y_axis = {'optimal A', 'optimal B', 'small world', 'fully connected', 'ring', 'uni ring'};
+
+end 
+
+% double-redundancy & double-synergy
+
+% {
+% heatmaps using matlab built-in function
+
+atoms = {all_atoms_err_coup_ccs.rtr, all_atoms_err_coup_mmi.rtr, all_atoms_err_coup_ccs.sts, all_atoms_err_coup_mmi.sts};
+file_names = {'_all_err_coup_ccs_rtr', '_all_err_coup_mmi_rtr', '_all_err_coup_ccs_sts', '_all_err_coup_mmi_sts'};
+titles = {'double-redundancy ccs', 'double-redundancy mmi', 'double-synergy ccs', 'double-synergy mmi'};
+
+for i = 1:size(atoms,2)
+	
+	figure;
+	clf
+	h = heatmap(atoms{i}, 'Colormap', parula, 'ColorbarVisible', 'on', 'CellLabelColor', 'none') ;
+	h.YDisplayLabels = y_axis;
+	h.XDisplayLabels = x_axis;
+	%caxis([0, 0.1]);
+	
+	if sim_index == '3'
+		h.YLabel = 'zero coupling';
+		h.XLabel = 'zero noise correlation';
+	
+	else 
+		h.XLabel = 'noise correlation';
+		if network == '2node' 
+			h.YLabel = 'coupling strength';
+		else 
+			h.YLabel = 'network architecture';
+		end
+	end 
+	
+	title(titles{i});
+	exportgraphics(gcf, [PATHOUT2 network file_names{i} sim_index '.png']);
+
+end
+%}
+
+% synergistic capacity, downward causation, causal decoupling
+
+% {
+% heatmaps using matlab built-in function:
 
 atoms = {synergy_capacity_ccs, synergy_capacity_mmi, downward_causation_ccs, downward_causation_mmi, causal_decoupling_ccs, causal_decoupling_mmi};
 file_names = {'_all_err_coup_ccs_synergy_capacity', '_all_err_coup_mmi_synergy_capacity', '_all_err_coup_ccs_downward_causation', '_all_err_coup_mmi_downward_causation', '_all_err_coup_ccs_causal_decoupling', '_all_err_coup_mmi_causal_decoupling'};
@@ -244,17 +328,25 @@ for i = 1:size(atoms,2)
 	h = heatmap(atoms{i}, 'Colormap', parula, 'ColorbarVisible', 'on', 'CellLabelColor', 'none') ;
 	h.YDisplayLabels = y_axis;
 	h.XDisplayLabels = x_axis;
-	h.XLabel = 'noise correlation';
+	%caxis([0, 0.1]);
 	
-	if network == '2node'
-		h.YLabel = 'coupling strength';
+	if sim_index == '3'
+		h.YLabel = 'zero coupling';
+		h.XLabel = 'zero noise correlation';
+	
 	else 
-		h.YLabel = 'network architecture';
-	end
+		h.XLabel = 'noise correlation';
+		if network == '2node' 
+			h.YLabel = 'coupling strength';
+		else 
+			h.YLabel = 'network architecture';
+		end
+	end 
 	
 	title(titles{i});
 	exportgraphics(gcf, [PATHOUT2 network file_names{i} sim_index '.png']);
 
 end
+%}
 
 close all;

@@ -1,10 +1,23 @@
-% statdata_corr_errors3() obtains time-series data for a Gaussian MVAR(p) process 
+% statdata_coup_errors2() obtains time-series data for a Gaussian MVAR(p) process 
 % (in a vectorized way) by first getting the time-lagged covariance using connection strength
 % and error correlation, extracting the covariance, using it to draw samples of the network,
 % and adding the respective A*X_(t-1) term.
 
-function X = statdata_corr_errors2(coupling_matrix, npoints, tau, err);  
+function X = statdata_coup_errors2(coupling_matrix, npoints, tau, err);  
 	
+% -----------------------------------------------------------------------
+%   FUNCTION: statdata_coup_errors2.m
+%   PURPOSE:  Obtain time-series data for a Gaussian MVAR(p) process
+%             X_t=A_1*X_{t-1}+A_2*X_{t-2}+...+A_p*X_{t-p}+E_t
+%
+%   INPUT:  coupling_matrix - generalized connectivity matrix, A=(A_1 A_2 ... A_p)
+%		    npoints - number of time-steps
+%		    tau - time-lag
+%               err - covariance matrix for E_t
+%
+%   OUTPUT: X - time-series data, rows are variables, columns are observations
+% -----------------------------------------------------------------------
+
 	settle = 500; %will only keep post-equilibrium data points
 	npoints = npoints+settle;
 	nvar = size(coupling_matrix,2);

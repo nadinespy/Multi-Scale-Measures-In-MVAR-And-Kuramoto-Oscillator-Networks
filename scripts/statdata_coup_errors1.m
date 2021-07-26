@@ -1,12 +1,13 @@
-function X = statdata1(coupling_matrix, npoints, tau, err)
+function X = statdata_coup_errors1(coupling_matrix, npoints, tau, err)
 
 % -----------------------------------------------------------------------
-%   FUNCTION: statdata.m
+%   FUNCTION: statdata_coup_errors1.m
 %   PURPOSE:  Obtain time-series data for a Gaussian MVAR(p) process
 %             X_t=A_1*X_{t-1}+A_2*X_{t-2}+...+A_p*X_{t-p}+E_t
 %
-%   INPUT:  A - generalized connectivity matrix, A=(A_1 A_2 ... A_p)
+%   INPUT:  coupling_matrix - generalized connectivity matrix, A=(A_1 A_2 ... A_p)
 %		    npoints - number of time-steps
+%		    tau - time-lag
 %               err - covariance matrix for E_t
 %
 %   OUTPUT: X - time-series data, rows are variables, columns are observations
