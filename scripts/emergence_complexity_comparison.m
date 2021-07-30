@@ -15,11 +15,12 @@ clc;
 
 cd '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/scripts'
 addpath '/media/nadinespy/NewVolume/my_stuff/work/toolboxes_matlab'
-% addpath '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/PhiIDComparison/scripts/heatmaps'
+addpath '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/scripts/ReconcilingEmergences-master'
+javaaddpath('infodynamics.jar');
 
 PATHOUT1 = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/results/';
 PATHOUT2 = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/results/plots/';
-javaaddpath('infodynamics.jar');
+
 
 %% choice of parameters
 
@@ -37,7 +38,7 @@ tau = 1;
 sim_method = @statdata_random;
 
 % save plots & matrices according to simulation method (options: '1' (for statdata_coup_errors1()), '2' (for statdata_coup_errors2()), '3' (for statdata_random())
-sim_index = '3';
+sim_index = '1';
 
 % network (options: '2node' for 2-node network with 100 different coupling strengths & noise correlations (if choosing sim_index = 1 or 2) OR random 2-node network with 100 zero couplings & 100 zero noise correlations (if choosing sim_index = 3);
 % '8node' for 8-node networks with 6 different architectures & noise correlations (if choosing sim_index = 1 or 2) OR random 8-node networks with 100 zero couplings & 100 zero correlations (if choosing sim_index = 3))
@@ -68,6 +69,7 @@ load([PATHOUT1 network '_all_atoms_err_coup_mmi' sim_index '.mat'],'all_atoms_er
 synergistic_capacity_mmi = emergence_mmi.synergy_capacity_mmi; 
 downward_causation_mmi = emergence_mmi.downward_causation_mmi; 
 causal_decoupling_mmi = emergence_mmi.causal_decoupling_mmi; 
+
 %}
 
 %% create coupling matrices & noise correlations depending on the chosen network size
@@ -79,7 +81,7 @@ if network == '2node'
 		coupling_vec = linspace(0.0, 0.0, 100);
 		error_vec = linspace(0.0, 0.0, 100); 
 	else coupling_vec = linspace(0.01,0.45, 100);
-		error_vec = linspace(0.01, 0.09, 100); 
+		error_vec = linspace(0.01, 0.9, 100); 
 	end 
 
 	coupling_matrices = []; 
@@ -98,16 +100,16 @@ elseif network == '8node'
 			coupling_matrices(:,:,i) = coupling_vec(i)*ones(8);
 		end 
 	
-	else load('nets.mat');									% phi-optimal binary network, phi-optimal weighted network, small world, fully connected, bidirectional ring, unidirectional ring
+	else load('all_nets.mat');									% phi-optimal binary network, phi-optimal weighted network, small world, fully connected, bidirectional ring, unidirectional ring
 		
-		net_names = fields(nets);
+		net_names = fields(all_nets);
 		nb_nets = length(net_names);
 
-		error_vec = linspace(0.01, 0.09, 6);
+		error_vec = linspace(0.01, 0.9, 6);
 		
 		coupling_matrices = [];
 		for i = 1:size(net_names,1);
-			coupling_matrices(:,:,i) = nets.(net_names{i});
+			coupling_matrices(:,:,i) = all_nets.(net_names{i});
 		end 
 		
 	end
@@ -122,6 +124,11 @@ end
 phiid_all_err_coup_mmi = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
 phiid_all_err_coup_ccs = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
 
+% instantiate variables to store practical measures for synergistic capacity for different coupling matrices and noise correlations
+synergy_capacity_practical = zeros(size(coupling_matrices,3), size(error_vec, 2));
+downward_causation_practical = zeros(size(coupling_matrices,3), size(error_vec, 2));
+causal_decoupling_practical = zeros(size(coupling_matrices,3), size(error_vec, 2));
+
 rng(1);
 for i = 1:size(coupling_matrices,3)
 	
@@ -132,10 +139,24 @@ for i = 1:size(coupling_matrices,3)
 		
 		err = error_vec(j);
 		X = sim_method(coupling_matrix, npoints, tau, err);
+		
+		% PhiID (synergistic capacity is calculated below)
 		phiid_all_err_coup_mmi(:,i,j) = struct2array(PhiIDFull(X, tau, 'MMI'))';
 		phiid_all_err_coup_ccs(:,i,j) = struct2array(PhiIDFull(X, tau, 'ccs'))';
 		phiid_all_err_coup_mmi(:,i,j) = struct2array(PhiIDFull(X, tau, 'MMI'))';
 		phiid_all_err_coup_ccs(:,i,j) = struct2array(PhiIDFull(X, tau, 'ccs'))';
+		
+		% practical measures for causal emergence
+		
+		% some super simple meaningless macro variable - adding up the micro
+		macro_variable = zeros(1, npoints);
+		for k = 1:(size(X,1))
+			macro_variable = macro_variable + X(k,:);
+		end 
+		
+		synergy_capacity_practical(i,j) = EmergencePsi(X', macro_variable');
+		downward_causation_practical(i,j) = EmergenceDelta(X', macro_variable');
+		causal_decoupling_practical(i,j) = synergy_capacity_practical(i,j) - downward_causation_practical(i,j);
 		
 	end 
 	i
@@ -200,6 +221,17 @@ all_atoms_err_coup_ccs.sts = squeeze(phiid_all_err_coup_ccs(16,:,:));
 
 save([PATHOUT1 network '_all_atoms_err_coup_ccs' sim_index '.mat'],'all_atoms_err_coup_ccs');
 save([PATHOUT1 network '_all_atoms_err_coup_mmi' sim_index '.mat'],'all_atoms_err_coup_mmi');
+%}
+
+% allocating variable names for the atoms in a struct;
+emergence_practical = [];
+emergence_practical = [];
+
+emergence_practical.synergy_capacity_practical = synergy_capacity_practical;
+emergence_practical.causal_decoupling_practical = causal_decoupling_practical;
+emergence_practical.downward_causation_practical = downward_causation_practical;
+
+save([PATHOUT1 network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
 %}
 
 %% synergistic/emergent capacity, downward causation, causal decoupling
@@ -317,9 +349,9 @@ end
 % {
 % heatmaps using matlab built-in function:
 
-atoms = {synergy_capacity_ccs, synergy_capacity_mmi, downward_causation_ccs, downward_causation_mmi, causal_decoupling_ccs, causal_decoupling_mmi};
-file_names = {'_all_err_coup_ccs_synergy_capacity', '_all_err_coup_mmi_synergy_capacity', '_all_err_coup_ccs_downward_causation', '_all_err_coup_mmi_downward_causation', '_all_err_coup_ccs_causal_decoupling', '_all_err_coup_mmi_causal_decoupling'};
-titles = {'synergy capacity ccs', 'synergy capacity mmi', 'downward causation ccs', 'downward causation mmi', 'causal decoupling ccs', 'causal decoupling mmi'};
+atoms = {synergy_capacity_ccs, synergy_capacity_mmi, synergy_capacity_practical, downward_causation_ccs, downward_causation_mmi, downward_causation_practical, causal_decoupling_ccs, causal_decoupling_mmi, causal_decoupling_practical};
+file_names = {'_all_err_coup_ccs_synergy_capacity', '_all_err_coup_mmi_synergy_capacity',  '_all_err_coup_practical_synergy_capacity', '_all_err_coup_ccs_downward_causation', '_all_err_coup_mmi_downward_causation', '_all_err_coup_practical_downward_causation', '_all_err_coup_ccs_causal_decoupling', '_all_err_coup_mmi_causal_decoupling', '_all_err_coup_practical_causal_decoupling'};
+titles = {'synergy capacity ccs', 'synergy capacity mmi', 'synergy capacity practical', 'downward causation ccs', 'downward causation mmi', 'downward causation practical', 'causal decoupling ccs', 'causal decoupling mmi', 'causal decoupling practical'};
 
 for i = 1:size(atoms,2)
 	
