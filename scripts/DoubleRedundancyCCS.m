@@ -178,7 +178,14 @@ double_coinfo = - Ixta - Ixtb - Iyta - Iytb + ...
                 + Rxyta + Rxytb - Rxytab + ...
                 + Rabtx + Rabty - Rabtxy;
 
+% double_info above is equal to:
+%	   - I(1(t);1(t+1)) - I(1(t);2(t+1)) - I(2(t);1(t+1)) - I(2(t);2(t+1))
+%	   + I(1(t);1(t+1),2(t+1)) + I(2(t);1(t+1),2(t+1)) + I(1(t),2(t);1(t+1)) + I(1(t),2(t);2(t+1)) - I(1(t),1(t+1);2(t),2(t+1))
+%	   + a bunch of redundancy terms derived for a univariate target
+	    
+	    
 signs = [sign(Ixta), sign(Ixtb), sign(Iyta), sign(Iytb), sign(double_coinfo)];
+% I(1(t);1(t+1)), I(1(t);2(t+1)), I(2(t);1(t+1)), I(2(t);2(t+1)), redred - synsyn
 redred = all(signs == signs(:,1), 2).*double_coinfo;
 
 end

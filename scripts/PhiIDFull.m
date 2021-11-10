@@ -117,7 +117,7 @@ p1 = str2num(mib.get(0).toString()) + 1;            % indices of partition 1, e.
 p2 = str2num(mib.get(1).toString()) + 1;            % indices of partition 2, e.g., in an 8-element system, [3,4,5,6]
 
 % Stack data and call full PhiID function
-atoms = private_FourVectorPhiID(sX(p1,1:end-tau), sX(p2,1:end-tau), ...
+atoms = private_FourVectorPhiID(sX(p1,1:end-tau), sX(p2,1:end-tau), ...			   % Here, we define X1, X2, Y1, and Y2, so the partitions at time t (X1, X2), and the partitions at time t+1 (Y1, Y2)
                                 sX(p1,1+tau:end), sX(p2,1+tau:end), measure);
 
 end
@@ -174,7 +174,7 @@ mu = mean(sX');                                                  % e.g., " , the
 assert(all(size(mu) == [1, D]) && all(size(S) == [D, D]));
 
 % Define local information-theoretic functions
-h = @(idx) -log(mvnpdf(sX(idx,:)', mu(idx), S(idx,idx)));  % multivariate entropy
+h = @(idx) -log(mvnpdf(sX(idx,:)', mu(idx), S(idx,idx)));  % multivariate entropy, h() takes as an input the indices of the variables to consider in sX
 mi  = @(src, tgt) h(src) + h(tgt) - h([src, tgt]);			% mutual information (I(X;Y) = H(X) + H(Y) - H(X,Y)) (not further used below)
 
 % Pre-compute entropies necessary for all IT quantities (all quantities
@@ -237,6 +237,14 @@ Rabtxy = RedFun(sX, t1, t2, [p1 p2], Ixyta, Ixytb, Ixytab);	    % {1}{2}-->{1}{2
                                                                                                   % partition2 at t & partition1 at t+1
                                                                                                   % partition2 at t & partition2 at t+1
                                                                                                   
+                                                                                                  % Example: we take the min between 
+												      	% I(X1(t),X2(t);X1(t+1),X2(t+1),
+													% I(X3(t),X4(t);X1(t+1),X2(t+1),
+													% I(X1(t),X2(t);X3(t+1),X4(t+1),
+													% I(X3(t),X4(t);X3(t+1),X4(t+1),
+
+													% if for system X, [X1, X2] give one partition, and [X3, X4] give the other.
+                                                                                                  
                                                                                                   % CCS: calculating co-info: double_coinfo (redred - synsyn) = - Ixta - Ixtb - Iyta - Iytb + ...
                                                                                                   %                                                                 Ixtab + Iytab + Ixyta + Ixytb - Ixytab + ...
                                                                                                   %                                                                 + Rxyta + Rxytb - Rxytab + ...
@@ -256,7 +264,7 @@ reds = [rtr Rxyta Rxytb Rxytab Rabtx Rabty Rabtxy ...
 % xtr: {1}-->{1}{2}
 % xtx: {1}-->{1}
 % xty: {1}-->{2} 
-% xts: {1}-->{12}
+% xts: {1}-->{12}1 1 1 1 1 1 1 1
 % ytr: {2}-->{1}{2}
 % ytx: {2}-->{1}
 % yty: {2}-->{2}

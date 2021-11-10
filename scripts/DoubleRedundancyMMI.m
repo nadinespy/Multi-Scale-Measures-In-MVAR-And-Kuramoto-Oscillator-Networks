@@ -80,7 +80,7 @@ p1 = str2num(mib.get(0).toString()) + 1;
 p2 = str2num(mib.get(1).toString()) + 1;
 
 redred = private_FourVectorMMI(X(p1, 1:end-tau), X(p2, 1:end-tau), ...
-                                X(p1, 1+tau:end), X(p2, 1+tau:end));
+                                X(p1, 1+tau:end), X(p2, 1+tau:end)); 				% Here, we define X1, X2, Y1, and Y2, so the partitions at time t (X1, X2), and the partitions at time t+1 (Y1, Y2)
 
 end
 
@@ -121,4 +121,15 @@ for i=1:length(src)
 end
 
 end
+
+
+% In the loop above, we take the min between 
+% I(X1(t),X2(t);X1(t+1),X2(t+1),
+% I(X3(t),X4(t);X1(t+1),X2(t+1),
+% I(X1(t),X2(t);X3(t+1),X4(t+1),
+% I(X3(t),X4(t);X3(t+1),X4(t+1),
+
+% if for system X, [X1, X2] give one partition, and [X3, X4] give the other.
+
+
 
