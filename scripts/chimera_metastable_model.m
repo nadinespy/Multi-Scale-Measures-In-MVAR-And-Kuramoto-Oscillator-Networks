@@ -88,6 +88,15 @@ for t=2:T
    synchrony(t,:) = abs(synchrony(t,:)/n0);					% taking the average
    
    synchrony_temp = mean(synchrony(t,:)');
+   
+   % Compute pairwise synchrony between communities
+   psi = zeros(M,M);
+   for i=1:M
+      for j=i:M
+         psi(i,j) = mean(abs((synchrony(1:T,i)+synchrony(1:T,j))/2));
+         psi(j,i) = psi(i,j);
+      end
+   end
   
    sigma_chi(1,t) = var(synchrony(t,:));
    

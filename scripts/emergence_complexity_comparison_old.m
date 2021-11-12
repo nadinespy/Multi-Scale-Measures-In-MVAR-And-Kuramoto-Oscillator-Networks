@@ -36,11 +36,11 @@ PATHOUT4b = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceC
 
 % 8-node kuramoto oscillators
 PATHOUT5a = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_kuramoto/';
-PATHOUT5b = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_kuramoto';
+PATHOUT5b = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_kuramoto/';
 
 % 256-node kuramoto oscillators
 PATHOUT6a = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/';
-PATHOUT6b = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto';
+PATHOUT6b = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/';
 
 
 
@@ -72,8 +72,8 @@ sim_index = '4';
 network = '256node_kuramoto';
 
 % choose according to which model is being investigated (see paths above)
-pathout_plots = PATHOUT6a;
-pathout_data = PATHOUT6b;
+pathout_plots = PATHOUT6b;
+pathout_data = PATHOUT6a;
 
 % KURAMOTO OSCILLATORS
 
@@ -238,22 +238,20 @@ elseif strcmp(network, '8node_mvar_global_coupling') == true;
 elseif ((strcmp(network, '8node_kuramoto') == true) || (strcmp(network, '256node_kuramoto') == true));
 	
 	if strcmp(network, '8node_kuramoto') == true
-		intra_comm_size = 4;						% intra-community size
-		n_communities = 2;							% number of communities
-		coupling_vec = linspace(0.05, 0.9, 100);
-		error_vec = linspace(0.0, 0.8, 100);			% not an error vector, but beta (named it error_vec so that i don't need to rewrite everything below)
+		intra_comm_size = 4;							% intra-community size
+		n_communities = 2;							% number of communities		
 	else intra_comm_size = 32;
 		n_communities = 8;
-		coupling_vec = linspace(0.05, 0.9, 10);
-		error_vec = linspace(0.0, 0.8, 10);
 	end
 		
-			
+	coupling_vec = linspace(0.05, 0.9, 10);
+	error_vec = linspace(0.0, 0.8, 10);					% not an error vector, but beta (named it error_vec so that i don't need to rewrite everything below)
+	
 	d0 = intra_comm_size; 
 	d1 = intra_comm_size;			     % numbers of connections at different community levels
 		
-	N = intra_comm_size*n_communities;	% total number of oscillators: 64
-	M = n_communities;				       % number of lowest level communities (what's that?): 4
+	N = intra_comm_size*n_communities;	% total number of oscillators: 8
+	M = n_communities;				       % number of lowest level communities (what's that?): 2
 	
 	synchronies = zeros(length(error_vec), n_communities, npoints);
 	
@@ -291,9 +289,12 @@ end
 %% calculating information atoms
 
 % {
-% instantiate variables to store atoms for different coupling matrices and noise correlations
-phiid_all_err_coup_mmi = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
-phiid_all_err_coup_ccs = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
+
+if strcmp(network, '256node_kuramoto') ~= true
+	% instantiate variables to store atoms for different coupling matrices and noise correlations
+	phiid_all_err_coup_mmi = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
+	phiid_all_err_coup_ccs = zeros(16, size(coupling_matrices,3), size(error_vec, 2));
+end
 
 % instantiate variables to store practical measures for synergistic capacity for different coupling matrices and noise correlations
 synergy_capacity_practical = zeros(size(coupling_matrices,3), size(error_vec, 2));
@@ -376,13 +377,31 @@ for i = 1:size(coupling_matrices, 3);
 				phiid_all_err_coup_ccs(:,i,j) = NaN;
 			end
 			
-			synergy_capacity_practical(i,j) = EmergencePsi(X', sigma_chi');
-			downward_causation_practical(i,j) = EmergenceDelta(X', sigma_chi');
-			causal_decoupling_practical(i,j) = synergy_capacity_practical(i,j) - downward_causation_practical(i,j);
-		
-			macro_variables(i,j,:) = sigma_chi;
-			synchronies(j,:,:) = synchrony;
+			synchronies(j,:,:) = synchrony;				% rows: betas, columns: communities, 3rd dimension: time-points
 			
+			% compute pairwise synchrony between communities
+			grand_mean_pairwise_synchrony = zeros(1,npoints);
+		
+			for h = 1:M;
+				mean_pairwise_synchrony_temp = zeros(1,npoints);
+				for g = 1:M;
+					mean_pairwise_synchrony_temp = mean_pairwise_synchrony_temp + abs((synchrony(h,:)+synchrony(g,:))/2);
+				end 
+				mean_pairwise_synchrony_temp = mean_pairwise_synchrony_temp/M;
+				grand_mean_pairwise_synchrony = grand_mean_pairwise_synchrony + mean_pairwise_synchrony_temp;
+			end
+			grand_mean_pairwise_synchrony = grand_mean_pairwise_synchrony/M;
+			
+			macro_variable_pairwise_synchrony(i,j,:) = grand_mean_pairwise_synchrony;
+			macro_variable_sigma_chi(i,j,:) = sigma_chi;
+			
+			synergy_capacity_practical_sigma_chi(i,j) = EmergencePsi(X', sigma_chi');
+			synergy_capacity_practical_pairwise_synchrony(i,j) = EmergencePsi(X', grand_mean_pairwise_synchrony');
+			downward_causation_practical_sigma_chi(i,j) = EmergenceDelta(X', sigma_chi');
+			downward_causation_practical_pairwise_synchrony(i,j) = EmergenceDelta(X', grand_mean_pairwise_synchrony');
+			causal_decoupling_practical_sigma_chi(i,j) = synergy_capacity_practical_sigma_chi(i,j) - downward_causation_practical_sigma_chi(i,j);
+			causal_decoupling_practical_pairwise_synchrony(i,j) = synergy_capacity_practical_pairwise_synchrony(i,j) - downward_causation_practical_pairwise_synchrony(i,j);
+
 			% average covariance/correlation matrix
 			cov_X = cov(X');
 			all_average_cov_X(i,j) = mean(nonzeros(tril(cov_X,-1)), 'all');
@@ -392,13 +411,32 @@ for i = 1:size(coupling_matrices, 3);
 			
 		elseif strcmp(network, '256node_kuramoto') == true;		% calculating only practical measures with such a big system
 			[X, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, err, intra_comm_size, n_communities);
-			
-			synergy_capacity_practical(i,j) = EmergencePsi(X', sigma_chi');
-			downward_causation_practical(i,j) = EmergenceDelta(X', sigma_chi');
-			causal_decoupling_practical(i,j) = synergy_capacity_practical(i,j) - downward_causation_practical(i,j);
+
+			% compute pairwise synchrony between communities
+			grand_mean_pairwise_synchrony = zeros(1,npoints);
 		
-			macro_variables(i,j,:) = sigma_chi;
-			synchronies(j,:,:) = synchrony;
+			for h = 1:M;
+				mean_pairwise_synchrony_temp = zeros(1,npoints);
+				for g = 1:M;
+					mean_pairwise_synchrony_temp = mean_pairwise_synchrony_temp + abs((synchrony(h,:)+synchrony(g,:))/2);
+				end 
+				mean_pairwise_synchrony_temp = mean_pairwise_synchrony_temp/M;
+				grand_mean_pairwise_synchrony = grand_mean_pairwise_synchrony + mean_pairwise_synchrony_temp;
+			end
+			grand_mean_pairwise_synchrony = grand_mean_pairwise_synchrony/M;
+			
+			macro_variable_pairwise_synchrony(i,j,:) = grand_mean_pairwise_synchrony;
+			macro_variable_sigma_chi(i,j,:) = sigma_chi;
+			
+			synergy_capacity_practical_sigma_chi(i,j) = EmergencePsi(X', sigma_chi');
+			synergy_capacity_practical_pairwise_synchrony(i,j) = EmergencePsi(X', grand_mean_pairwise_synchrony');
+			downward_causation_practical_sigma_chi(i,j) = EmergenceDelta(X', sigma_chi');
+			downward_causation_practical_pairwise_synchrony(i,j) = EmergenceDelta(X', grand_mean_pairwise_synchrony');
+			causal_decoupling_practical_sigma_chi(i,j) = synergy_capacity_practical_sigma_chi(i,j) - downward_causation_practical_sigma_chi(i,j);
+			causal_decoupling_practical_pairwise_synchrony(i,j) = synergy_capacity_practical_pairwise_synchrony(i,j) - downward_causation_practical_pairwise_synchrony(i,j);
+
+			macro_variables_sigma_chi(i,j,:) = sigma_chi;
+			synchronies(j,:,:) = synchrony;				% rows: betas, columns: communities, 3rd dimension: time-points
 			
 			% average covariance/correlation matrix
 			cov_X = cov(X');
@@ -493,67 +531,81 @@ end
 % sty: {12}-->{2} 
 % sts: {12}-->{12}
 
-all_atoms_err_coup_mmi = [];
-all_atoms_err_coup_mmi.rtr = squeeze(phiid_all_err_coup_mmi(1,:,:));
-all_atoms_err_coup_mmi.rtx = squeeze(phiid_all_err_coup_mmi(2,:,:));
-all_atoms_err_coup_mmi.rty = squeeze(phiid_all_err_coup_mmi(3,:,:));
-all_atoms_err_coup_mmi.rts = squeeze(phiid_all_err_coup_mmi(4,:,:));
-all_atoms_err_coup_mmi.xtr = squeeze(phiid_all_err_coup_mmi(5,:,:));
-all_atoms_err_coup_mmi.xtx = squeeze(phiid_all_err_coup_mmi(6,:,:));
-all_atoms_err_coup_mmi.xty = squeeze(phiid_all_err_coup_mmi(7,:,:));
-all_atoms_err_coup_mmi.xts = squeeze(phiid_all_err_coup_mmi(8,:,:));
-all_atoms_err_coup_mmi.ytr = squeeze(phiid_all_err_coup_mmi(9,:,:));
-all_atoms_err_coup_mmi.ytx = squeeze(phiid_all_err_coup_mmi(10,:,:));
-all_atoms_err_coup_mmi.yty = squeeze(phiid_all_err_coup_mmi(11,:,:));
-all_atoms_err_coup_mmi.yts = squeeze(phiid_all_err_coup_mmi(12,:,:));
-all_atoms_err_coup_mmi.str = squeeze(phiid_all_err_coup_mmi(13,:,:));
-all_atoms_err_coup_mmi.stx = squeeze(phiid_all_err_coup_mmi(14,:,:));
-all_atoms_err_coup_mmi.sty = squeeze(phiid_all_err_coup_mmi(15,:,:));
-all_atoms_err_coup_mmi.sts = squeeze(phiid_all_err_coup_mmi(16,:,:));
-
-all_atoms_err_coup_ccs = [];
-all_atoms_err_coup_ccs.rtr = squeeze(phiid_all_err_coup_ccs(1,:,:));
-all_atoms_err_coup_ccs.rtx = squeeze(phiid_all_err_coup_ccs(2,:,:));
-all_atoms_err_coup_ccs.rty = squeeze(phiid_all_err_coup_ccs(3,:,:));
-all_atoms_err_coup_ccs.rts = squeeze(phiid_all_err_coup_ccs(4,:,:));
-all_atoms_err_coup_ccs.xtr = squeeze(phiid_all_err_coup_ccs(5,:,:));
-all_atoms_err_coup_ccs.xtx = squeeze(phiid_all_err_coup_ccs(6,:,:));
-all_atoms_err_coup_ccs.xty = squeeze(phiid_all_err_coup_ccs(7,:,:));
-all_atoms_err_coup_ccs.xts = squeeze(phiid_all_err_coup_ccs(8,:,:));
-all_atoms_err_coup_ccs.ytr = squeeze(phiid_all_err_coup_ccs(9,:,:));
-all_atoms_err_coup_ccs.ytx = squeeze(phiid_all_err_coup_ccs(10,:,:));
-all_atoms_err_coup_ccs.yty = squeeze(phiid_all_err_coup_ccs(11,:,:));
-all_atoms_err_coup_ccs.yts = squeeze(phiid_all_err_coup_ccs(12,:,:));
-all_atoms_err_coup_ccs.str = squeeze(phiid_all_err_coup_ccs(13,:,:));
-all_atoms_err_coup_ccs.stx = squeeze(phiid_all_err_coup_ccs(14,:,:));
-all_atoms_err_coup_ccs.sty = squeeze(phiid_all_err_coup_ccs(15,:,:));
-all_atoms_err_coup_ccs.sts = squeeze(phiid_all_err_coup_ccs(16,:,:));
-
-
-
-save([pathout_data network '_macro_variables_ ' sim_index '.mat'], 'macro_variables');
-save([pathout_data network '_all_atoms_err_coup_ccs' sim_index '.mat'], 'all_atoms_err_coup_ccs');
-save([pathout_data network '_all_atoms_err_coup_mmi' sim_index '.mat'], 'all_atoms_err_coup_mmi');
-save([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
-save([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
-
-save([pathout_data network '_all_atoms_err_coup_ccs' sim_index '.mat'], 'all_atoms_err_coup_ccs');
-save([pathout_data network '_all_atoms_err_coup_mmi' sim_index '.mat'], 'all_atoms_err_coup_mmi');
-save([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
-save([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
-
-
-%
-
 % allocating variable names for the atoms in a struct;
-emergence_practical = [];
-emergence_practical = [];
 
-emergence_practical.synergy_capacity_practical = synergy_capacity_practical;
-emergence_practical.causal_decoupling_practical = causal_decoupling_practical;
-emergence_practical.downward_causation_practical = downward_causation_practical;
 
-save([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
+save([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
+save([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
+
+if ((strcmp(network, '8node_kuramoto') == true) || (strcmp(network, '256node_kuramoto') == true));
+	emergence_practical_sigma_chi = [];
+	emergence_practical_pairwise_synchrony = [];
+
+	emergence_practical_sigma_chi.synergy_capacity_practical_sigma_chi = synergy_capacity_practical_sigma_chi;
+	emergence_practical_sigma_chi.causal_decoupling_practical_sigma_chi = causal_decoupling_practical_sigma_chi;
+	emergence_practical_sigma_chi.downward_causation_practical_sigma_chi = downward_causation_practical_sigma_chi;
+	
+	emergence_practical_pairwise_synchrony.synergy_capacity_practical_pairwise_synchrony = synergy_capacity_practical_pairwise_synchrony;
+	emergence_practical_pairwise_synchrony.causal_decoupling_practical_pairwise_synchrony = causal_decoupling_practical_pairwise_synchrony;
+	emergence_practical_pairwise_synchrony.downward_causation_practical_pairwise_synchrony = downward_causation_practical_pairwise_synchrony;
+	
+	save([pathout_data network '_macro_variable_sigma_chi' sim_index '.mat'], 'macro_variable_sigma_chi');
+	save([pathout_data network '_macro_variable_pairwise_synchrony' sim_index '.mat'], 'macro_variable_pairwise_synchrony');
+	save([pathout_data network '_emergence_practical_sigma_chi' sim_index '.mat'], 'emergence_practical_sigma_chi');
+	save([pathout_data network '_emergence_practical_pairwise_synchrony' sim_index '.mat'], 'emergence_practical_pairwise_synchrony');
+else
+	emergence_practical = [];
+
+	emergence_practical.synergy_capacity_practical = synergy_capacity_practical;
+	emergence_practical.causal_decoupling_practical = causal_decoupling_practical;
+	emergence_practical.downward_causation_practical = downward_causation_practical;
+	save([pathout_data network '_macro_variables' sim_index '.mat'], 'macro_variables');
+	save([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
+end 
+
+if strcmp(network, '256node_kuramoto') ~= true;
+	all_atoms_err_coup_mmi = [];
+	all_atoms_err_coup_mmi.rtr = squeeze(phiid_all_err_coup_mmi(1,:,:));
+	all_atoms_err_coup_mmi.rtx = squeeze(phiid_all_err_coup_mmi(2,:,:));
+	all_atoms_err_coup_mmi.rty = squeeze(phiid_all_err_coup_mmi(3,:,:));
+	all_atoms_err_coup_mmi.rts = squeeze(phiid_all_err_coup_mmi(4,:,:));
+	all_atoms_err_coup_mmi.xtr = squeeze(phiid_all_err_coup_mmi(5,:,:));
+	all_atoms_err_coup_mmi.xtx = squeeze(phiid_all_err_coup_mmi(6,:,:));
+	all_atoms_err_coup_mmi.xty = squeeze(phiid_all_err_coup_mmi(7,:,:));
+	all_atoms_err_coup_mmi.xts = squeeze(phiid_all_err_coup_mmi(8,:,:));
+	all_atoms_err_coup_mmi.ytr = squeeze(phiid_all_err_coup_mmi(9,:,:));
+	all_atoms_err_coup_mmi.ytx = squeeze(phiid_all_err_coup_mmi(10,:,:));
+	all_atoms_err_coup_mmi.yty = squeeze(phiid_all_err_coup_mmi(11,:,:));
+	all_atoms_err_coup_mmi.yts = squeeze(phiid_all_err_coup_mmi(12,:,:));
+	all_atoms_err_coup_mmi.str = squeeze(phiid_all_err_coup_mmi(13,:,:));
+	all_atoms_err_coup_mmi.stx = squeeze(phiid_all_err_coup_mmi(14,:,:));
+	all_atoms_err_coup_mmi.sty = squeeze(phiid_all_err_coup_mmi(15,:,:));
+	all_atoms_err_coup_mmi.sts = squeeze(phiid_all_err_coup_mmi(16,:,:));
+
+	all_atoms_err_coup_ccs = [];
+	all_atoms_err_coup_ccs.rtr = squeeze(phiid_all_err_coup_ccs(1,:,:));
+	all_atoms_err_coup_ccs.rtx = squeeze(phiid_all_err_coup_ccs(2,:,:));
+	all_atoms_err_coup_ccs.rty = squeeze(phiid_all_err_coup_ccs(3,:,:));
+	all_atoms_err_coup_ccs.rts = squeeze(phiid_all_err_coup_ccs(4,:,:));
+	all_atoms_err_coup_ccs.xtr = squeeze(phiid_all_err_coup_ccs(5,:,:));
+	all_atoms_err_coup_ccs.xtx = squeeze(phiid_all_err_coup_ccs(6,:,:));
+	all_atoms_err_coup_ccs.xty = squeeze(phiid_all_err_coup_ccs(7,:,:));
+	all_atoms_err_coup_ccs.xts = squeeze(phiid_all_err_coup_ccs(8,:,:));
+	all_atoms_err_coup_ccs.ytr = squeeze(phiid_all_err_coup_ccs(9,:,:));
+	all_atoms_err_coup_ccs.ytx = squeeze(phiid_all_err_coup_ccs(10,:,:));
+	all_atoms_err_coup_ccs.yty = squeeze(phiid_all_err_coup_ccs(11,:,:));
+	all_atoms_err_coup_ccs.yts = squeeze(phiid_all_err_coup_ccs(12,:,:));
+	all_atoms_err_coup_ccs.str = squeeze(phiid_all_err_coup_ccs(13,:,:));
+	all_atoms_err_coup_ccs.stx = squeeze(phiid_all_err_coup_ccs(14,:,:));
+	all_atoms_err_coup_ccs.sty = squeeze(phiid_all_err_coup_ccs(15,:,:));
+	all_atoms_err_coup_ccs.sts = squeeze(phiid_all_err_coup_ccs(16,:,:));
+	
+	save([pathout_data network '_all_atoms_err_coup_ccs' sim_index '.mat'], 'all_atoms_err_coup_ccs');
+	save([pathout_data network '_all_atoms_err_coup_mmi' sim_index '.mat'], 'all_atoms_err_coup_mmi');
+	save([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
+	save([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
+end 
+
 
 %}
 
@@ -608,7 +660,10 @@ save([pathout_plots network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs')
 save([pathout_plots network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
 %}
 
-%% plotting 
+%% plotting
+
+clear xlabel;
+clear ylabel;
 
 % axes ticks
 if sim_index == '3'
@@ -635,13 +690,9 @@ elseif strcmp(network, '8node_mvar_different_architectures') == true;
 		x_axis = {'0.13', '0.26', '0.39', '0.52', '0.65', '0.78', '0.9'};
 		y_axis = {'optimal A', 'optimal B', 'small world', 'two communities', 'fully connected', 'ring', 'uni ring'};
 
-elseif ((strcmp(network, '8node_kuramoto') == true) || (strcmp(network, '256node_kuramoto') == true)); 
-		x_axis = {'0.0', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.27', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.54', '', '', '', '', '', '', '', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.8', ''};
-		y_axis = {'0.05', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.9', ''};
+elseif ((strcmp(network, '256node_kuramoto') == true) || (strcmp(network, '8node_kuramoto') == true));
+		x_axis = {'0.0', '', '0.18', '', '0.36', '', '0.55', '', '', '0.8'};
+		y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
 end
 % double-redundancy & double-synergy
 
@@ -673,19 +724,22 @@ for i = 1:size(atoms,2)
 	xticklabels(x_axis);
 	
 	if sim_index == '3';
-		ylabel = 'zero coupling';
-		xlabel = 'zero noise correlation';
+		ylabel('zero coupling');
+		xlabel('zero noise correlation');
 	
 	else 
-		xlabel = 'noise correlation';
+		xlabel('noise correlation');
 		if strcmp(network, '2node') == true;
-			ylabel = 'coupling strength';
+			ylabel('coupling strength');
 		elseif strcmp(network, '8node_erdoes_renyi') == true;
-			ylabel = 'density';
+			ylabel('density');
 		elseif strcmp(network, '8node_global_coupling') == true;
-			ylabel = 'global coupling factor';
+			ylabel('global coupling factor');
+		elseif ((strcmp(network, '8node_kuramoto') == true) || (strcmp(network, '256node_kuramoto') == true));
+			ylabel('A');
+			xlabel('beta');
 		else 
-			ylabel = 'network architecture';
+			ylabel('network architecture');
 		end
 	end 
 	
@@ -704,23 +758,48 @@ end
 % heatmaps using matlab built-in function:
 
 if strcmp(network, '256node_kuramoto') == true;
-	atoms = {synergy_capacity_practical, downward_causation_practical, causal_decoupling_practical, all_average_cov_X, all_average_corr_X};
-	file_names = {'_all_err_coup_practical_synergy_capacity', '_all_err_coup_practical_downward_causation', 
-		'_all_err_coup_practical_causal_decoupling', '_all_err_coup_average_cov_X', '_all_err_coup_average_corr_X'};
-	titles = {'synergy capacity ccs', 'synergy capacity mmi', 'synergy capacity practical', 'downward causation ccs', 
-		'downward causation mmi', 'downward causation practical', 'causal decoupling ccs', 'causal decoupling mmi', 
-		'causal decoupling practical', 'average covariance X', 'average correlation X'};
-else
-	atoms = {synergy_capacity_ccs, synergy_capacity_mmi, synergy_capacity_practical, downward_causation_ccs, downward_causation_mmi, downward_causation_practical, causal_decoupling_ccs, causal_decoupling_mmi, causal_decoupling_practical, all_average_cov_X, all_average_corr_X};
-	file_names = {'_all_err_coup_ccs_synergy_capacity', '_all_err_coup_mmi_synergy_capacity',  '_all_err_coup_practical_synergy_capacity', 
-		'_all_err_coup_ccs_downward_causation', '_all_err_coup_mmi_downward_causation', '_all_err_coup_practical_downward_causation', 
-		'_all_err_coup_ccs_causal_decoupling', '_all_err_coup_mmi_causal_decoupling', '_all_err_coup_practical_causal_decoupling', 
+	atoms = {synergy_capacity_practical_pairwise_synchrony, downward_causation_practical_pairwise_synchrony, ...
+		causal_decoupling_practical_pairwise_synchrony, synergy_capacity_practical_sigma_chi, ...
+		downward_causation_practical_sigma_chi, causal_decoupling_practical_sigma_chi, all_average_cov_X, all_average_corr_X};
+	file_names = {'_all_err_coup_practical_synergy_capacity_pairwise_synchrony', ...
+		'_all_err_coup_practical_downward_causation_pairwise_synchrony', ... 
+		'_all_err_coup_practical_causal_decoupling_pairwise_synchrony', '_all_err_coup_practical_synergy_capacity_sigma_chi', ...
+		'_all_err_coup_practical_downward_causation_sigma_chi', ... 
+		'_all_err_coup_practical_causal_decoupling_sigma_chi','_all_err_coup_average_cov_X', '_all_err_coup_average_corr_X'};
+	titles = {'synergy capacity practical pairwise synchrony', 'downward causation practical pairwise synchrony', ...
+		'causal decoupling practical pairwise synchrony', 'synergy capacity practical sigma chi', ...
+		'downward causation practical pairwise synchrony', 'causal decoupling practical sigma chi', ...
+		'average covariance X', 'average correlation X'};
+elseif strcmp(network, '8node_kuramoto') == true;
+	atoms = {synergy_capacity_ccs, synergy_capacity_mmi, synergy_capacity_practical_pairwise_synchrony, downward_causation_ccs, ...
+		downward_causation_mmi, downward_causation_practical_pairwise_synchrony, causal_decoupling_ccs, causal_decoupling_mmi, ...
+		causal_decoupling_practical_pairwise_synchrony, synergy_capacity_practical_sigma_chi, ...
+		downward_causation_practical_sigma_chi, causal_decoupling_practical_sigma_chi, all_average_cov_X, ...
+		all_average_corr_X};
+	file_names = {'_all_err_coup_ccs_synergy_capacity', '_all_err_coup_mmi_synergy_capacity', ...
+		'_all_err_coup_practical_synergy_capacity_pairwise_synchrony', '_all_err_coup_ccs_downward_causation', ...
+		'_all_err_coup_mmi_downward_causation', '_all_err_coup_practical_downward_causation_pairwise_synchrony', ...
+		'_all_err_coup_ccs_causal_decoupling', '_all_err_coup_mmi_causal_decoupling', ...
+		'_all_err_coup_practical_causal_decoupling_pairwise_synchrony', '_all_err_coup_practical_synergy_capacity_sigma_chi', ...
+		'_all_err_coup_practical_downward_causation_sigma_chi', '_all_err_coup_practical_causal_decoupling_sigma_chi', ...
 		'_all_err_coup_average_cov_X', '_all_err_coup_average_corr_X'};
-	titles = {'synergy capacity ccs', 'synergy capacity mmi', 'synergy capacity practical', 'downward causation ccs', 'downward causation mmi', 
-		'downward causation practical', 'causal decoupling ccs', 'causal decoupling mmi', 'causal decoupling practical', 'average covariance X', 
+	titles = {'synergy capacity ccs', 'synergy capacity mmi', 'synergy capacity practical pairwise synchrony', 'downward causation ccs', ...
+		'downward causation mmi', 'downward causation practical pairwise synchrony', 'causal decoupling ccs', 'causal decoupling mmi', ...
+		'causal decoupling practical pairwise synchrony', 'synergy capacity practical sigma chi', ...
+		'downward causation practical sigma chi', 'causal decoupling practical sigma chi', ...
+		'average covariance X', 'average correlation X'};
+else 
+	atoms = {synergy_capacity_ccs, synergy_capacity_mmi, synergy_capacity_practical, downward_causation_ccs, downward_causation_mmi, downward_causation_practical, causal_decoupling_ccs, causal_decoupling_mmi, causal_decoupling_practical, all_average_cov_X, all_average_corr_X};
+	file_names = {'_all_err_coup_ccs_synergy_capacity', '_all_err_coup_mmi_synergy_capacity',  '_all_err_coup_practical_synergy_capacity', ...
+		'_all_err_coup_ccs_downward_causation', '_all_err_coup_mmi_downward_causation', '_all_err_coup_practical_downward_causation', ...
+		'_all_err_coup_ccs_causal_decoupling', '_all_err_coup_mmi_causal_decoupling', '_all_err_coup_practical_causal_decoupling', ...
+		'_all_err_coup_average_cov_X', '_all_err_coup_average_corr_X'};
+	titles = {'synergy capacity ccs', 'synergy capacity mmi', 'synergy capacity practical', 'downward causation ccs', 'downward causation mmi', ... 
+		'downward causation practical', 'causal decoupling ccs', 'causal decoupling mmi', 'causal decoupling practical', 'average covariance X', ...
 		'average correlation X'};
 end 
 
+clear xlabel;
 
 for i = 1:size(atoms,2)
 	
@@ -732,37 +811,46 @@ for i = 1:size(atoms,2)
 	
 	hColorbar = colorbar;
 	set(hColorbar, 'Ticks', sort([hColorbar.Limits, hColorbar.Ticks]))
-
+	
+	if ((strcmp(network, '8node_mvar_erdoes_renyi') == true) || (strcmp(network, '8node_mvar_global_coupling') == true));
+	xticks(1:10);
+	yticks(1:10);
+	else
 	xticks(1:100);
 	yticks(1:100);
+	end 
 	set(gca,'TickLength',[0 0])
 	yticklabels(y_axis);
 	xticklabels(x_axis);
 	
 	if sim_index == '3'
-		ylabel = 'zero coupling';
-		xlabel = 'zero noise correlation';
+		ylabel('zero coupling');
+		xlabel('zero noise correlation');
 	
 	else 
-		xlabel = 'noise correlation';
+		xlabel('noise correlation');
 		if strcmp(network, '2node_mvar') == true; 
-			ylabel = 'coupling strength';
+			ylabel('coupling strength');
 		elseif strcmp(network, '8node_mvar_erdoes_renyi') == true;
-			ylabel = 'density';
+			ylabel('density');
 		elseif strcmp(network, '8node_mvar_global_coupling') == true;
-			ylabel = 'global coupling factor';
+			ylabel('global coupling factor');
+		elseif ((strcmp(network, '8node_kuramoto') == true) || (strcmp(network, '256node_kuramoto') == true));
+			ylabel('A');
+			xlabel('err');
 		else 
-			ylabel = 'network architecture';
+			ylabel('network architecture');
+			xlabel('noise correlation');
 		end
 	end 
 	
 	title(titles{i});
-	exportgraphics(gcf, [PATHOUT2 network file_names{i} sim_index '.png']);
+	exportgraphics(gcf, [pathout_plots network file_names{i} sim_index '.png']);
 
 end
 %}
 
-close all;
+%close all;
 
 
 %% scatter plots for emergence capacity, sigma met mean & sigma chi mean in 8-node kuramoto oscillators, with fixed A, and varying beta
@@ -772,11 +860,11 @@ if strcmp(network, '8node_kuramoto') == true;
 clear ylabel;
 clear xlabel;
 
+load([pathout_data network '_emergence_practical_pairwise_synchrony' sim_index '.mat'], 'emergence_practical_pairwise_synchrony');
+load([pathout_data network '_emergence_practical_sigma_chi' sim_index '.mat'], 'emergence_practical_sigma_chi');
 load([pathout_data network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
 load([pathout_data network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
-load([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
 
-% coupling_vec(20) = 0.2131
 A = [5, 20, 40, 60, 80, 95];
 
 for p = 1:length(A);
@@ -802,13 +890,21 @@ ylabel('emergence capacity mmi');
 xlabel('beta');
 exportgraphics(gcf, [pathout_plots network '_synergy_capacity_mmi_' a_string '_' sim_index '.png']);
 
-blubb3 = emergence_practical.synergy_capacity_practical(g,:);
+blubb3 = emergence_practical_pairwise_synchrony.synergy_capacity_practical_pairwise_synchrony(g,:);
 figure;
 scatter(error_vec, blubb3, 60, 'filled');
 title(['emergence capacity practical, A = ' num2str(coupling_vec(g))]);
+ylabel('emergence capacity practical pairwise synchrony');
+xlabel('beta');
+exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_pairwise_synchrony' a_string '_' sim_index '.png']);
+
+blubb4 = emergence_practical_sigma_chi.synergy_capacity_practical_sigma_chi(g,:);
+figure;
+scatter(error_vec, blubb4, 60, 'filled');
+title(['emergence capacity practical sigma chi, A = ' num2str(coupling_vec(g))]);
 ylabel('emergence capacity practical');
 xlabel('beta');
-exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_' a_string '_' sim_index '.png']);
+exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_sigma_chi' a_string '_' sim_index '.png']);
 
 load([pathout_data network '_synchronies_ '  a_string '_' sim_index '.mat'], 'synchronies');
 %load([PATHOUT3 network '_synchronies_ '  '21313' '_' sim_index '.mat'], 'synchronies');
@@ -852,34 +948,49 @@ if strcmp(network, '256node_kuramoto') == true;
 clear ylabel;
 clear xlabel;
 
-load([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
+load([pathout_data network '_emergence_practical_pairwise_synchrony' sim_index '.mat'], 'emergence_practical_pairwise_synchrony');
+load([pathout_data network '_emergence_practical_sigma_chi' sim_index '.mat'], 'emergence_practical_sigma_chi');
 
 % coupling_vec(20) = 0.2131
-A = [5, 20, 40, 60, 80, 95];
+A = [2, 4, 6, 8, 10];
 
 for p = 1:length(A);
 
 g = A(p);
 
-blubb3 = emergence_practical.synergy_capacity_practical(g,:);
+a_string = num2str(coupling_vec(g));
+a_string = a_string(3:end);
+
+blubb3 = emergence_practical_pairwise_synchrony.synergy_capacity_practical_pairwise_synchrony(g,:);
 figure;
 scatter(error_vec, blubb3, 60, 'filled');
-title(['emergence capacity practical, A = ' num2str(coupling_vec(g))]);
-ylabel('emergence capacity practical');
+title(['emergence capacity practical pairwise synchrony, A = ', num2str(coupling_vec(g))]);
+ylabel('emergence capacity practical pairwise synchrony');
 xlabel('beta');
-exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_' a_string '_' sim_index '.png']);
+exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_pairwise_synchrony' a_string '_' sim_index '.png']);
+
+blubb4 = emergence_practical_sigma_chi.synergy_capacity_practical_sigma_chi(g,:);
+figure;
+scatter(error_vec, blubb4, 60, 'filled');
+title(['emergence capacity practical sigma chi, A = ' num2str(coupling_vec(g))]);
+ylabel('emergence capacity practical sigma chi');
+xlabel('beta');
+exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_sigma_chi' a_string '_' sim_index '.png']);
 
 load([pathout_data network '_synchronies_ '  a_string '_' sim_index '.mat'], 'synchronies');
 %load([PATHOUT3 network '_synchronies_ '  '21313' '_' sim_index '.mat'], 'synchronies');
 
-% metastability
+% metastability (average of variance of time-series of synchronies for each beta; take whole synchrony time-series of each community,
+% calculate variance for each of them (so that we'll have as many variances as communities), calculate average)
 sigma_met_mean = [];
 for i = 1:length(error_vec);
 	sigma_met = squeeze(synchronies(i,:,:));
-	sigma_met_mean(i) = mean(var(sigma_met'));
+	sigma_met_mean(i) = mean(var(sigma_met'));			% var() gets variance across rows
 end
 
-% chimera states
+% chimera states (average of variance of synchronies per time-point for each beta; look at each time-points separately,
+% calculate variance of synchrony across communities for each of them (so that we'll have as many variances as time-points), 
+% calculate average)
 sigma_chi_mean = [];
 for i = 1:length(error_vec);
 	sigma_chi = squeeze(synchronies(i,:,:));
@@ -900,11 +1011,10 @@ ylabel('sigma met mean');
 xlabel('beta');
 exportgraphics(gcf, [pathout_plots network '_sigma_met_mean_' a_string '_' sim_index '.png']);
 
-close all;
+%close all;
 end 
 
 end
-
 
 %% generating built-in heatmaps with colormap parula
 
