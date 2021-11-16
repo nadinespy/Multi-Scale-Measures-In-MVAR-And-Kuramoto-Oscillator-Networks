@@ -45,31 +45,19 @@ network = '256node_kuramoto';
 
 %% load files (if already existent, to, e. g., only create plots)
 
-%{
+% {
 
-load([pathout_data network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
-load([pathout_data network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
 load([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
-load([pathout_data network '_all_atoms_beta_coup_ccs' sim_index '.mat'], 'all_atoms_beta_coup_ccs');
-load([pathout_data network '_all_atoms_beta_coup_mmi' sim_index '.mat'], 'all_atoms_beta_coup_mmi');
 load([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
 load([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
 
-synergy_capacity_mmi = emergence_mmi.synergy_capacity_mmi;
-downward_causation_mmi = emergence_mmi.downward_causation_mmi;
-causal_decoupling_mmi = emergence_mmi.causal_decoupling_mmi;
+synergy_capacity_practical_sigma_chi = emergence_practical.synergy_capacity_practical_sigma_chi; 
+downward_causation_practical_sigma_chi = emergence_practical.downward_causation_practical_sigma_chi; 
+causal_decoupling_practical_sigma_chi = emergence_practical.causal_decoupling_practical_sigma_chi;
 
-synergy_capacity_ccs = emergence_ccs.synergy_capacity_ccs;
-downward_causation_ccs = emergence_ccs.downward_causation_ccs;
-causal_decoupling_ccs = emergence_ccs.causal_decoupling_ccs;
-
-synergy_capacity_practical_linear = emergence_practical.synergy_capacity_practical_linear; 
-downward_causation_practical_linear = emergence_practical.downward_causation_practical_linear; 
-causal_decoupling_practical_linear = emergence_practical.causal_decoupling_practical_linear;
-
-synergy_capacity_practical_exponential = emergence_practical.synergy_capacity_practical_exponential; 
-downward_causation_practical_exponential = emergence_practical.downward_causation_practical_exponential; 
-causal_decoupling_practical_exponential = emergence_practical.causal_decoupling_practical_exponential;
+synergy_capacity_practical_pairwise_synchrony = emergence_practical.synergy_capacity_practical_pairwise_synchrony; 
+downward_causation_practical_pairwise_synchrony = emergence_practical.downward_causation_practical_pairwise_synchrony; 
+causal_decoupling_practical_pairwise_synchrony = emergence_practical.causal_decoupling_practical_pairwise_synchrony;
 
 %}
 
@@ -298,21 +286,21 @@ g = A(p);
 a_string = num2str(coupling_vec(g));
 a_string = a_string(3:end);
 
-synergy_capacity_practical_pairwise_synchrony_temp = emergence_practical_pairwise_synchrony.synergy_capacity_practical_pairwise_synchrony(g,:);
+synergy_capacity_practical_pairwise_synchrony_temp = emergence_practical.synergy_capacity_practical_pairwise_synchrony(g,:);
 figure;
-scatter(error_vec, synergy_capacity_practical_pairwise_synchrony_temp, 60, 'filled');
+scatter(beta_vec, synergy_capacity_practical_pairwise_synchrony_temp, 60, 'filled');
 title(['emergence capacity practical pairwise synchrony, A = ', num2str(coupling_vec(g))]);
 ylabel('emergence capacity practical pairwise synchrony');
 xlabel('beta');
-exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_pairwise_synchrony' a_string '_' sim_index '.png']);
+exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_pairwise_synchrony_' a_string '_' sim_index '.png']);
 
-synergy_capacity_practical_sigma_chi_temp = emergence_practical_sigma_chi.synergy_capacity_practical_sigma_chi(g,:);
+synergy_capacity_practical_sigma_chi_temp = emergence_practical.synergy_capacity_practical_sigma_chi(g,:);
 figure;
-scatter(error_vec, synergy_capacity_practical_sigma_chi_temp, 60, 'filled');
+scatter(beta_vec, synergy_capacity_practical_sigma_chi_temp, 60, 'filled');
 title(['emergence capacity practical sigma chi, A = ' num2str(coupling_vec(g))]);
 ylabel('emergence capacity practical sigma chi');
 xlabel('beta');
-exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_sigma_chi' a_string '_' sim_index '.png']);
+exportgraphics(gcf, [pathout_plots network '_synergy_capacity_practical_sigma_chi_' a_string '_' sim_index '.png']);
 
 load([pathout_data network '_synchronies_ '  a_string '_' sim_index '.mat'], 'synchronies');
 %load([PATHOUT3 network '_synchronies_ '  '21313' '_' sim_index '.mat'], 'synchronies');
@@ -320,7 +308,7 @@ load([pathout_data network '_synchronies_ '  a_string '_' sim_index '.mat'], 'sy
 % metastability (average of variance of time-series of synchronies for each beta; take whole synchrony time-series of each community,
 % calculate variance for each of them (so that we'll have as many variances as communities), calculate average)
 sigma_met_mean = [];
-for i = 1:length(error_vec);
+for i = 1:length(beta_vec);
 	sigma_met = squeeze(synchronies(i,:,:));
 	sigma_met_mean(i) = mean(var(sigma_met'));			% var() gets variance across rows
 end
@@ -329,7 +317,7 @@ end
 % calculate variance of synchrony across communities for each of them (so that we'll have as many variances as time-points), 
 % calculate average)
 sigma_chi_mean = [];
-for i = 1:length(error_vec);
+for i = 1:length(beta_vec);
 	sigma_chi = squeeze(synchronies(i,:,:));
 	sigma_chi_mean(i) = mean(var(sigma_chi));
 end
@@ -348,5 +336,6 @@ ylabel('sigma met mean');
 xlabel('beta');
 exportgraphics(gcf, [pathout_plots network '_sigma_met_mean_' a_string '_' sim_index '.png']);
 
-%close all;
 end 
+
+close all;

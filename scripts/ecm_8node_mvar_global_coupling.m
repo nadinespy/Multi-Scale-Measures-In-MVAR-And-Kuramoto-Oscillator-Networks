@@ -295,8 +295,8 @@ emergence_mmi.synergy_capacity_mmi = synergy_capacity_mmi;
 emergence_mmi.causal_decoupling_mmi = causal_decoupling_mmi;
 emergence_mmi.downward_causation_mmi = downward_causation_mmi;
 
-save([pathout_plots network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
-save([pathout_plots network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
+save([pathout_data network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
+save([pathout_data network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
 %}
 
 %% plotting

@@ -1,11 +1,11 @@
-%% TO DO
+s%% TO DO
 % - where/how to store model information and parameter values for noise correlation & coupling matrix in the saved mat-file?
 % - fill struct file in a loop?
 % - add integrated information measures?
 
-%% 8-NODE MULTIVARIATE AUTOREGRESSIVE (MVAR) ERDOES-RENYI TIME-SERIES WITH DIFFERENT DENSITIES & MACRO VARIABLES
+%% 8-NODE MULTIVARIATE AUTOREGRESSIVE TIME-SERIES (MVAR) WITH DIFFERENT ARCHITECTURES & DIFFERENT MACRO VARIABLES
 
-% This script implements synergy capacity for 8-node MVAR Erdoes-Renyi models with different densities and noise correlations, and two different macro variables 
+% This script implements synergy capacity for 8-node MVAR models with different network architectures and noise correlations, and two different macro variables 
 % (one time being a summation of the raw values of X, and one time being a summation of the exponential of X).
 
 clear all;
@@ -18,8 +18,8 @@ addpath '/media/nadinespy/NewVolume/my_stuff/work/toolboxes_matlab'
 addpath '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/scripts/ReconcilingEmergences-master'
 javaaddpath('infodynamics.jar');
 
-pathout_data = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_mvar_erdoes_renyi/';
-pathout_plots = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_mvar_erdoes_renyi/';
+pathout_data = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_mvar_different_architectures/';
+pathout_plots = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_mvar_different_architectures/';
 
 %% choice of parameters
 
@@ -40,7 +40,7 @@ sim_index = '1';
 % '8node_kuramoto' for metastable chimera states with 100 different intra- and intercommunity coupling strengths & betas (if choosing sim_index = 4) 
 % '256node_kuramoto' for metastable chimera states with 100 different intra- and intercommunity coupling strengths & betas (if choosing sim_index = 5) 
 
-network = '8node_mvar_erdoes_renyi';
+network = '8node_mvar_different_architectures';
 
 %% load files (if already existent, to, e. g., only create plots)
 
@@ -72,47 +72,39 @@ causal_decoupling_practical_exponential = emergence_practical.causal_decoupling_
 
 %}
 
-%% create density matrices & noise correlation vectors
+%% create coupling matrices (& noise correlations) for the different models
 
 % {
 
-density_vec = linspace(0.05,0.9, 10);
-error_vec = linspace(0.01, 0.9, 10);
-nb_ER_networks = 50;
-	
-density_matrices = [];
-	
-for n = 1:length(error_vec);						
-	noise = error_vec(n);
-	
-	for o = 1:length(density_vec);
-		density = density_vec(o);
-		
-		fifty_values_per_ER_network = zeros(50, 1);
-		for p = 1:nb_ER_networks
-			
-			ER_network = zeros(8,8);
-			a = 0;
-			b = 0.99;
-			for i = 1:length(ER_network);
-				for j = 1:length(ER_network);
-					r = (b-a) .* rand(1) + a;
-					
-					if (r <= density && i ~= j)
-						ER_network(i, j) = 1;
-					end
-				end
-			end
-			
-			% normalise network so that spectral radius is close to but below 1
-			sr = max(abs(eig(ER_network)));
-			ER_network_normalized = ER_network./(1.10*sr);
-			density_matrices(:,:,o,p) = ER_network_normalized;
-			
-		end
-	end
-end
+if sim_index == '3'
 
+	coupling_vec = linspace(0.0, 0.0, 100);
+	error_vec = linspace(0.0, 0.0, 100);
+		
+	coupling_matrices = []; 
+	for i = 1:length(coupling_vec);
+		coupling_matrices(:,:,i) = coupling_vec(i)*ones(8);
+	end 
+	
+% networks in all_nets.mat: phi-optimal binary network, phi-optimal weighted network, small world, 
+% fully connected, bidirectional ring, unidirectional ring
+else load('all_nets.mat');
+	
+	net_names = fields(all_nets);
+	error_vec = linspace(0.01, 0.9, 7);
+		
+	coupling_matrices = [];
+	all_sr = [];
+	for i = 1:size(net_names,1);
+		net = all_nets.(net_names{i});					% normalise network so that spectral radius is close to but below 1
+		sr = max(abs(eig(net)));
+		all_sr.(net_names{i}) = sr;
+            net = net./(1.10*sr);
+		coupling_matrices(:,:,i) = net;
+	end 
+	save([pathout_data network '_spectral_radius' sim_index '.mat'], 'all_sr');
+		
+end
 
 %% calculating information atoms & practical measures
 
@@ -121,108 +113,109 @@ end
 % instantiate variables to store practical measures for synergistic capacity for different coupling matrices and noise correlations
 
 % macro variable: summation of exponential values of X
-synergy_capacity_practical_exponential = zeros(size(density_matrices,3), size(error_vec, 2));
-downward_causation_practical_exponential = zeros(size(density_matrices,3), size(error_vec, 2));
-causal_decoupling_practical_exponential = zeros(size(density_matrices,3), size(error_vec, 2));
+synergy_capacity_practical_exponential = zeros(size(coupling_matrices,3), size(error_vec, 2));
+downward_causation_practical_exponential = zeros(size(coupling_matrices,3), size(error_vec, 2));
+causal_decoupling_practical_exponential = zeros(size(coupling_matrices,3), size(error_vec, 2));
 
 % macro variable: summation of raw values of X
-synergy_capacity_practical_linear = zeros(size(density_matrices,3), size(error_vec, 2));
-downward_causation_practical_linear = zeros(size(density_matrices,3), size(error_vec, 2));
-causal_decoupling_practical_linear = zeros(size(density_matrices,3), size(error_vec, 2));
+synergy_capacity_practical_linear = zeros(size(coupling_matrices,3), size(error_vec, 2));
+downward_causation_practical_linear = zeros(size(coupling_matrices,3), size(error_vec, 2));
+causal_decoupling_practical_linear = zeros(size(coupling_matrices,3), size(error_vec, 2));
 
-% instantiate average covariance/correlation matrix
-all_average_cov_X = zeros(size(density_matrices,3), size(error_vec, 2));
-all_average_corr_X = zeros(size(density_matrices,3), size(error_vec, 2));
+% average covariance/correlation matrix
+all_average_cov_X = zeros(size(coupling_matrices,3), size(error_vec, 2));
+all_average_corr_X = zeros(size(coupling_matrices,3), size(error_vec, 2));
 
 rng(1);
-for i = 1:size(density_matrices, 3);
+for i = 1:size(coupling_matrices, 3);
 	
-	density_matrix = density_matrices(:,:,i,:);
-	density_matrix = squeeze(density_matrix(:,:,1,:));
-	disp(i)
+coupling_matrix = coupling_matrices(:,:,i);
+disp(i)
 	
 	for j = 1:length(error_vec)
 		
 		err = error_vec(j);
-
-		phiid_all_err_coup_mmi_temp = zeros(16,50);
-		phiid_all_err_coup_ccs_temp = zeros(16,50);
-		all_average_cov_X_temp = zeros(1,50);
-		all_average_corr_X_temp = zeros(1,50);
-		synergy_capacity_practical_linear_temp = zeros(1,50);
-		downward_causation_practical_linear_temp = zeros(1,50);
-		causal_decoupling_practical_linear_temp = zeros(1,50);
-		synergy_capacity_practical_exponential_temp = zeros(1,50);
-		downward_causation_practical_exponential_temp = zeros(1,50);
-		causal_decoupling_practical_exponential_temp = zeros(1,50);
-			
-		for q = 1:length(fifty_values_per_ER_network);
-			X = sim_method(density_matrix(:,:,q), npoints, tau, err);
-			
-			macro_variable_linear_temp = zeros(1, npoints); 
-			macro_variable_exponential_temp = zeros(1, npoints); 
-			
-			try
-				phiid_all_err_coup_mmi_temp(:,q) = struct2array(PhiIDFull(X, tau, 'MMI'))';
-				phiid_all_err_coup_ccs_temp(:,q) = struct2array(PhiIDFull(X, tau, 'ccs'))';
-					
-				cov_X = cov(X');
-				all_average_cov_X_temp(q) = mean(nonzeros(tril(cov_X,-1)), 'all');
-				corr_X = corrcov(cov_X);
-				all_average_corr_X_temp(q) = mean(nonzeros(tril(corr_X,-1)), 'all');
-					
-				for k = 1:(size(X,1))
-					macro_variable_linear_temp = macro_variable_linear_temp + X(k,:);
-				end
-					
-				synergy_capacity_practical_linear_temp(q) = EmergencePsi(X', macro_variable_linear_temp');
-				downward_causation_practical_linear_temp(q) = EmergenceDelta(X', macro_variable_linear_temp');
-				causal_decoupling_practical_linear_temp(q) = synergy_capacity_practical_linear_temp(q) - downward_causation_practical_linear_temp(q);
-				
-				for k = 1:(size(X,1))
-					macro_variable_exponential_temp = macro_variable_exponential_temp + exp(X(k,:));
-				end
-					
-				synergy_capacity_practical_exponential_temp(q) = EmergencePsi(X', macro_variable_exponential_temp');
-				downward_causation_practical_exponential_temp(q) = EmergenceDelta(X', macro_variable_exponential_temp');
-				causal_decoupling_practical_exponential_temp(q) = synergy_capacity_practical_exponential_temp(q) - downward_causation_practical_exponential_temp(q);
+		X = sim_method(coupling_matrix, npoints, tau, err);
 		
-			catch 
-				phiid_all_err_coup_mmi_temp(:,q) = NaN;
-				phiid_all_err_coup_ccs_temp(:,q) = NaN;
-				all_average_cov_X_temp(q) = NaN;
-				all_average_corr_X_temp(q) = NaN;
-				synergy_capacity_practical_exponential_temp(q) = NaN;
-				downward_causation_practical_exponential_temp(q) = NaN;
-				causal_decoupling_practical_exponential_temp(q) = NaN;
-				synergy_capacity_practical_linear_temp(q) = NaN;
-				downward_causation_practical_linear_temp(q) = NaN;
-				causal_decoupling_practical_linear_temp(q) = NaN;
-
+		% PhiID 
+		phiid_all_err_coup_mmi(:,i,j) = struct2array(PhiIDFull(X, tau, 'MMI'))';
+		phiid_all_err_coup_ccs(:,i,j) = struct2array(PhiIDFull(X, tau, 'ccs'))';
+		
+		% practical measures for causal emergence - some super simple meaningless macro variable: 
+		% adding up the micro one time using the raw values of X, one time using the exponential of X	
+		
+		macro_variable_linear = zeros(1, npoints);
+		if i == 4	% index corresponds to network with two community structures								
+			hub1 = zeros(1, npoints);
+			hub2 = zeros(1, npoints);
+			
+			for k = 1:4
+				hub1 = hub1 + X(k,:);
+			end  
+			
+			for k = 5:(size(X,1))
+				hub2 = hub2 + X(k,:);
 			end
-		end 
 			
-		% averages of all 50 ER networks
-		all_average_cov_X(i,j) = nanmean(all_average_cov_X_temp);
-		all_average_corr_X(i,j) = nanmean(all_average_corr_X_temp);
-		phiid_all_err_coup_mmi(:,i,j) = nanmean(real(phiid_all_err_coup_mmi_temp),2);
-		phiid_all_err_coup_ccs(:,i,j) = nanmean(real(phiid_all_err_coup_ccs_temp), 2);
-		synergy_capacity_practical_exponential(i,j) = nanmean(synergy_capacity_practical_exponential_temp);
-		downward_causation_practical_exponential(i,j) = nanmean(downward_causation_practical_exponential_temp);
-		causal_decoupling_practical_exponential(i,j) = nanmean(causal_decoupling_practical_exponential_temp);
-		synergy_capacity_practical_linear(i,j) = nanmean(synergy_capacity_practical_linear_temp);
-		downward_causation_practical_linear(i,j) = nanmean(downward_causation_practical_linear_temp);
-		causal_decoupling_practical_linear(i,j) = nanmean(causal_decoupling_practical_linear_temp);
+			for k = 1:(size(X,2))
+				macro_variable_linear(1, k) = max(hub1(1,k), hub2(1,k));
+			end
+			
+		else
+			for k = 1:(size(X,1));
+				macro_variable_linear = macro_variable_linear + X(k,:);
+			end 			
+		end 
 		
-	end
-end 
+		synergy_capacity_practical_linear(i,j) = EmergencePsi(X', macro_variable_linear');
+		downward_causation_practical_linear(i,j) = EmergenceDelta(X', macro_variable_linear');
+		causal_decoupling_practical_linear(i,j) = synergy_capacity_practical_linear(i,j) - downward_causation_practical_linear(i,j);
 
+		macro_variable_exponential = zeros(1, npoints);
+		if i == 4	% index corresponds to network with two community structures								
+			hub1 = zeros(1, npoints);
+			hub2 = zeros(1, npoints);
+			
+			for k = 1:4
+				hub1 = hub1 + exp(X(k,:));
+			end  
+			
+			for k = 5:(size(X,1))
+				hub2 = hub2 + exp(X(k,:));
+			end
+			
+			for k = 1:(size(X,2))
+				macro_variable_exponential(1, k) = max(hub1(1,k), hub2(1,k));
+			end
+			
+		else
+			for k = 1:(size(X,1));
+				macro_variable_exponential = macro_variable_exponential + exp(X(k,:));
+			end 			
+		end 
+
+		synergy_capacity_practical_exponential(i,j) = EmergencePsi(X', macro_variable_exponential');
+		downward_causation_practical_exponential(i,j) = EmergenceDelta(X', macro_variable_exponential');
+		causal_decoupling_practical_exponential(i,j) = synergy_capacity_practical_exponential(i,j) - downward_causation_practical_exponential(i,j);
+		
+		% average covariance/correlation matrix
+		cov_X = cov(X');
+		all_average_cov_X(i,j) = mean(nonzeros(tril(cov_X,-1)), 'all');
+			
+		corr_X = corrcov(cov_X);
+		all_average_corr_X(i,j) = mean(nonzeros(tril(corr_X,-1)), 'all');
+	
+	end 
+
+end 
+	
 save([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
 save([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
 
 %% storing information atoms & practical measures for different macro variables in struct files
 
 % practical measures for different macro variables
+
 emergence_practical = [];
 
 emergence_practical.synergy_capacity_practical_linear = synergy_capacity_practical_linear;
@@ -291,6 +284,7 @@ all_atoms_err_coup_ccs.sts = squeeze(phiid_all_err_coup_ccs(16,:,:));
 
 save([pathout_data network '_all_atoms_err_coup_ccs' sim_index '.mat'], 'all_atoms_err_coup_ccs');
 save([pathout_data network '_all_atoms_err_coup_mmi' sim_index '.mat'], 'all_atoms_err_coup_mmi');
+
 %}
 
 %% phiid-based synergistic/emergent capacity, downward causation, causal decoupling
@@ -340,11 +334,14 @@ emergence_mmi.synergy_capacity_mmi = synergy_capacity_mmi;
 emergence_mmi.causal_decoupling_mmi = causal_decoupling_mmi;
 emergence_mmi.downward_causation_mmi = downward_causation_mmi;
 
-save([pathout_plots network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
-save([pathout_plots network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
+save([pathout_data network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
+save([pathout_data network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
 %}
 
 %% plotting
+
+clear xlabel;
+clear ylabel;
 
 % axes ticks
 if sim_index == '3'
@@ -353,12 +350,8 @@ if sim_index == '3'
 	y_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ... 
 		'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
 else
-	x_axis = {'0.09', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.9', ''};
-	y_axis = {'0.05', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.3', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.6', '', '', '', '', '', '', '', '', '', '', '', '', '', ... 
-		'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '0.9', ''};
+	x_axis = {'0.13', '0.26', '0.39', '0.52', '0.65', '0.78', '0.9'};
+	y_axis = {'optimal A', 'optimal B', 'small world', 'two communities', 'fully connected', 'ring', 'uni ring'};
 end
 
 % double-redundancy & double-synergy
@@ -395,6 +388,7 @@ for i = 1:size(atoms,2)
 
 	xticks(1:size(x_axis, 2));
 	yticks(1:size(y_axis, 2));
+	
 	set(gca,'TickLength',[0 0])
 	yticklabels(y_axis);
 	xticklabels(x_axis);
@@ -404,9 +398,9 @@ for i = 1:size(atoms,2)
 		xlabel('zero noise correlation');
 	else 
 		xlabel('noise correlation');
-		ylabel('density');
-	end 
-	
+		ylabel('network architecture');
+	end
+
 	title(titles{i});
 	exportgraphics(gcf, [pathout_plots network file_names{i} sim_index '.png']);
 
@@ -472,7 +466,7 @@ for i = 1:size(atoms,2)
 	
 	xticks(1:size(x_axis, 2));
 	yticks(1:size(y_axis, 2));
-	
+
 	set(gca,'TickLength',[0 0])
 	yticklabels(y_axis);
 	xticklabels(x_axis);
@@ -482,7 +476,7 @@ for i = 1:size(atoms,2)
 		xlabel('zero noise correlation');
 	else 
 		xlabel('noise correlation');
-		ylabel('density');
+		ylabel('network architecture');
 	end 
 	
 	title(titles{i});
@@ -491,4 +485,39 @@ for i = 1:size(atoms,2)
 end
 %}
 
-%close all;
+close all;
+
+%% generating built-in heatmaps with colormap parula
+
+%{
+for i = 1:size(atoms,2)
+	
+	figure;
+	clf
+	h = heatmap(atoms{i}, 'Colormap', parula, 'ColorbarVisible', 'on', 'CellLabelColor', 'none') ;
+	h.YDisplayLabels = y_axis;
+	h.XDisplayLabels = x_axis;
+	%caxis([0, 0.1]);
+	
+	if sim_index == '3'
+		h.YLabel = 'zero coupling';
+		h.XLabel = 'zero noise correlation';
+	
+	else 
+		h.XLabel = 'noise correlation';
+		if strcmp(network, '2node') == true; 
+			h.YLabel = 'coupling strength';
+		elseif strcmp(network, '8node_erdoes_renyi') == true;
+			h.YLabel = 'density';
+		elseif strcmp(network, '8node_erdoes_global_coupling') == true;
+			h.YLabel = 'global coupling factor';
+		else 
+			h.YLabel = 'network architecture';
+		end
+	end 
+	
+	title(titles{i});
+	exportgraphics(gcf, [PATHOUT2 network file_names{i} sim_index '.png']);
+
+end
+%}
