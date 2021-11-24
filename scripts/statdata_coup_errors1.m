@@ -38,7 +38,7 @@ mu = zeros(1, nvar);
 
 % construct correlation matrix
 R = eye(nvar);
-R(R==0)=err;
+R(R==0) = err;
 
 % only necessary for non-standard normal distributions, otherwise R = cov_matrix
 standard_dev = ones(1, nvar);							   % vector of standard deviations of the errors
@@ -50,7 +50,7 @@ corr_errors = corrcoef(E(1,:), E(2,:));					   % check correlation
 
 %% simulate time-series of the network
 
-p=floor(size(coupling_matrix,2)/nvar);								  % time-steps to look into the past
+p = floor(size(coupling_matrix,2)/nvar);								  % time-steps to look into the past
 
 X = zeros([nvar, npoints]);
 
@@ -68,7 +68,7 @@ end
 %} 
 
 % vectorized version
-for t=(1+tau):npoints
+for t = (1+tau):npoints
 	X(:,t) = coupling_matrix*X(:,t-tau) + E(:,t);
 end
 	

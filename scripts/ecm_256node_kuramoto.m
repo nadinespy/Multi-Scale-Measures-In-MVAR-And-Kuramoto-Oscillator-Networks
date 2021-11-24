@@ -339,3 +339,150 @@ exportgraphics(gcf, [pathout_plots network '_sigma_met_mean_' a_string '_' sim_i
 end 
 
 close all;
+
+%% phiid-based measures (don't work so far for this system size)
+
+% calculating information atoms
+
+rng(1);
+for i = 1:size(coupling_matrices, 3);
+	
+	coupling_matrix = coupling_matrices(:,:,i);
+	disp(i)
+	
+	for j = 1:length(beta_vec)
+	disp(j)
+	
+		beta = beta_vec(j);
+		
+		[X, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);	
+		
+		% PhiID
+		try
+			phiid_all_beta_coup_mmi(:,i,j) = struct2array(PhiIDFull(X, tau, 'MMI'))';
+		catch 
+			phiid_all_beta_coup_mmi(:,i,j) = NaN;
+		end
+			
+		try
+			phiid_all_beta_coup_ccs(:,i,j) = struct2array(PhiIDFull(X, tau, 'ccs'))';
+		catch 
+			phiid_all_beta_coup_ccs(:,i,j) = NaN;
+		end
+			
+	end
+	
+end 
+
+%% storing information atoms in struct files
+
+% information atoms: extract single atoms such that rows are the couplings, and columns the errors
+
+% rtr:  {1}{2}-->{1}{2}
+% rtx: {1}{2}-->{1}
+% rty: {1}{2}-->{2}
+% rts: {1}{2}-->{12}
+% xtr: {1}-->{1}{2}
+% xtx: {1}-->{1}
+% xty: {1}-->{2} 
+% xts: {1}-->{12}
+% ytr: {2}-->{1}{2}
+% ytx: {2}-->{1}
+% yty: {2}-->{2}
+% yts: {2}-->{12} 
+% str: {12}-->{1}{2}
+% stx: {12}-->{1} 
+% sty: {12}-->{2} 
+% sts: {12}-->{12}
+
+all_atoms_beta_coup_mmi = [];
+all_atoms_beta_coup_mmi.rtr = squeeze(phiid_all_beta_coup_mmi(1,:,:));
+all_atoms_beta_coup_mmi.rtx = squeeze(phiid_all_beta_coup_mmi(2,:,:));
+all_atoms_beta_coup_mmi.rty = squeeze(phiid_all_beta_coup_mmi(3,:,:));
+all_atoms_beta_coup_mmi.rts = squeeze(phiid_all_beta_coup_mmi(4,:,:));
+all_atoms_beta_coup_mmi.xtr = squeeze(phiid_all_beta_coup_mmi(5,:,:));
+all_atoms_beta_coup_mmi.xtx = squeeze(phiid_all_beta_coup_mmi(6,:,:));
+all_atoms_beta_coup_mmi.xty = squeeze(phiid_all_beta_coup_mmi(7,:,:));
+all_atoms_beta_coup_mmi.xts = squeeze(phiid_all_beta_coup_mmi(8,:,:));
+all_atoms_beta_coup_mmi.ytr = squeeze(phiid_all_beta_coup_mmi(9,:,:));
+all_atoms_beta_coup_mmi.ytx = squeeze(phiid_all_beta_coup_mmi(10,:,:));
+all_atoms_beta_coup_mmi.yty = squeeze(phiid_all_beta_coup_mmi(11,:,:));
+all_atoms_beta_coup_mmi.yts = squeeze(phiid_all_beta_coup_mmi(12,:,:));
+all_atoms_beta_coup_mmi.str = squeeze(phiid_all_beta_coup_mmi(13,:,:));
+all_atoms_beta_coup_mmi.stx = squeeze(phiid_all_beta_coup_mmi(14,:,:));
+all_atoms_beta_coup_mmi.sty = squeeze(phiid_all_beta_coup_mmi(15,:,:));
+all_atoms_beta_coup_mmi.sts = squeeze(phiid_all_beta_coup_mmi(16,:,:));
+
+all_atoms_beta_coup_ccs = [];
+all_atoms_beta_coup_ccs.rtr = squeeze(phiid_all_beta_coup_ccs(1,:,:));
+all_atoms_beta_coup_ccs.rtx = squeeze(phiid_all_beta_coup_ccs(2,:,:));
+all_atoms_beta_coup_ccs.rty = squeeze(phiid_all_beta_coup_ccs(3,:,:));
+all_atoms_beta_coup_ccs.rts = squeeze(phiid_all_beta_coup_ccs(4,:,:));
+all_atoms_beta_coup_ccs.xtr = squeeze(phiid_all_beta_coup_ccs(5,:,:));
+all_atoms_beta_coup_ccs.xtx = squeeze(phiid_all_beta_coup_ccs(6,:,:));
+all_atoms_beta_coup_ccs.xty = squeeze(phiid_all_beta_coup_ccs(7,:,:));
+all_atoms_beta_coup_ccs.xts = squeeze(phiid_all_beta_coup_ccs(8,:,:));
+all_atoms_beta_coup_ccs.ytr = squeeze(phiid_all_beta_coup_ccs(9,:,:));
+all_atoms_beta_coup_ccs.ytx = squeeze(phiid_all_beta_coup_ccs(10,:,:));
+all_atoms_beta_coup_ccs.yty = squeeze(phiid_all_beta_coup_ccs(11,:,:));
+all_atoms_beta_coup_ccs.yts = squeeze(phiid_all_beta_coup_ccs(12,:,:));
+all_atoms_beta_coup_ccs.str = squeeze(phiid_all_beta_coup_ccs(13,:,:));
+all_atoms_beta_coup_ccs.stx = squeeze(phiid_all_beta_coup_ccs(14,:,:));
+all_atoms_beta_coup_ccs.sty = squeeze(phiid_all_beta_coup_ccs(15,:,:));
+all_atoms_beta_coup_ccs.sts = squeeze(phiid_all_beta_coup_ccs(16,:,:));
+
+save([pathout_data network '_all_atoms_beta_coup_ccs' sim_index '.mat'], 'all_atoms_beta_coup_ccs');
+save([pathout_data network '_all_atoms_beta_coup_mmi' sim_index '.mat'], 'all_atoms_beta_coup_mmi');
+
+%}
+
+%% phiid-based synergistic/emergent capacity, downward causation, causal decoupling
+
+% {
+% calculate:
+% Syn(X_t;X_t-1) (synergistic capacity of the system) 
+% Un (Vt;Xt'|Xt) (causal decoupling - the top term in the lattice) 
+% Un(Vt;Xt'α|Xt) (downward causation) 
+
+% synergy (only considering the synergy that the sources have, not the target): 
+% {12} --> {1}{2} +
+% {12} --> {1} + 
+% {12} --> {2} +
+% {12} --> {12} 
+ 
+% causal decoupling: {12} --> {12}
+
+% downward causation: 
+% {12} --> {1}{2} + 
+% {12} --> {1} + 
+% {12} --> {2}
+
+% synergistic capacity
+synergy_capacity_ccs = all_atoms_beta_coup_ccs.str + ...
+	all_atoms_beta_coup_ccs.stx + all_atoms_beta_coup_ccs.sty + all_atoms_beta_coup_ccs.sts;
+
+downward_causation_ccs = all_atoms_beta_coup_ccs.str + all_atoms_beta_coup_ccs.stx + all_atoms_beta_coup_ccs.sty;
+
+synergy_capacity_mmi = all_atoms_beta_coup_mmi.str + ...
+	all_atoms_beta_coup_mmi.stx + all_atoms_beta_coup_mmi.sty + all_atoms_beta_coup_mmi.sts;
+
+downward_causation_mmi = all_atoms_beta_coup_mmi.str + all_atoms_beta_coup_mmi.stx + all_atoms_beta_coup_mmi.sty;
+
+causal_decoupling_ccs = synergy_capacity_ccs - downward_causation_ccs;
+causal_decoupling_mmi = synergy_capacity_mmi - downward_causation_mmi;
+
+% save variables in a struct
+emergence_ccs = [];
+emergence_mmi = [];
+
+emergence_ccs.synergy_capacity_ccs = synergy_capacity_ccs;
+emergence_ccs.causal_decoupling_ccs = causal_decoupling_ccs;
+emergence_ccs.downward_causation_ccs = downward_causation_ccs;
+
+emergence_mmi.synergy_capacity_mmi = synergy_capacity_mmi;
+emergence_mmi.causal_decoupling_mmi = causal_decoupling_mmi;
+emergence_mmi.downward_causation_mmi = downward_causation_mmi;
+
+save([pathout_data network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
+save([pathout_data network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
+%}

@@ -1,5 +1,6 @@
 %% TO DO
 % - where/how to store model information and parameter values for noise correlation & coupling matrix in the saved mat-file?
+% - separate calculations for phiid-based and practical measures 
 % - fill struct file in a loop?
 % - add integrated information measures?
 
