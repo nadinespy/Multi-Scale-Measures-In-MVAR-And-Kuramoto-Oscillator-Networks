@@ -9,7 +9,7 @@ function [X, Y] = statdata_coup_errors3(coupling_matrix, npoints, tau, err, corr
 %		    npoints - number of time-steps
 %		    tau - time-lag
 %               err - covariance matrix for E_t
-%		    cov - covariance for 
+%		    corr - correlation between two variables in X
 %
 %   OUTPUT: X - time-series data, rows are variables, columns are observations
 % -----------------------------------------------------------------------
