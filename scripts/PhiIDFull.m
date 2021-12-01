@@ -106,6 +106,8 @@ sX = X./repmat(std(X')', [1, T]);
 
 % Use JIDT to compute Phi and MIB
 phiCalc = javaObject('infodynamics.measures.continuous.gaussian.IntegratedInformationCalculatorGaussian');
+phiCalc.setProperty('PARTITION_SCAN_METHOD', 'EVEN_BIPARTITIONS')
+
 if tau > 1
   phiCalc.setProperty(phiCalc.PROP_TAU, num2str(tau));
 end
@@ -127,7 +129,7 @@ end
 %*********************************************************
 
 % returns local PhiID atoms
-function [ atoms ] = private_FourVectorPhiID(X1, X2, Y1, Y2, measure)			   %X1: partition 1 at t
+function [ atoms ] = private_FourVectorPhiID(X1, X2, Y1, Y2, measure)		    % X1: partition 1 at t
 																					% X2: partition 2 at t
 																					% Y1: partition 1 at t+1
 																					% Y2: partition 2 at t+1                                                                                                                  

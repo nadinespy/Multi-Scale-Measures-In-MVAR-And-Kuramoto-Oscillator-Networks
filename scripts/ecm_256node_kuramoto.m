@@ -25,8 +25,8 @@ pathout_plots = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/Emerge
 %% choice of parameters
 
 % time-lag and number of data points in time-series (same for all simulations)
-npoints = 2000;
-tau = 1;
+all_npoints = [2000, 10000];
+taus = [1, 100];
 
 % simulation method (options: statdata_coup_errors1(), statdata_coup_errors2(), statdata_random(), chimera_metastable_model())
 sim_method = @chimera_metastable_model;
@@ -49,8 +49,8 @@ binarization_threshold = 0.8;
 %{
 
 load([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
-load([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
-load([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
+load([pathout_data network '_all_average_corr_theta' sim_index '.mat'], 'all_average_corr_theta');
+load([pathout_data network '_all_average_cov_theta' sim_index '.mat'], 'all_average_cov_theta');
 
 synergy_capacity_practical_sigma_chi = emergence_practical.synergy_capacity_practical_sigma_chi; 
 downward_causation_practical_sigma_chi = emergence_practical.downward_causation_practical_sigma_chi; 
@@ -66,23 +66,25 @@ causal_decoupling_practical_pairwise_synchrony = emergence_practical.causal_deco
 
 % {
 
-intra_comm_size = 32;							% intra-community size
-n_communities = 8;							% number of communities		
+intra_comm_size = 32;							  % intra-community size
+n_communities = 8;							    % number of communities		
 	
 coupling_vec = linspace(0.05, 0.9, 10);
-beta_vec = linspace(0.0, 0.8, 10);				
+beta_vec = linspace(0.0, 0.4, 10);				    % use beta values only up to 0.4, as sigma met & sigma chi turn out to be zero for greater 
+													% values of beta; in these cases, sigma chi will be a non-varying zero macro variable,
+													% yielding erroneous values for emergence 		
 	
 d0 = intra_comm_size; 
-d1 = intra_comm_size;			     % numbers of connections at different community levels
+d1 = intra_comm_size;							  % numbers of connections at different community levels
 		
-N = intra_comm_size*n_communities;	% total number of oscillators: 8
-M = n_communities;				       % number of lowest level communities (what's that?): 2
+N = intra_comm_size*n_communities;			   % total number of oscillators: 8
+M = n_communities;							   % number of lowest level communities (what's that?): 2
 	
 synchronies = zeros(length(beta_vec), n_communities, npoints);
 	
 coupling_matrices = zeros(N,N,length(coupling_vec));
 for o = 1:length(coupling_vec);
-	A = coupling_vec(o);			% was 0.2 (the higher A, the stronger the intra-community coupling strength)
+	A = coupling_vec(o);						     % was 0.2 (the higher A, the stronger the intra-community coupling strength)
 	k1 = (1-A)/2;				
 	k0 = 1-k1;						
 	
@@ -111,9 +113,10 @@ end
 %% calculating practical measures for different macro and micro variables
 
 % instantiate variables to store practical measures for synergistic capacity for different coupling matrices and noise correlations
+nbins = 100;
 
 rng(1);
-for i = 1:size(coupling_matrices, 3);
+for i = 2:size(coupling_matrices, 3);
 	
 	coupling_matrix = coupling_matrices(:,:,i);
 	disp(i)
@@ -122,8 +125,32 @@ for i = 1:size(coupling_matrices, 3);
 		
 		beta = beta_vec(j);
 		
-		[X, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);	
+		[thetas, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);
+		
+		% check distributions of a subset of parameters
+		if (((i == 1) && (j == 1)) || ((i == 3) && (j == 3)) || ((i == 7) && (j == 7)) || ((i == 10) && (j == 10)));
 			
+			r = randi([0 256],1,3);
+			for k = 1:length(r);
+				a_string = num2str(coupling_vec(i));
+				a_string = a_string(3:end);
+				histogram(thetas(k,:)', nbins);
+				title(['Distribution of theta ', num2str(r(k)), ', A = ', num2str(coupling_vec(i)), ', beta = ', num2str(beta_vec(j))]);
+				ylabel('frequency');
+				xlabel(['values of theta ' num2str(r(k))]);
+				exportgraphics(gcf, [pathout_plots network '_distr_theta' num2str(r(k)) a_string '_' sim_index '.png']);
+			end
+			close all;
+			
+% 			figure;
+% 			plot(thetas.')
+% 			title(['Time-series of thetas, A = ', num2str(coupling_vec(i)) ', beta = ' num2str(beta_vec(j))]);
+% 			ylabel('thetas');
+% 			xlabel('Time');
+% 			exportgraphics(gcf, [pathout_plots network '_time_series_thetas_' a_string '_' sim_index '.png']);
+
+		end 
+					
 		synchronies(j,:,:) = synchrony;				% rows: betas, columns: communities, 3rd dimension: time-points
 		
 		% practical measures for causal emergence: variance of synchronies & global average pairwise synchrony between communities
@@ -142,18 +169,18 @@ for i = 1:size(coupling_matrices, 3);
 		grand_mean_pairwise_synchrony = grand_mean_pairwise_synchrony/M;
 		
 		% practical causal emergence with phases as micro variables
-		synergy_capacity_practical_sigma_chi(i,j) = EmergencePsi(X', sigma_chi');
-		synergy_capacity_practical_pairwise_synchrony(i,j) = EmergencePsi(X', grand_mean_pairwise_synchrony');
-		downward_causation_practical_sigma_chi(i,j) = EmergenceDelta(X', sigma_chi');
-		downward_causation_practical_pairwise_synchrony(i,j) = EmergenceDelta(X', grand_mean_pairwise_synchrony');
+		synergy_capacity_practical_sigma_chi(i,j) = EmergencePsi(thetas', sigma_chi', tau);
+		synergy_capacity_practical_pairwise_synchrony(i,j) = EmergencePsi(thetas', grand_mean_pairwise_synchrony', tau);
+		downward_causation_practical_sigma_chi(i,j) = EmergenceDelta(thetas', sigma_chi', tau);
+		downward_causation_practical_pairwise_synchrony(i,j) = EmergenceDelta(thetas', grand_mean_pairwise_synchrony', tau);
 		causal_decoupling_practical_sigma_chi(i,j) = synergy_capacity_practical_sigma_chi(i,j) - downward_causation_practical_sigma_chi(i,j);
 		causal_decoupling_practical_pairwise_synchrony(i,j) = synergy_capacity_practical_pairwise_synchrony(i,j) - downward_causation_practical_pairwise_synchrony(i,j);
 
 		% practical causal emergence with synchronies as "micro" variables
-		synergy_capacity_practical_sigma_chi_micro_sync(i,j) = EmergencePsi(synchrony', sigma_chi');
-		synergy_capacity_practical_pairwise_synchrony_micro_sync(i,j) = EmergencePsi(synchrony', grand_mean_pairwise_synchrony');
-		downward_causation_practical_sigma_chi_micro_sync(i,j) = EmergenceDelta(synchrony', sigma_chi');
-		downward_causation_practical_pairwise_synchrony_micro_sync(i,j) = EmergenceDelta(synchrony', grand_mean_pairwise_synchrony');
+		synergy_capacity_practical_sigma_chi_micro_sync(i,j) = EmergencePsi(synchrony', sigma_chi', tau);
+		synergy_capacity_practical_pairwise_synchrony_micro_sync(i,j) = EmergencePsi(synchrony', grand_mean_pairwise_synchrony', tau);
+		downward_causation_practical_sigma_chi_micro_sync(i,j) = EmergenceDelta(synchrony', sigma_chi', tau);
+		downward_causation_practical_pairwise_synchrony_micro_sync(i,j) = EmergenceDelta(synchrony', grand_mean_pairwise_synchrony', tau);
 		causal_decoupling_practical_sigma_chi_micro_sync(i,j) = synergy_capacity_practical_sigma_chi_micro_sync(i,j) - downward_causation_practical_sigma_chi_micro_sync(i,j);
 		causal_decoupling_practical_pairwise_synchrony_micro_sync(i,j) = synergy_capacity_practical_pairwise_synchrony_micro_sync(i,j) - downward_causation_practical_pairwise_synchrony_micro_sync(i,j);
 
@@ -169,42 +196,42 @@ for i = 1:size(coupling_matrices, 3);
 		
 		binarized_synchronies(j,:,:) = binarized_synchrony;
 		
-		synergy_capacity_practical_sigma_chi_micro_sync_bin(i,j) = EmergencePsi(binarized_synchrony', sigma_chi');
-		synergy_capacity_practical_pairwise_synchrony_micro_sync_bin(i,j) = EmergencePsi(binarized_synchrony', grand_mean_pairwise_synchrony');
-		downward_causation_practical_sigma_chi_micro_sync_bin(i,j) = EmergenceDelta(binarized_synchrony', sigma_chi');
-		downward_causation_practical_pairwise_synchrony_micro_sync_bin(i,j) = EmergenceDelta(binarized_synchrony', grand_mean_pairwise_synchrony');
+		synergy_capacity_practical_sigma_chi_micro_sync_bin(i,j) = EmergencePsi(binarized_synchrony', sigma_chi', tau);
+		synergy_capacity_practical_pairwise_synchrony_micro_sync_bin(i,j) = EmergencePsi(binarized_synchrony', grand_mean_pairwise_synchrony', tau);
+		downward_causation_practical_sigma_chi_micro_sync_bin(i,j) = EmergenceDelta(binarized_synchrony', sigma_chi', tau);
+		downward_causation_practical_pairwise_synchrony_micro_sync_bin(i,j) = EmergenceDelta(binarized_synchrony', grand_mean_pairwise_synchrony', tau);
 		causal_decoupling_practical_sigma_chi_micro_sync_bin(i,j) = synergy_capacity_practical_sigma_chi_micro_sync_bin(i,j) - downward_causation_practical_sigma_chi_micro_sync_bin(i,j);
 		causal_decoupling_practical_pairwise_synchrony_micro_sync_bin(i,j) = synergy_capacity_practical_pairwise_synchrony_micro_sync_bin(i,j) - downward_causation_practical_pairwise_synchrony_micro_sync_bin(i,j);
  
 		% practical causal emergence with cos(phase) as the "true" micro variables (the "raw" signal)
-		cos_synchrony = cos(synchrony);
-		cos_synchronies(j,:,:) = cos_synchrony;
+		cos_theta = cos(thetas);
+		cos_thetas(j,:,:) = cos_theta;
 		
-		synergy_capacity_practical_sigma_chi_micro_sync_cos(i,j) = EmergencePsi(cos_synchrony', sigma_chi');
-		synergy_capacity_practical_pairwise_synchrony_micro_sync_cos(i,j) = EmergencePsi(cos_synchrony', grand_mean_pairwise_synchrony');
-		downward_causation_practical_sigma_chi_micro_sync_cos(i,j) = EmergenceDelta(cos_synchrony', sigma_chi');
-		downward_causation_practical_pairwise_synchrony_micro_sync_cos(i,j) = EmergenceDelta(cos_synchrony', grand_mean_pairwise_synchrony');
-		causal_decoupling_practical_sigma_chi_micro_sync_cos(i,j) = synergy_capacity_practical_sigma_chi_micro_sync_cos(i,j) - downward_causation_practical_sigma_chi_micro_sync_cos(i,j);
-		causal_decoupling_practical_pairwise_synchrony_micro_sync_cos(i,j) = synergy_capacity_practical_pairwise_synchrony_micro_sync_cos(i,j) - downward_causation_practical_pairwise_synchrony_micro_sync_cos(i,j);
+		synergy_capacity_practical_sigma_chi_micro_theta_cos(i,j) = EmergencePsi(cos_theta', sigma_chi', tau);
+		synergy_capacity_practical_pairwise_synchrony_micro_theta_cos(i,j) = EmergencePsi(cos_theta', grand_mean_pairwise_synchrony', tau);
+		downward_causation_practical_sigma_chi_micro_theta_cos(i,j) = EmergenceDelta(cos_theta', sigma_chi', tau);
+		downward_causation_practical_pairwise_synchrony_micro_theta_cos(i,j) = EmergenceDelta(cos_theta', grand_mean_pairwise_synchrony', tau);
+		causal_decoupling_practical_sigma_chi_micro_theta_cos(i,j) = synergy_capacity_practical_sigma_chi_micro_theta_cos(i,j) - downward_causation_practical_sigma_chi_micro_theta_cos(i,j);
+		causal_decoupling_practical_pairwise_synchrony_micro_theta_cos(i,j) = synergy_capacity_practical_pairwise_synchrony_micro_theta_cos(i,j) - downward_causation_practical_pairwise_synchrony_micro_theta_cos(i,j);
 		
 		% average covariance/correlation matrix
-		cov_X = cov(X');
-		all_average_cov_X(i,j) = mean(nonzeros(tril(cov_X,-1)), 'all');
+		cov_theta = cov(thetas');
+		all_average_cov_theta(i,j) = mean(nonzeros(tril(cov_theta,-1)), 'all');
 			
-		corr_X = corrcov(cov_X);
-		all_average_corr_X(i,j) = mean(nonzeros(tril(corr_X,-1)), 'all');
+		corr_theta = corrcov(cov_theta);
+		all_average_corr_theta(i,j) = mean(nonzeros(tril(corr_theta,-1)), 'all');
 			
 	end
 	
 	a_string = num2str(coupling_vec(i));
-	save([pathout_data network '_synchronies_' a_string(3:end) '_' sim_index '.mat'], 'synchronies');
-	save([pathout_data network '_binarized_synchronies_' a_string(3:end) '_' sim_index '.mat'], 'binarized_synchronies');
-	save([pathout_data network '_cos_synchronies_' a_string(3:end) '_' sim_index '.mat'], 'cos_synchronies');
+	save([pathout_data network '_synchronies_' a_string(3:end) '_' num2trs(tau) '_' sim_index '.mat'], 'synchronies');
+	save([pathout_data network '_binarized_synchronies_' a_string(3:end) '_' num2trs(tau) '_' sim_index '.mat'], 'binarized_synchronies');
+	save([pathout_data network '_cos_thetas_' a_string(3:end) '_' num2trs(tau) '_' sim_index '.mat'], 'cos_thetas');
 	
 end 
 
-save([pathout_data network '_all_average_corr_X_' sim_index '.mat'], 'all_average_corr_X');
-save([pathout_data network '_all_average_cov_X_' sim_index '.mat'], 'all_average_cov_X');
+save([pathout_data network '_all_average_corr_thetas_' sim_index '.mat'], 'all_average_corr_theta');
+save([pathout_data network '_all_average_cov_thetas_' sim_index '.mat'], 'all_average_cov_theta');
 
 %% storing practical measures for different macro variables in struct files
 
@@ -233,14 +260,14 @@ emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_sync_bin
 emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_sync_bin = causal_decoupling_practical_pairwise_synchrony_micro_sync_bin;
 emergence_practical.downward_causation_practical_pairwise_synchrony_micro_sync_bin = downward_causation_practical_pairwise_synchrony_micro_sync_bin;
 
-emergence_practical.synergy_capacity_practical_sigma_chi_micro_sync_cos = synergy_capacity_practical_sigma_chi_micro_sync_cos;
-emergence_practical.causal_decoupling_practical_sigma_chi_micro_sync_cos = causal_decoupling_practical_sigma_chi_micro_sync_cos;
-emergence_practical.downward_causation_practical_sigma_chi_micro_sync_cos = downward_causation_practical_sigma_chi_micro_sync_cos;
-emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_sync_cos = synergy_capacity_practical_pairwise_synchrony_micro_sync_cos;
-emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_sync_cos = causal_decoupling_practical_pairwise_synchrony_micro_sync_cos;
-emergence_practical.downward_causation_practical_pairwise_synchrony_micro_sync_cos = downward_causation_practical_pairwise_synchrony_micro_sync_cos;
+emergence_practical.synergy_capacity_practical_sigma_chi_micro_theta_cos = synergy_capacity_practical_sigma_chi_micro_theta_cos;
+emergence_practical.causal_decoupling_practical_sigma_chi_micro_theta_cos = causal_decoupling_practical_sigma_chi_micro_theta_cos;
+emergence_practical.downward_causation_practical_sigma_chi_micro_theta_cos = downward_causation_practical_sigma_chi_micro_theta_cos;
+emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_theta_cos = synergy_capacity_practical_pairwise_synchrony_micro_theta_cos;
+emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_theta_cos = causal_decoupling_practical_pairwise_synchrony_micro_theta_cos;
+emergence_practical.downward_causation_practical_pairwise_synchrony_micro_theta_cos = downward_causation_practical_pairwise_synchrony_micro_theta_cos;
 
-save([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
+save([pathout_data network '_emergence_practical_' tau '_' sim_index '.mat'], 'emergence_practical');
 
 %}
 
@@ -253,7 +280,7 @@ if sim_index == '3'
 	y_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ... 
 		'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
 else
-	x_axis = {'0.0', '', '0.18', '', '0.36', '', '0.55', '', '', '0.8'};
+	x_axis = {'0.0', '', '0.1', '', '0.2', '', '0.3', '', '', '0.4'};
 	y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
 end
 
@@ -280,14 +307,14 @@ atoms = {synergy_capacity_practical_pairwise_synchrony, ...
 	downward_causation_practical_sigma_chi_micro_sync, ...
 	causal_decoupling_practical_pairwise_synchrony_micro_sync, ...
 	causal_decoupling_practical_sigma_chi_micro_sync, ...
-	synergy_capacity_practical_pairwise_synchrony_micro_sync_cos, ...
-	synergy_capacity_practical_sigma_chi_micro_sync_cos, ...
-	downward_causation_practical_pairwise_synchrony_micro_sync_cos, ...
-	downward_causation_practical_sigma_chi_micro_sync_cos, ...
-	causal_decoupling_practical_pairwise_synchrony_micro_sync_cos, ...
-	causal_decoupling_practical_sigma_chi_micro_sync_cos, ...
-	all_average_cov_X, ...
-	all_average_corr_X};
+	synergy_capacity_practical_pairwise_synchrony_micro_theta_cos, ...
+	synergy_capacity_practical_sigma_chi_micro_theta_cos, ...
+	downward_causation_practical_pairwise_synchrony_micro_theta_cos, ...
+	downward_causation_practical_sigma_chi_micro_theta_cos, ...
+	causal_decoupling_practical_pairwise_synchrony_micro_theta_cos, ...
+	causal_decoupling_practical_sigma_chi_micro_theta_cos, ...
+	all_average_cov_theta, ...
+	all_average_corr_theta};
 
 file_names = {'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony', ...
 	'_all_beta_coup_practical_synergy_capacity_sigma_chi', ...
@@ -298,30 +325,30 @@ file_names = {'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony', ..
 	'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony_micro_sync_bin', ...
 	'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_sync_bin', ...
 	'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_sync_bin', ...
-	'_all_beta_coup_practical_downward_causation_sigma_chi_bin', ...
+	'_all_beta_coup_practical_downward_causation_sigma_chi_micro_sync_bin', ...
 	'_all_beta_coup_practical_causal_decoupling_pairwise_synchrony_micro_sync_bin', ...
 	'_all_beta_coup_practical_causal_decoupling_sigma_chi_micro_sync_bin', ...
 	'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony_micro_sync', ...
-	'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_sync_binarized', ...
+	'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_sync', ...
 	'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_sync', ...
-	'_all_beta_coup_practical_downward_causation_sigma_chi_binarized', ...
+	'_all_beta_coup_practical_downward_causation_sigma_chi_micro_sync', ...
 	'_all_beta_coup_practical_causal_decoupling_pairwise_synchrony_micro_sync', ...
 	'_all_beta_coup_practical_causal_decoupling_sigma_chi_micro_sync', ...
-	'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony_micro_sync_cos', ...
-	'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_sync_cos', ...
-	'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_sync_cos', ...
-	'_all_beta_coup_practical_downward_causation_sigma_chi_cos', ...
-	'_all_beta_coup_practical_causal_decoupling_pairwise_synchrony_micro_sync_cos', ...
-	'_all_beta_coup_practical_causal_decoupling_sigma_chi_micro_sync_cos', ...
-	'_all_beta_coup_average_cov_X', ...
-	'_all_beta_coup_average_corr_X'};
+	'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony_micro_theta_cos', ...
+	'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_theta_cos', ...
+	'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_theta_cos', ...
+	'_all_beta_coup_practical_downward_causation_sigma_chi_micro_theta_cos', ...
+	'_all_beta_coup_practical_causal_decoupling_pairwise_synchrony_micro_theta_cos', ...
+	'_all_beta_coup_practical_causal_decoupling_sigma_chi_micro_theta_cos', ...
+	'_all_beta_coup_average_cov_theta', ...
+	'_all_beta_coup_average_corr_theta'};
 
-titles = {'synergy capacity practical pairwise synchrony', ...
-	'synergy capacity practical sigma chi', ...
-	'downward causation practical pairwise synchrony', ...
-	'downward causation practical sigma chi', ...
-	'causal decoupling practical pairwise synchrony', ...
-	'causal decoupling practical sigma chi', ...
+titles = {'synergy capacity practical pairwise synchrony micro theta', ...
+	'synergy capacity practical sigma chi micro theta', ...
+	'downward causation practical pairwise synchrony micro theta', ...
+	'downward causation practical sigma chi micro theta', ...
+	'causal decoupling practical pairwise synchrony micro theta', ...
+	'causal decoupling practical sigma chi micro theta', ...
 	'synergy capacity practical pairwise synchrony micro sync binarized', ...
 	'synergy capacity practical sigma chi micro sync binarized', ...
 	'downward causation practical pairwise synchrony micro sync binarized', ...
@@ -329,19 +356,19 @@ titles = {'synergy capacity practical pairwise synchrony', ...
 	'causal decoupling practical pairwise synchrony micro sync binarized', ...
 	'causal decoupling practical sigma chi micro sync binarized', ...
 	'synergy capacity practical pairwise synchrony micro sync', ...
-	'synergy capacity practical sigma chi micro sync binarized', ...
+	'synergy capacity practical sigma chi micro sync', ...
 	'downward causation practical pairwise synchrony micro sync', ...
 	'downward causation practical sigma chi micro sync', ...
 	'causal decoupling practical pairwise synchrony micro sync', ...
 	'causal decoupling practical sigma chi micro sync', ...
-	'synergy capacity practical pairwise synchrony micro sync cos', ...
-	'synergy capacity practical sigma chi micro sync cos', ...
-	'downward causation practical pairwise synchrony micro sync cos', ...
-	'downward causation practical sigma chi micro sync cos', ...
-	'causal decoupling practical pairwise synchrony micro sync cos', ...
-	'causal decoupling practical sigma chi micro sync cos', ...
-	'average covariance X', ...
-	'average correlation X'};
+	'synergy capacity practical pairwise synchrony micro theta cos', ...
+	'synergy capacity practical sigma chi micro theta cos', ...
+	'downward causation practical pairwise synchrony micro theta cos', ...
+	'downward causation practical sigma chi micro theta cos', ...
+	'causal decoupling practical pairwise synchrony micro theta cos', ...
+	'causal decoupling practical sigma chi micro theta cos', ...
+	'average covariance thetas', ...
+	'average correlation thetas'};
 
 for i = 1:size(atoms,2)
 	
@@ -371,12 +398,12 @@ for i = 1:size(atoms,2)
 	end 
 	
 	title(titles{i});
-	exportgraphics(gcf, [pathout_plots network file_names{i} sim_index '.png']);
+	exportgraphics(gcf, [pathout_plots network file_names{i} '_' tau '_' sim_index '.png']);
 
 end
 %}
 
-close all;
+%close all;
 
 
 %% scatter plots for emergence capacity, sigma met mean & sigma chi mean in 256-node kuramoto oscillators, with fixed A, and varying beta
@@ -445,7 +472,20 @@ end
 
 close all;
 
-%% phiid-based measures (don't work so far for this system size)
+%% phiid-based measures (don't work for this system size)
+
+% some covariance matrices are not positive definite which is why some information-theoretic functions in PhiID 
+% can't be computed (in this case, all terms involving t1 and t2, i.e., the indices of first & second target partition):
+% h_p1t1t2 = h([p1 t1 t2]);									 
+% h_p2t1t2 = h([p2 t1 t2]);
+% h_t1t2 = h([t1 t2]);											
+% h_p1p2t1t2 = h([p1 p2 t1 t2]);
+% where h = @(idx) -log(mvnpdf(sX(idx,:)', mu(idx), S(idx,idx))); 
+% h() gives the multivariate entropy, takes as an input the indices of the variables to consider in sX in PhiIDFull()
+
+% one way to check whether a given matrix is positive definite is to see whether p is positive or not - it will be
+% zero, if the matrix is positive definite, and positive, if it's not:
+% [~,p] = chol(some_matrix)
 
 % calculating information atoms
 
@@ -456,21 +496,37 @@ for i = 1:size(coupling_matrices, 3);
 	disp(i)
 	
 	for j = 1:length(beta_vec)
-	disp(j)
 	
 		beta = beta_vec(j);
 		
-		[X, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);	
+		[thetas, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);	
 		
+		% partition indices (arbitrary assigment)
+		part1 = linspace(1, 128, 128);				    % indices of partition 1, e.g., in an 8-element system, [1,2,7,8]
+		part2 = linspace(129, 256, 128);				  % indices of partition 2, e.g., in an 8-element system, [3,4,5,6]
+
+		% stack data and call full PhiID function
+		X1 = thetas(part1,1:end-tau);
+		X2 = thetas(part2,1:end-tau);					    % Here, we define X1, X2, Y1, and Y2, so the partitions at time t (X1, X2), and the partitions at time t+1 (Y1, Y2)
+            Y1 = thetas(part1,1+tau:end);
+		Y2 = thetas(part2,1+tau:end);
+		
+		X = [X1; X2; Y1; Y2];								% stack all variables from partitions row-wise
+		sX = X./repmat(std(X')', [1, npoints - tau]);
+		X1 = sX(1:128,:);
+		X2 = sX(129:256,:);
+		Y1 = sX(257:384,:);
+		Y1 = sX(385:512,:);
+
 		% PhiID
 		try
-			phiid_all_beta_coup_mmi(:,i,j) = struct2array(PhiIDFull(X, tau, 'MMI'))';
+			phiid_all_beta_coup_mmi(:,i,j) = struct2array(PhiIDFull(X1, X2, Y1, Y2, 'MMI'))';
 		catch 
 			phiid_all_beta_coup_mmi(:,i,j) = NaN;
 		end
 			
 		try
-			phiid_all_beta_coup_ccs(:,i,j) = struct2array(PhiIDFull(X, tau, 'ccs'))';
+			phiid_all_beta_coup_ccs(:,i,j) = struct2array(PhiIDFull(X1, X2, Y1, Y2, 'ccs'))';
 		catch 
 			phiid_all_beta_coup_ccs(:,i,j) = NaN;
 		end
@@ -536,8 +592,8 @@ all_atoms_beta_coup_ccs.stx = squeeze(phiid_all_beta_coup_ccs(14,:,:));
 all_atoms_beta_coup_ccs.sty = squeeze(phiid_all_beta_coup_ccs(15,:,:));
 all_atoms_beta_coup_ccs.sts = squeeze(phiid_all_beta_coup_ccs(16,:,:));
 
-save([pathout_data network '_all_atoms_beta_coup_ccs' sim_index '.mat'], 'all_atoms_beta_coup_ccs');
-save([pathout_data network '_all_atoms_beta_coup_mmi' sim_index '.mat'], 'all_atoms_beta_coup_mmi');
+save([pathout_data network '_all_atoms_beta_coup_ccs_' sim_index '.mat'], 'all_atoms_beta_coup_ccs');
+save([pathout_data network '_all_atoms_beta_coup_mmi_' sim_index '.mat'], 'all_atoms_beta_coup_mmi');
 
 %}
 
@@ -588,6 +644,80 @@ emergence_mmi.synergy_capacity_mmi = synergy_capacity_mmi;
 emergence_mmi.causal_decoupling_mmi = causal_decoupling_mmi;
 emergence_mmi.downward_causation_mmi = downward_causation_mmi;
 
-save([pathout_data network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
-save([pathout_data network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
+save([pathout_data network '_emergence_ccs_' sim_index '.mat'], 'emergence_ccs');
+save([pathout_data network '_emergence_mmi_' sim_index '.mat'], 'emergence_mmi');
 %}
+
+%% plotting
+
+% axes ticks
+if sim_index == '3'
+	x_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ... 
+		'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
+	y_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ... 
+		'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
+else
+	x_axis = {'0.0', '', '0.1', '', '0.2', '', '0.3', '', '', '0.4'};
+	y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
+end
+
+% synergistic capacity, downward causation, causal decoupling
+
+% {
+% heatmaps using matlab built-in function:
+
+atoms = {synergy_capacity_ccs, ...
+	downward_causation_ccs, ...
+	causal_decoupling_ccs, ...
+	synergy_capacity_mmi, ...
+	downward_causation_mmi, ...
+	causal_decoupling_mmi};
+
+file_names = {'_all_beta_coup_synergy_capacity_ccs_', ...
+	'_all_beta_coup_downward_causation_ccs_', ...
+	'_all_beta_coup_practical_causal_decoupling_ccs_', ...
+	'_all_beta_coup_synergy_capacity_mmi_', ...
+	'_all_beta_coup_downward_causation_mmi_', ...
+	'_all_beta_coup_practical_causal_decoupling_mmi_'};
+
+titles = {'synergy capacity ccs', ...
+	'downward causation ccs', ...
+	'causal decoupling ccs', ...
+	'synergy capacity mmi', ...
+	'downward causation mmi', ...
+	'causal decoupling mmi'};
+
+for i = 1:size(atoms,2)
+	
+	figure;
+
+	imagesc(atoms{i});
+	colormap(bluewhitered); 
+	colorbar;
+	
+	hColorbar = colorbar;
+	set(hColorbar, 'Ticks', sort([hColorbar.Limits, hColorbar.Ticks]))
+	
+	xticks(1:size(x_axis, 2));
+	yticks(1:size(y_axis, 2));
+	
+	set(gca,'TickLength',[0 0])
+	yticklabels(y_axis);
+	xticklabels(x_axis);
+	
+	if sim_index == '3'
+		ylabel('zero coupling');
+		xlabel('zero noise correlation');
+	
+	else 
+		ylabel('A');
+		xlabel('beta');
+	end 
+	
+	title(titles{i});
+	exportgraphics(gcf, [pathout_plots network file_names{i} tau '_' sim_index '.png']);
+
+end
+%}
+
+%close all;

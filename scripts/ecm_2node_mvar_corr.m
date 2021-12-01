@@ -138,7 +138,7 @@ for k = 2:length(corr_vec);
 			err = error_vec(j);
 			
 			[X, Y] = sim_method(coupling_matrix, npoints, tau, err, corr);
-			hist3(X', 'Nbins', [100 100])
+			hist3(X', 'Nbins', [100 100]);
 			
 			% PhiID
 			phiid_all_err_coup_mmi(:,i,j) = struct2array(PhiIDFull(X(1,:), X(2,:), Y(1,:), Y(2,:), 'mmi'))';

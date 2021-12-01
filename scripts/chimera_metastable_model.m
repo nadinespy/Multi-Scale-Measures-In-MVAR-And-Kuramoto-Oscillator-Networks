@@ -1,4 +1,5 @@
-function [X, sigma_chi, synchrony] = chimera_metastable_model(coupling_matrix, npoints, beta, intra_comm_size, n_communities)
+
+function [thetas, sigma_chi, synchrony] = chimera_metastable_model(coupling_matrix, npoints, beta, intra_comm_size, n_communities)
 % Produces metastable chimera-like states in a modular network of
 % oscillators. The model is inspired by Abrams, et al., PRL 2008, and is
 % parameterised by b and A, according to their paper.
@@ -26,7 +27,7 @@ T = npoints;		% number of time steps
 ws = 2;			% window size for downsampling synchrony data
 
 
-X(1,:) = rand(1,N)*2*pi-pi;	% random initial phases for all 256 initial oscillators (X will grow in rows each of which is a time-step; columns 1-8 are oscillators of 1st community, columns 9-16 are oscillators of 2nd community and so on)
+thetas(1,:) = rand(1,N)*2*pi-pi;	% random initial phases for all 256 initial oscillators (thetas will grow in rows each of which is a time-step; columns 1-8 are oscillators of 1st community, columns 9-16 are oscillators of 2nd community and so on)
 Dmean = d0+d1;					% average connections per oscillator
 synchrony = zeros(T,M);					% synchrony data
 
@@ -39,7 +40,7 @@ sigma_chi = zeros(1, T);
 for t=2:T
    %disp(t)
    % Simulate the Kuramoto model
-   temp1 = X(t-1,:);			% take phases of oscillators from former time-point
+   temp1 = thetas(t-1,:);			% take phases of oscillators from former time-point
    
    for j=1:1/h						% for j = 1:20
       temp2 = temp1;
@@ -76,12 +77,12 @@ for t=2:T
       end
             
    end
-   X(t,:) = temp1;		% add sukcessively rows (time-points) of the 256 oscillators
+   thetas(t,:) = temp1;		% add sukcessively rows (time-points) of the 256 oscillators
 
    % Compute synchrony within communities
    for i = 1:M
       for j = 1:n0
-         x1 = X(t,(i-1)*n0+j);
+         x1 = thetas(t,(i-1)*n0+j);
          synchrony(t,i) = synchrony(t,i)+exp(x1*sqrt(-1));		% adding all synchrony values of each oscillator belonging to the same community
       end
    end
@@ -100,14 +101,23 @@ for t=2:T
   
    sigma_chi(1,t) = var(synchrony(t,:));
    
-   X(t,:) = mod(X(t,:)+pi,2*pi)-pi;	   % normalise phases
+   thetas(t,:) = mod(thetas(t,:)+pi,2*pi)-pi;	   % normalise phases
 
 end
 
-X = X';
+thetas = thetas';
+
+cov_err  = eye(N, N);
+mu = zeros(N,1);
+
+%adding error
+E = mvnrnd(mu, cov_err, npoints)';	
+thetas = thetas + E;
+
 synchrony = synchrony';
 
 global_chi = mean(sigma_chi);
 lambda = mean(synchrony, 2);
 global_lambda = mean(lambda);
+
 end
