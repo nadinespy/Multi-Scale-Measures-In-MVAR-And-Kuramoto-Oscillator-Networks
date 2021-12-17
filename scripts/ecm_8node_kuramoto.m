@@ -6,8 +6,8 @@
 
 %% 8-NODE KURAMOTO OSCILLATORS WITH DIFFERENT COUPLINGS, BETAS, MACRO & MICRO VARIABLES
 
-% This script implements synergy capacity for 8-node Kuramoto oscillators with different couplings and phase lags, two different macro variables 
-% (variance of synchronies & global average pairwise synchrony between communities), and three different micro variables (thetas, cos(thetas), synchronies, and 
+% This script implements causal emergence for 8-node Kuramoto oscillators with different couplings and phase lags, two different macro variables 
+% (variance of synchronies & global average pairwise synchrony between communities), and three different micro variables (theta, cos(theta), synchronies, and 
 % binarized synchronies).
 
 clear all;
@@ -22,11 +22,13 @@ javaaddpath('infodynamics.jar');
 
 pathout_data = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_kuramoto/']; 
+pathout_data_sim_time_series = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_kuramoto/sim_time_series/'];
 pathout_data_synchronies = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_kuramoto/synchronies/'];
 pathout_data_binarized_synchronies = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_kuramoto/binarized_synchronies/'];
-pathout_data_practical_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
+pathout_data_pract_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_kuramoto/practical_ce/'];
 pathout_data_phiid_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_kuramoto/phiid_ce/'];
@@ -37,7 +39,7 @@ pathout_data_average_cov = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_pro
 
 pathout_plots = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_kuramoto/'];
-pathout_plots_practical_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
+pathout_plots_pract_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_kuramoto/practical_ce/'];
 pathout_plots_phiid_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_kuramoto/phiid_ce/'];
@@ -51,13 +53,10 @@ pathout_plots_sigma_chi = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_proj
 
 % time-lag and number of data points in time-series (same for all simulations)
 all_npoints = [2000, 10000];
-taus = [1, 100];
+taus = [1 10 100];
 
 % simulation method (options: statdata_coup_errors1(), statdata_coup_errors2(), statdata_random(), chimera_metastable_model())
 sim_method = @chimera_metastable_model;
-
-% save plots & matrices according to simulation method (options: '1' (for statdata_coup_errors1()), '2' (for statdata_coup_errors2()), '3' (for statdata_random(), '4' (for metastable_chimera_model())
-sim_index = '4';
 
 % network (options: '2node_mvar' for 2-node network with 100 different coupling strengths & noise correlations (if choosing sim_index = 1 or 2) OR random 2-node network with 100 zero couplings & 100 zero noise correlations (if choosing sim_index = 3);
 % '8node_mvar_different_architectures' for 8-node networks with 6 different architectures & noise correlations (if choosing sim_index = 1 or 2) OR random 8-node networks with 100 zero couplings & 100 zero correlations (if choosing sim_index = 3));
@@ -73,29 +72,29 @@ binarization_threshold = 0.8;
 
 %{
 
-load([pathout_data network '_emergence_ccs' sim_index '.mat'], 'emergence_ccs');
-load([pathout_data network '_emergence_mmi' sim_index '.mat'], 'emergence_mmi');
-load([pathout_data network '_emergence_practical' sim_index '.mat'], 'emergence_practical');
+load([pathout_data network '_ce_ccs' sim_index '.mat'], 'ce_ccs');
+load([pathout_data network '_ce_mmi' sim_index '.mat'], 'ce_mmi');
+load([pathout_data network '_ce_pract ' sim_index '.mat'], 'ce_pract ');
 load([pathout_data network '_all_atoms_beta_coup_ccs' sim_index '.mat'], 'all_atoms_beta_coup_ccs');
 load([pathout_data network '_all_atoms_beta_coup_mmi' sim_index '.mat'], 'all_atoms_beta_coup_mmi');
 load([pathout_data network '_all_average_corr_X' sim_index '.mat'], 'all_average_corr_X');
 load([pathout_data network '_all_average_cov_X' sim_index '.mat'], 'all_average_cov_X');
 
-synergy_capacity_mmi = emergence_mmi.synergy_capacity_mmi;
-downward_causation_mmi = emergence_mmi.downward_causation_mmi;
-causal_decoupling_mmi = emergence_mmi.causal_decoupling_mmi;
+synergy_capacity_mmi = ce_mmi.synergy_capacity_mmi;
+dc_mmi = ce_mmi.dc_mmi;
+cd_mmi = ce_mmi.cd_mmi;
 
-synergy_capacity_ccs = emergence_ccs.synergy_capacity_ccs;
-downward_causation_ccs = emergence_ccs.downward_causation_ccs;
-causal_decoupling_ccs = emergence_ccs.causal_decoupling_ccs;
+synergy_capacity_ccs = ce_ccs.synergy_capacity_ccs;
+dc_ccs = ce_ccs.dc_ccs;
+cd_ccs = ce_ccs.cd_ccs;
 
-synergy_capacity_practical_sigma_chi = emergence_practical.synergy_capacity_practical_sigma_chi; 
-downward_causation_practical_sigma_chi = emergence_practical.downward_causation_practical_sigma_chi; 
-causal_decoupling_practical_sigma_chi = emergence_practical.causal_decoupling_practical_sigma_chi;
+synergy_capacity_pract _sigma_chi = ce_pract .synergy_capacity_pract _sigma_chi; 
+dc_pract _sigma_chi = ce_pract .dc_pract _sigma_chi; 
+cd_pract _sigma_chi = ce_pract .cd_pract _sigma_chi;
 
-synergy_capacity_practical_pairwise_synchrony = emergence_practical.synergy_capacity_practical_pairwise_synchrony; 
-downward_causation_practical_pairwise_synchrony = emergence_practical.downward_causation_practical_pairwise_synchrony; 
-causal_decoupling_practical_pairwise_synchrony = emergence_practical.causal_decoupling_practical_pairwise_synchrony;
+synergy_capacity_pract _pairwise_synchrony = ce_pract .synergy_capacity_pract _pairwise_synchrony; 
+dc_pract _pairwise_synchrony = ce_pract .dc_pract _pairwise_synchrony; 
+cd_pract _pairwise_synchrony = ce_pract .cd_pract _pairwise_synchrony;
 
 %}
 
@@ -146,6 +145,32 @@ end
 %% calculating information atoms & practical measures
 
 for q = 1:length(all_npoints);
+	disp(q)
+	npoints = all_npoints(q);
+	
+	for i = 1:size(coupling_matrices, 3);
+		disp(i)
+		coupling_string = num2str(coupling_vec(i));
+		coupling_string = coupling_string(3:end);
+		coupling_matrix = coupling_matrices(:,:,i);
+	
+		for j = 1:length(beta_vec)
+			
+			beta = beta_vec(j);
+			beta_string = num2str(beta);
+			beta_string = beta_string(3:end);
+				
+			[theta, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);	 
+			save([pathout_data_sim_time_series network '_theta_' num2str(npoints) '_' coupling_string '_' beta_string '.mat'], 'theta');
+			save([pathout_data_sim_time_series network '_sigma_chi_' num2str(npoints) '_' coupling_string '_' beta_string '.mat'], 'sigma_chi');
+			save([pathout_data_sim_time_series network '_synchrony_' num2str(npoints) '_' coupling_string '_' beta_string '.mat'], 'synchrony');
+			
+		end 
+	end 
+end 
+
+
+for q = 1:length(all_npoints);
 	npoints = all_npoints(q);
 	disp(q)
 	
@@ -154,68 +179,63 @@ for q = 1:length(all_npoints);
 
 		rng(1);
 		for i = 1:size(coupling_matrices, 3);
-	
+			coupling_string = num2str(coupling_vec(i));
+			coupling_string = coupling_string(3:end);
 			coupling_matrix = coupling_matrices(:,:,i);
 	
 			for j = 1:length(beta_vec)
-		
-				beta = beta_vec(j);
-		
-				[thetas, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);	
-		
-				% PhiID
-				try
-					phiid_all_beta_coup_mmi(:,i,j) = struct2array(PhiIDFull(thetas, tau, 'MMI'))';
-				catch
-					phiid_all_beta_coup_mmi(:,i,j) = NaN;
-				end
-				
-				try
-					phiid_all_beta_coup_ccs(:,i,j) = struct2array(PhiIDFull(thetas, tau, 'ccs'))';
-				catch
-					phiid_all_beta_coup_ccs(:,i,j) = NaN;
-				end
+				disp(j)
 			
-				synchronies(j,:,:) = synchrony;				% rows: betas, columns: communities, 3rd dimension: time-points
+				beta = beta_vec(j);
+				beta_string = num2str(beta);
+				beta_string = beta_string(3:end);
 				
-				% practical measures for causal emergence: variance of synchronies & global average pairwise synchrony between communities
-				grand_mean_pairwise_synchrony = zeros(1,npoints);
-				
-				for h = 1:M;
-					mean_pairwise_synchrony_temp = zeros(1,npoints);
-					for g = 1:M;
-						mean_pairwise_synchrony_temp = mean_pairwise_synchrony_temp + abs((synchrony(h,:)+synchrony(g,:))/2);
-					end
-					mean_pairwise_synchrony_temp = mean_pairwise_synchrony_temp/M;
-					grand_mean_pairwise_synchrony = grand_mean_pairwise_synchrony + mean_pairwise_synchrony_temp;
+				load([pathout_data_sim_time_series network '_theta_' num2str(npoints) '_' coupling_string '_' beta_string '.mat'], 'theta');
+				load([pathout_data_sim_time_series network '_sigma_chi_' num2str(npoints) '_' coupling_string '_' beta_string '.mat'], 'sigma_chi');
+				load([pathout_data_sim_time_series network '_synchrony_' num2str(npoints) '_' coupling_string '_' beta_string '.mat'], 'synchrony');
+			
+				% PhiID
+				% thetas
+				try
+					phiid_all_beta_coup_mmi_theta(:,i,j) = struct2array(PhiIDFull(theta, tau, 'MMI'))';
+				catch
+					phiid_all_beta_coup_mmi_theta(:,i,j) = NaN;
 				end
-				grand_mean_pairwise_synchrony = grand_mean_pairwise_synchrony/M;
 				
-				% practical causal emergence with thetas as micro variables
-				synergy_capacity_practical_sigma_chi(i,j) = EmergencePsi(thetas', sigma_chi');
-				synergy_capacity_practical_pairwise_synchrony(i,j) = EmergencePsi(thetas', grand_mean_pairwise_synchrony');
-				downward_causation_practical_sigma_chi(i,j) = EmergenceDelta(thetas', sigma_chi');
-				downward_causation_practical_pairwise_synchrony(i,j) = EmergenceDelta(thetas', grand_mean_pairwise_synchrony');
-				causal_decoupling_practical_sigma_chi(i,j) = synergy_capacity_practical_sigma_chi(i,j) - downward_causation_practical_sigma_chi(i,j);
-				causal_decoupling_practical_pairwise_synchrony(i,j) = synergy_capacity_practical_pairwise_synchrony(i,j) - downward_causation_practical_pairwise_synchrony(i,j);
+				try
+					phiid_all_beta_coup_ccs_theta(:,i,j) = struct2array(PhiIDFull(theta, tau, 'ccs'))';
+				catch
+					phiid_all_beta_coup_ccs_theta(:,i,j) = NaN;
+				end
 				
-				% practical causal emergence with phases as micro variables
-				synergy_capacity_practical_sigma_chi(i,j) = EmergencePsi(thetas', sigma_chi', tau);
-				synergy_capacity_practical_pairwise_synchrony(i,j) = EmergencePsi(thetas', grand_mean_pairwise_synchrony', tau);
-				downward_causation_practical_sigma_chi(i,j) = EmergenceDelta(thetas', sigma_chi', tau);
-				downward_causation_practical_pairwise_synchrony(i,j) = EmergenceDelta(thetas', grand_mean_pairwise_synchrony', tau);
-				causal_decoupling_practical_sigma_chi(i,j) = synergy_capacity_practical_sigma_chi(i,j) - downward_causation_practical_sigma_chi(i,j);
-				causal_decoupling_practical_pairwise_synchrony(i,j) = synergy_capacity_practical_pairwise_synchrony(i,j) - downward_causation_practical_pairwise_synchrony(i,j);
+				% cos(theta)
+				cos_theta = cos(theta);
+				try
+					phiid_all_beta_coup_mmi_cos_theta(:,i,j) = struct2array(PhiIDFull(cos_theta, tau, 'MMI'))';
+				catch
+					phiid_all_beta_coup_mmi_cos_theta(:,i,j) = NaN;
+				end
 				
-				% practical causal emergence with synchronies as "micro" variables
-				synergy_capacity_practical_sigma_chi_micro_sync(i,j) = EmergencePsi(synchrony', sigma_chi', tau);
-				synergy_capacity_practical_pairwise_synchrony_micro_sync(i,j) = EmergencePsi(synchrony', grand_mean_pairwise_synchrony', tau);
-				downward_causation_practical_sigma_chi_micro_sync(i,j) = EmergenceDelta(synchrony', sigma_chi', tau);
-				downward_causation_practical_pairwise_synchrony_micro_sync(i,j) = EmergenceDelta(synchrony', grand_mean_pairwise_synchrony', tau);
-				causal_decoupling_practical_sigma_chi_micro_sync(i,j) = synergy_capacity_practical_sigma_chi_micro_sync(i,j) - downward_causation_practical_sigma_chi_micro_sync(i,j);
-				causal_decoupling_practical_pairwise_synchrony_micro_sync(i,j) = synergy_capacity_practical_pairwise_synchrony_micro_sync(i,j) - downward_causation_practical_pairwise_synchrony_micro_sync(i,j);
+				try
+					phiid_all_beta_coup_ccs_cos_theta(:,i,j) = struct2array(PhiIDFull(cos_theta, tau, 'ccs'))';
+				catch
+					phiid_all_beta_coup_ccs_cos_theta(:,i,j) = NaN;
+				end
 				
-				% doing the same, albeit with binarized synchronies as the "micro" variables
+				% synchronies
+				try
+					phiid_all_beta_coup_mmi_sync(:,i,j) = struct2array(PhiIDFull(synchrony, tau, 'MMI'))';
+				catch
+					phiid_all_beta_coup_mmi_sync(:,i,j) = NaN;
+				end
+				
+				try
+					phiid_all_beta_coup_ccs_sync(:,i,j) = struct2array(PhiIDFull(synchrony, tau, 'ccs'))';
+				catch
+					phiid_all_beta_coup_ccs_sync(:,i,j) = NaN;
+				end
+				
+				% binarized synchronies
 				for k = 1:size(synchrony, 2);
 					for l = 1:size(synchrony,1);
 						if synchrony(l,k) >= binarization_threshold;
@@ -225,78 +245,120 @@ for q = 1:length(all_npoints);
 					end
 				end
 				
-				binarized_synchronies(j,:,:) = binarized_synchrony;
+				bin_synchronies(j,:,:) = binarized_synchrony;
 				
-				synergy_capacity_practical_sigma_chi_micro_sync_bin(i,j) = EmergencePsi(binarized_synchrony', sigma_chi', tau);
-				synergy_capacity_practical_pairwise_synchrony_micro_sync_bin(i,j) = EmergencePsi(binarized_synchrony', grand_mean_pairwise_synchrony', tau);
-				downward_causation_practical_sigma_chi_micro_sync_bin(i,j) = EmergenceDelta(binarized_synchrony', sigma_chi', tau);
-				downward_causation_practical_pairwise_synchrony_micro_sync_bin(i,j) = EmergenceDelta(binarized_synchrony', grand_mean_pairwise_synchrony', tau);
-				causal_decoupling_practical_sigma_chi_micro_sync_bin(i,j) = synergy_capacity_practical_sigma_chi_micro_sync_bin(i,j) - downward_causation_practical_sigma_chi_micro_sync_bin(i,j);
-				causal_decoupling_practical_pairwise_synchrony_micro_sync_bin(i,j) = synergy_capacity_practical_pairwise_synchrony_micro_sync_bin(i,j) - downward_causation_practical_pairwise_synchrony_micro_sync_bin(i,j);
+				try
+					phiid_all_beta_coup_mmi_bin_sync(:,i,j) = struct2array(PhiIDFull(binarized_synchrony, tau, 'MMI'))';
+				catch
+					phiid_all_beta_coup_mmi_bin_sync(:,i,j) = NaN;
+				end
 				
-				% practical causal emergence with cos(phase) as the "true" micro variables (the "raw" signal)
-				cos_theta = cos(thetas);
+				try
+					phiid_all_beta_coup_ccs_bin_sync(:,i,j) = struct2array(PhiIDFull(binarized_synchrony, tau, 'ccs'))';
+				catch
+					phiid_all_beta_coup_ccs_bin_sync(:,i,j) = NaN;
+				end
 				
-				synergy_capacity_practical_sigma_chi_micro_theta_cos(i,j) = EmergencePsi(cos_theta', sigma_chi', tau);
-				synergy_capacity_practical_pairwise_synchrony_micro_theta_cos(i,j) = EmergencePsi(cos_theta', grand_mean_pairwise_synchrony', tau);
-				downward_causation_practical_sigma_chi_micro_theta_cos(i,j) = EmergenceDelta(cos_theta', sigma_chi', tau);
-				downward_causation_practical_pairwise_synchrony_micro_theta_cos(i,j) = EmergenceDelta(cos_theta', grand_mean_pairwise_synchrony', tau);
-				causal_decoupling_practical_sigma_chi_micro_theta_cos(i,j) = synergy_capacity_practical_sigma_chi_micro_theta_cos(i,j) - downward_causation_practical_sigma_chi_micro_theta_cos(i,j);
-				causal_decoupling_practical_pairwise_synchrony_micro_theta_cos(i,j) = synergy_capacity_practical_pairwise_synchrony_micro_theta_cos(i,j) - downward_causation_practical_pairwise_synchrony_micro_theta_cos(i,j);
+				synchronies(j,:,:) = synchrony;				% rows: betas, columns: communities, 3rd dimension: time-points
+				
+				% practical measures for causal emergence: variance of synchronies & global average pairwise synchrony between communities
+				grand_mean_pair_sync = zeros(1,npoints);
+				
+				for h = 1:M;
+					mean_pair_sync_temp = zeros(1,npoints);
+					for g = 1:M;
+						mean_pair_sync_temp = mean_pair_sync_temp + abs((synchrony(h,:)+synchrony(g,:))/2);
+					end
+					mean_pair_sync_temp = mean_pair_sync_temp/M;
+					grand_mean_pair_sync = grand_mean_pair_sync + mean_pair_sync_temp;
+				end
+				grand_mean_pair_sync = grand_mean_pair_sync/M;
+				
+				% practical causal emergence with thetas as micro variables
+				ce_pract_sigma_chi_micro_theta(i,j) = EmergencePsi(theta', sigma_chi');
+				ce_pract_pair_sync_micro_theta(i,j) = EmergencePsi(theta', grand_mean_pair_sync');
+				dc_pract_sigma_chi_micro_theta(i,j) = EmergenceDelta(theta', sigma_chi');
+				dc_pract_pair_sync_micro_theta(i,j) = EmergenceDelta(theta', grand_mean_pair_sync');
+				cd_pract_sigma_chi_micro_theta(i,j) = ce_pract_sigma_chi_micro_theta(i,j) - dc_pract_sigma_chi_micro_theta(i,j);
+				cd_pract_pair_sync_micro_theta(i,j) = ce_pract_pair_sync_micro_theta(i,j) - dc_pract_pair_sync_micro_theta(i,j);
+				
+				% practical causal emergence with synchronies as "micro" variables
+				ce_pract_sigma_chi_micro_sync(i,j) = EmergencePsi(synchrony', sigma_chi', tau);
+				ce_pract_pair_sync_micro_sync(i,j) = EmergencePsi(synchrony', grand_mean_pair_sync', tau);
+				dc_pract_sigma_chi_micro_sync(i,j) = EmergenceDelta(synchrony', sigma_chi', tau);
+				dc_pract_pair_sync_micro_sync(i,j) = EmergenceDelta(synchrony', grand_mean_pair_sync', tau);
+				cd_pract_sigma_chi_micro_sync(i,j) = ce_pract_sigma_chi_micro_sync(i,j) - dc_pract_sigma_chi_micro_sync(i,j);
+				cd_pract_pair_sync_micro_sync(i,j) = ce_pract_pair_sync_micro_sync(i,j) - dc_pract_pair_sync_micro_sync(i,j);
+				
+				% doing the same, albeit with binarized synchronies as the "micro" variables
+				ce_pract_sigma_chi_micro_bin_sync(i,j) = EmergencePsi(binarized_synchrony', sigma_chi', tau);
+				ce_pract_pair_sync_micro_bin_sync(i,j) = EmergencePsi(binarized_synchrony', grand_mean_pair_sync', tau);
+				dc_pract_sigma_chi_micro_bin_sync(i,j) = EmergenceDelta(binarized_synchrony', sigma_chi', tau);
+				dc_pract_pair_sync_micro_bin_sync(i,j) = EmergenceDelta(binarized_synchrony', grand_mean_pair_sync', tau);
+				cd_pract_sigma_chi_micro_bin_sync(i,j) = ce_pract_sigma_chi_micro_bin_sync(i,j) - dc_pract_sigma_chi_micro_bin_sync(i,j);
+				cd_pract_pair_sync_micro_bin_sync(i,j) = ce_pract_pair_sync_micro_bin_sync(i,j) - dc_pract_pair_sync_micro_bin_sync(i,j);
+				
+				% practical causal emergence with cos(phase) as the "true" micro variables (the "raw" signal)	
+				ce_pract_sigma_chi_micro_cos_theta(i,j) = EmergencePsi(cos_theta', sigma_chi', tau);
+				ce_pract_pair_sync_micro_cos_theta(i,j) = EmergencePsi(cos_theta', grand_mean_pair_sync', tau);
+				dc_pract_sigma_chi_micro_cos_theta(i,j) = EmergenceDelta(cos_theta', sigma_chi', tau);
+				dc_pract_pair_sync_micro_cos_theta(i,j) = EmergenceDelta(cos_theta', grand_mean_pair_sync', tau);
+				cd_pract_sigma_chi_micro_cos_theta(i,j) = ce_pract_sigma_chi_micro_cos_theta(i,j) - dc_pract_sigma_chi_micro_cos_theta(i,j);
+				cd_pract_pair_sync_micro_cos_theta(i,j) = ce_pract_pair_sync_micro_cos_theta(i,j) - dc_pract_pair_sync_micro_cos_theta(i,j);
 				
 				% average covariance/correlation matrix
-				cov_thetas = cov(thetas');
-				all_average_cov_thetas(i,j) = mean(nonzeros(tril(cov_thetas,-1)), 'all');
+				cov_theta = cov(theta');
+				all_average_cov_theta(i,j) = mean(nonzeros(tril(cov_theta,-1)), 'all');
 				
-				corr_thetas = corrcov(cov_thetas);
-				all_average_corr_thetas(i,j) = mean(nonzeros(tril(corr_thetas,-1)), 'all');
+				corr_theta = corrcov(cov_theta);
+				all_average_corr_theta(i,j) = mean(nonzeros(tril(corr_theta,-1)), 'all');
 			
 			end
 			
 			a_string = num2str(coupling_vec(i));
 			save([pathout_data_synchronies network '_synchronies_'  a_string(3:end) '_' num2str(npoints) '.mat'], 'synchronies');
-			save([pathout_data_binarized_synchronies network '_binarized_synchronies_' a_string(3:end) '_' num2str(npoints) '.mat'], 'binarized_synchronies');
+			save([pathout_data_binarized_synchronies network '_bin_synchronies_' a_string(3:end) '_' num2str(npoints) '.mat'], 'bin_synchronies');
 			
 		end
 
-		save([pathout_data_average_corr network '_all_average_corr_theta_' num2str(npoints) '.mat'], 'all_average_corr_thetas');
-		save([pathout_data_average_cov network '_all_average_cov_theta_' num2str(npoints) '.mat'], 'all_average_cov_thetas');
+		save([pathout_data_average_corr network '_all_average_corr_theta_' num2str(npoints) '.mat'], 'all_average_corr_theta');
+		save([pathout_data_average_cov network '_all_average_cov_theta_' num2str(npoints) '.mat'], 'all_average_cov_theta');
 
 		%% storing information atoms & practical measures for different macro variables in struct files
 
 		% practical measures for different macro variables
 
-		emergence_practical = [];
+		ce_practical = [];
 		
-		emergence_practical.synergy_capacity_practical_sigma_chi = synergy_capacity_practical_sigma_chi;
-		emergence_practical.causal_decoupling_practical_sigma_chi = causal_decoupling_practical_sigma_chi;
-		emergence_practical.downward_causation_practical_sigma_chi = downward_causation_practical_sigma_chi;
-		emergence_practical.synergy_capacity_practical_pairwise_synchrony = synergy_capacity_practical_pairwise_synchrony;
-		emergence_practical.causal_decoupling_practical_pairwise_synchrony = causal_decoupling_practical_pairwise_synchrony;
-		emergence_practical.downward_causation_practical_pairwise_synchrony = downward_causation_practical_pairwise_synchrony;
+		ce_practical.ce_pract_sigma_chi_micro_theta= ce_pract_sigma_chi_micro_theta;
+		ce_practical.cd_pract_sigma_chi_micro_theta = cd_pract_sigma_chi_micro_theta;
+		ce_practical.dc_pract_sigma_chi_micro_theta = dc_pract_sigma_chi_micro_theta;
+		ce_practical.ce_pract_pair_sync_micro_theta = ce_pract_pair_sync_micro_theta;
+		ce_practical.cd_pract_pair_sync_micro_theta = cd_pract_pair_sync_micro_theta;
+		ce_practical.dc_pract_pair_sync_micro_theta = dc_pract_pair_sync_micro_theta;
 		
-		emergence_practical.synergy_capacity_practical_sigma_chi_micro_sync = synergy_capacity_practical_sigma_chi_micro_sync;
-		emergence_practical.causal_decoupling_practical_sigma_chi_micro_sync = causal_decoupling_practical_sigma_chi_micro_sync;
-		emergence_practical.downward_causation_practical_sigma_chi_micro_sync = downward_causation_practical_sigma_chi_micro_sync;
-		emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_sync = synergy_capacity_practical_pairwise_synchrony_micro_sync;
-		emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_sync = causal_decoupling_practical_pairwise_synchrony_micro_sync;
-		emergence_practical.downward_causation_practical_pairwise_synchrony_micro_sync = downward_causation_practical_pairwise_synchrony_micro_sync;
+		ce_practical.ce_pract_sigma_chi_micro_sync = ce_pract_sigma_chi_micro_sync;
+		ce_practical.cd_pract_sigma_chi_micro_sync = cd_pract_sigma_chi_micro_sync;
+		ce_practical.dc_pract_sigma_chi_micro_sync = dc_pract_sigma_chi_micro_sync;
+		ce_practical.ce_pract_pair_sync_micro_sync = ce_pract_pair_sync_micro_sync;
+		ce_practical.cd_pract_pair_sync_micro_sync = cd_pract_pair_sync_micro_sync;
+		ce_practical.dc_pract_pair_sync_micro_sync = dc_pract_pair_sync_micro_sync;
 		
-		emergence_practical.synergy_capacity_practical_sigma_chi_micro_sync_bin = synergy_capacity_practical_sigma_chi_micro_sync_bin;
-		emergence_practical.causal_decoupling_practical_sigma_chi_micro_sync_bin = causal_decoupling_practical_sigma_chi_micro_sync_bin;
-		emergence_practical.downward_causation_practical_sigma_chi_micro_sync_bin = downward_causation_practical_sigma_chi_micro_sync_bin;
-		emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_sync_bin = synergy_capacity_practical_pairwise_synchrony_micro_sync_bin;
-		emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_sync_bin = causal_decoupling_practical_pairwise_synchrony_micro_sync_bin;
-		emergence_practical.downward_causation_practical_pairwise_synchrony_micro_sync_bin = downward_causation_practical_pairwise_synchrony_micro_sync_bin;
+		ce_practical.ce_pract_sigma_chi_micro_bin_sync = ce_pract_sigma_chi_micro_bin_sync;
+		ce_practical.cd_pract_sigma_chi_micro_bin_sync = cd_pract_sigma_chi_micro_bin_sync;
+		ce_practical.dc_pract_sigma_chi_micro_bin_sync = dc_pract_sigma_chi_micro_bin_sync;
+		ce_practical.ce_pract_pair_sync_micro_bin_sync = ce_pract_pair_sync_micro_bin_sync;
+		ce_practical.cd_pract_pair_sync_micro_bin_sync = cd_pract_pair_sync_micro_bin_sync;
+		ce_practical.dc_pract_pair_sync_micro_bin_sync = dc_pract_pair_sync_micro_bin_sync;
 		
-		emergence_practical.synergy_capacity_practical_sigma_chi_micro_theta_cos = synergy_capacity_practical_sigma_chi_micro_theta_cos;
-		emergence_practical.causal_decoupling_practical_sigma_chi_micro_theta_cos = causal_decoupling_practical_sigma_chi_micro_theta_cos;
-		emergence_practical.downward_causation_practical_sigma_chi_micro_theta_cos = downward_causation_practical_sigma_chi_micro_theta_cos;
-		emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_theta_cos = synergy_capacity_practical_pairwise_synchrony_micro_theta_cos;
-		emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_theta_cos = causal_decoupling_practical_pairwise_synchrony_micro_theta_cos;
-		emergence_practical.downward_causation_practical_pairwise_synchrony_micro_theta_cos = downward_causation_practical_pairwise_synchrony_micro_theta_cos;
+		ce_practical.ce_pract_sigma_chi_micro_cos_theta = ce_pract_sigma_chi_micro_cos_theta;
+		ce_practical.cd_pract_sigma_chi_micro_cos_theta = cd_pract_sigma_chi_micro_cos_theta;
+		ce_practical.dc_pract_sigma_chi_micro_cos_theta = dc_pract_sigma_chi_micro_cos_theta;
+		ce_practical.ce_pract_pair_sync_micro_cos_theta = ce_pract_pair_sync_micro_cos_theta;
+		ce_practical.cd_pract_pair_sync_micro_cos_theta = cd_pract_pair_sync_micro_cos_theta;
+		ce_practical.dc_pract_pair_sync_micro_cos_theta = dc_pract_pair_sync_micro_cos_theta;
 		
-		save([pathout_data_practical_ce network '_emergence_practical_' num2str(npoints) '_' num2str(tau) '.mat'], 'emergence_practical');
+		save([pathout_data_pract_ce network '_ce_practical_' num2str(npoints) '_' num2str(tau) '.mat'], 'ce_practical');
 		
 		% information atoms: extract single atoms such that rows are the couplings, and columns the errors
 		
@@ -317,44 +379,22 @@ for q = 1:length(all_npoints);
 		% sty: {12}-->{2}
 		% sts: {12}-->{12}
 		
-		all_atoms_beta_coup_mmi = [];
-		all_atoms_beta_coup_mmi.rtr = squeeze(phiid_all_beta_coup_mmi(1,:,:));
-		all_atoms_beta_coup_mmi.rtx = squeeze(phiid_all_beta_coup_mmi(2,:,:));
-		all_atoms_beta_coup_mmi.rty = squeeze(phiid_all_beta_coup_mmi(3,:,:));
-		all_atoms_beta_coup_mmi.rts = squeeze(phiid_all_beta_coup_mmi(4,:,:));
-		all_atoms_beta_coup_mmi.xtr = squeeze(phiid_all_beta_coup_mmi(5,:,:));
-		all_atoms_beta_coup_mmi.xtx = squeeze(phiid_all_beta_coup_mmi(6,:,:));
-		all_atoms_beta_coup_mmi.xty = squeeze(phiid_all_beta_coup_mmi(7,:,:));
-		all_atoms_beta_coup_mmi.xts = squeeze(phiid_all_beta_coup_mmi(8,:,:));
-		all_atoms_beta_coup_mmi.ytr = squeeze(phiid_all_beta_coup_mmi(9,:,:));
-		all_atoms_beta_coup_mmi.ytx = squeeze(phiid_all_beta_coup_mmi(10,:,:));
-		all_atoms_beta_coup_mmi.yty = squeeze(phiid_all_beta_coup_mmi(11,:,:));
-		all_atoms_beta_coup_mmi.yts = squeeze(phiid_all_beta_coup_mmi(12,:,:));
-		all_atoms_beta_coup_mmi.str = squeeze(phiid_all_beta_coup_mmi(13,:,:));
-		all_atoms_beta_coup_mmi.stx = squeeze(phiid_all_beta_coup_mmi(14,:,:));
-		all_atoms_beta_coup_mmi.sty = squeeze(phiid_all_beta_coup_mmi(15,:,:));
-		all_atoms_beta_coup_mmi.sts = squeeze(phiid_all_beta_coup_mmi(16,:,:));
+		[all_atoms_beta_coup_mmi_theta, all_atoms_beta_coup_ccs_theta] =  store_atoms_in_struct(phiid_all_beta_coup_mmi_theta, phiid_all_beta_coup_ccs_theta);
+		[all_atoms_beta_coup_mmi_cos_theta, all_atoms_beta_coup_ccs_cos_theta] =  store_atoms_in_struct(phiid_all_beta_coup_mmi_cos_theta, phiid_all_beta_coup_ccs_cos_theta);
+		[all_atoms_beta_coup_mmi_sync, all_atoms_beta_coup_ccs_sync] =  store_atoms_in_struct(phiid_all_beta_coup_mmi_sync, phiid_all_beta_coup_ccs_sync);
+		[all_atoms_beta_coup_mmi_bin_sync, all_atoms_beta_coup_ccs_bin_sync] =  store_atoms_in_struct(phiid_all_beta_coup_mmi_bin_sync, phiid_all_beta_coup_ccs_bin_sync);
 		
-		all_atoms_beta_coup_ccs = [];
-		all_atoms_beta_coup_ccs.rtr = squeeze(phiid_all_beta_coup_ccs(1,:,:));
-		all_atoms_beta_coup_ccs.rtx = squeeze(phiid_all_beta_coup_ccs(2,:,:));
-		all_atoms_beta_coup_ccs.rty = squeeze(phiid_all_beta_coup_ccs(3,:,:));
-		all_atoms_beta_coup_ccs.rts = squeeze(phiid_all_beta_coup_ccs(4,:,:));
-		all_atoms_beta_coup_ccs.xtr = squeeze(phiid_all_beta_coup_ccs(5,:,:));
-		all_atoms_beta_coup_ccs.xtx = squeeze(phiid_all_beta_coup_ccs(6,:,:));
-		all_atoms_beta_coup_ccs.xty = squeeze(phiid_all_beta_coup_ccs(7,:,:));
-		all_atoms_beta_coup_ccs.xts = squeeze(phiid_all_beta_coup_ccs(8,:,:));
-		all_atoms_beta_coup_ccs.ytr = squeeze(phiid_all_beta_coup_ccs(9,:,:));
-		all_atoms_beta_coup_ccs.ytx = squeeze(phiid_all_beta_coup_ccs(10,:,:));
-		all_atoms_beta_coup_ccs.yty = squeeze(phiid_all_beta_coup_ccs(11,:,:));
-		all_atoms_beta_coup_ccs.yts = squeeze(phiid_all_beta_coup_ccs(12,:,:));
-		all_atoms_beta_coup_ccs.str = squeeze(phiid_all_beta_coup_ccs(13,:,:));
-		all_atoms_beta_coup_ccs.stx = squeeze(phiid_all_beta_coup_ccs(14,:,:));
-		all_atoms_beta_coup_ccs.sty = squeeze(phiid_all_beta_coup_ccs(15,:,:));
-		all_atoms_beta_coup_ccs.sts = squeeze(phiid_all_beta_coup_ccs(16,:,:));
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_theta');
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_theta');
 		
-		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs');
-		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi');
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_cos_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_cos_theta');
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_cos_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_cos_theta');
+
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_sync');
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_sync');
+		
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_bin_sync');
+		save([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_bin_sync');
 
 		%% phiid-based synergistic/emergent capacity, downward causation, causal decoupling
 
@@ -377,69 +417,99 @@ for q = 1:length(all_npoints);
 		% {12} --> {1} +
 		% {12} --> {2}
 		
-		% synergistic capacity
-		synergy_capacity_ccs = all_atoms_beta_coup_ccs.str + ...
-			all_atoms_beta_coup_ccs.stx + all_atoms_beta_coup_ccs.sty + all_atoms_beta_coup_ccs.sts;
-		
-		downward_causation_ccs = all_atoms_beta_coup_ccs.str + all_atoms_beta_coup_ccs.stx + all_atoms_beta_coup_ccs.sty;
-		
-		synergy_capacity_mmi = all_atoms_beta_coup_mmi.str + ...
-			all_atoms_beta_coup_mmi.stx + all_atoms_beta_coup_mmi.sty + all_atoms_beta_coup_mmi.sts;
-		
-		downward_causation_mmi = all_atoms_beta_coup_mmi.str + all_atoms_beta_coup_mmi.stx + all_atoms_beta_coup_mmi.sty;
-		
-		causal_decoupling_ccs = synergy_capacity_ccs - downward_causation_ccs;
-		causal_decoupling_mmi = synergy_capacity_mmi - downward_causation_mmi;
+		% causal emergence
+
+		[ce_mmi_theta, ...
+		dc_mmi_theta, ...
+		cd_mmi_theta, ...
+		ce_ccs_theta, ...
+		dc_ccs_theta, ...
+		cd_ccs_theta] = phiid_causal_emergence(all_atoms_beta_coup_mmi_theta, all_atoms_beta_coup_ccs_theta);
+
+		[ce_mmi_cos_theta, ...
+		dc_mmi_cos_theta, ...
+		cd_mmi_cos_theta, ...
+		ce_ccs_cos_theta, ...
+		dc_ccs_cos_theta, ...
+		cd_ccs_cos_theta] = phiid_causal_emergence(all_atoms_beta_coup_mmi_cos_theta, all_atoms_beta_coup_ccs_cos_theta);
+
+		[ce_mmi_sync, ...
+		dc_mmi_sync, ...
+		cd_mmi_sync, ...
+		ce_ccs_sync, ...
+		dc_ccs_sync, ...
+		cd_ccs_sync] = phiid_causal_emergence(all_atoms_beta_coup_mmi_sync, all_atoms_beta_coup_ccs_sync);
+
+		[ce_mmi_bin_sync, ...
+		dc_mmi_bin_sync, ...
+		cd_mmi_bin_sync, ...
+		ce_ccs_bin_sync, ...
+		dc_ccs_bin_sync, ...
+		cd_ccs_bin_sync] = phiid_causal_emergence(all_atoms_beta_coup_mmi_bin_sync, all_atoms_beta_coup_ccs_bin_sync);
 		
 		% save variables in a struct
-		emergence_ccs = [];
-		emergence_mmi = [];
+
+		[ce_ccs, ce_mmi, ce_practical] = store_emergence_in_struct2(...
+			ce_mmi_theta, ce_mmi_cos_theta, ce_mmi_sync, ce_mmi_bin_sync,...
+			cd_mmi_theta, cd_mmi_cos_theta, cd_mmi_sync, cd_mmi_bin_sync,...
+			dc_mmi_theta, dc_mmi_cos_theta, dc_mmi_sync, dc_mmi_bin_sync, ...
+			ce_ccs_theta, ce_ccs_cos_theta, ce_ccs_sync, ce_ccs_bin_sync,...
+			cd_ccs_theta, cd_ccs_cos_theta, cd_ccs_sync, cd_ccs_bin_sync,...
+			dc_ccs_theta, dc_ccs_cos_theta, dc_ccs_sync, dc_ccs_bin_sync, ...
+			ce_pract_sigma_chi_micro_theta, ce_pract_sigma_chi_micro_cos_theta, ce_pract_sigma_chi_micro_sync, ce_pract_sigma_chi_micro_bin_sync,...
+			cd_pract_sigma_chi_micro_theta, cd_pract_sigma_chi_micro_cos_theta, cd_pract_sigma_chi_micro_sync, cd_pract_sigma_chi_micro_bin_sync,...
+			dc_pract_sigma_chi_micro_theta, dc_pract_sigma_chi_micro_cos_theta, dc_pract_sigma_chi_micro_sync, dc_pract_sigma_chi_micro_bin_sync, ...
+			ce_pract_pair_sync_micro_theta, ce_pract_pair_sync_micro_cos_theta, ce_pract_pair_sync_micro_sync, ce_pract_pair_sync_micro_bin_sync,...
+			cd_pract_pair_sync_micro_theta, cd_pract_pair_sync_micro_cos_theta, cd_pract_pair_sync_micro_sync, cd_pract_pair_sync_micro_bin_sync,...
+			dc_pract_pair_sync_micro_theta, dc_pract_pair_sync_micro_cos_theta, dc_pract_pair_sync_micro_sync, dc_pract_pair_sync_micro_bin_sync);
 		
-		emergence_ccs.synergy_capacity_ccs = synergy_capacity_ccs;
-		emergence_ccs.causal_decoupling_ccs = causal_decoupling_ccs;
-		emergence_ccs.downward_causation_ccs = downward_causation_ccs;
-		
-		emergence_mmi.synergy_capacity_mmi = synergy_capacity_mmi;
-		emergence_mmi.causal_decoupling_mmi = causal_decoupling_mmi;
-		emergence_mmi.downward_causation_mmi = downward_causation_mmi;
-		
-		save([pathout_data_phiid_ce network '_emergence_ccs_' num2str(npoints) '_' num2str(tau) '.mat'], 'emergence_ccs');
-		save([pathout_data_phiid_ce network '_emergence_mmi_' num2str(npoints) '_' num2str(tau) '.mat'], 'emergence_mmi');
+		save([pathout_data_phiid_ce network '_ce_ccs_' num2str(npoints) '_' num2str(tau) '.mat'], 'ce_ccs');
+		save([pathout_data_phiid_ce network '_ce_mmi_' num2str(npoints) '_' num2str(tau) '.mat'], 'ce_mmi');
+		save([pathout_data_pract_ce network '_ce_pract_' num2str(npoints) '_' num2str(tau) '.mat'], 'ce_practical');
 
 	end 
 	
-	clear emergence_ccs;
-	clear emergence_mmi;
-	clera all_atoms_beta_coup_ccs;
-	clear all_atoms_beta_coup_mmi;
+	clear ce_ccs;
+	clear ce_mmi;
+	clear ce_practical;
+	clear all_atoms_beta_coup_ccs_theta;
+	clear all_atoms_beta_coup_mmi_theta;
+	clear all_atoms_beta_coup_ccs_cos_theta;
+	clear all_atoms_beta_coup_mmi_cos_theta;
+	clear all_atoms_beta_coup_ccs_sync;
+	clear all_atoms_beta_coup_mmi_sync;
+	clear all_atoms_beta_coup_ccs_bin_sync;
+	clear all_atoms_beta_coup_mmi_bin_sync;
+	clear synchrony;
+	clear binarized_synchrony;
 	clear synchronies;
-	clear binarized_synchronies;
+	clear bin_synchronies;
 	clear all_average_corr_theta;
 	clear all_average_cov_theta;
-	clear synergy_capacity_practical_sigma_chi;
-	clear synergy_capacity_practical_pairwise_synchrony;
-	clear downward_causation_practical_sigma_chi;
-	clear downward_causation_practical_pairwise_synchrony;
-	clear causal_decoupling_practical_sigma_chi;
-	clear causal_decoupling_practical_pairwise_synchrony;
-	clear synergy_capacity_practical_sigma_chi_micro_sync;
-	clear synergy_capacity_practical_pairwise_synchrony_micro_sync;
-	clear downward_causation_practical_sigma_chi_micro_sync;
-	clear downward_causation_practical_pairwise_synchrony_micro_sync;
-	clear causal_decoupling_practical_sigma_chi_micro_sync;
-	clear causal_decoupling_practical_pairwise_synchrony_micro_sync;
-	clear synergy_capacity_practical_sigma_chi_micro_sync_bin;
-	clear synergy_capacity_practical_pairwise_synchrony_micro_sync_bin;
-	clear downward_causation_practical_sigma_chi_micro_sync_bin;
-	clear downward_causation_practical_pairwise_synchrony_micro_sync_bin;
-	clear causal_decoupling_practical_sigma_chi_micro_sync_bin;
-	clear causal_decoupling_practical_pairwise_synchrony_micro_sync_bin;
-	clear synergy_capacity_practical_sigma_chi_micro_theta_cos;
-	clear synergy_capacity_practical_pairwise_synchrony_micro_theta_cos;
-	clear downward_causation_practical_sigma_chi_micro_theta_cos;
-	clear downward_causation_practical_pairwise_synchrony_micro_theta_cos;
-	clear causal_decoupling_practical_sigma_chi_micro_theta_cos;
-	clear causal_decoupling_practical_pairwise_synchrony_micro_theta_cos;
+	clear ce_pract_sigma_chi_micro_theta;
+	clear ce_pract_pair_sync_micro_theta;
+	clear dc_pract_sigma_chi_micro_theta;
+	clear dc_pract_pair_sync_micro_theta;
+	clear cd_pract_sigma_chi_micro_theta;
+	clear cd_pract_pair_sync_micro_theta;
+	clear ce_pract_sigma_chi_micro_sync;
+	clear ce_pract_pair_sync_micro_sync;
+	clear dc_pract_sigma_chi_micro_sync;
+	clear dc_pract_pair_sync_micro_sync;
+	clear cd_pract_sigma_chi_micro_sync;
+	clear cd_pract_pair_sync_micro_sync;
+	clear ce_pract_sigma_chi_micro_bin_sync;
+	clear ce_pract_pair_sync_micro_bin_sync;
+	clear dc_pract_sigma_chi_micro_bin_sync;
+	clear dc_pract_pair_sync_micro_bin_sync;
+	clear cd_pract_sigma_chi_micro_bin_sync;
+	clear cd_pract_pair_sync_micro_bin_sync;
+	clear ce_pract_sigma_chi_micro_cos_theta;
+	clear ce_pract_pair_sync_micro_cos_theta;
+	clear dc_pract_sigma_chi_micro_cos_theta;
+	clear dc_pract_pair_sync_micro_cos_theta;
+	clear cd_pract_sigma_chi_micro_cos_theta;
+	clear cd_pract_pair_sync_micro_cos_theta;
 	
 end 
 
@@ -455,75 +525,115 @@ for q = 1:length(all_npoints);
 	for z = 1:length(taus);
 		tau = taus(z);
 		
-		load([pathout_data_phiid_ce network '_emergence_ccs_' num2str(npoints) '_' num2str(tau) '.mat'], 'emergence_ccs');
-		load([pathout_data_phiid_ce network '_emergence_mmi_' num2str(npoints) '_' num2str(tau) '.mat'], 'emergence_mmi');
-		load([pathout_data_practical_ce network '_emergence_practical_' num2str(npoints) '_' num2str(tau) '.mat'], 'emergence_practical');
-		load([pathout_data_average_corr network '_all_average_corr_theta_' num2str(npoints) '.mat'], 'all_average_corr_thetas');
-		load([pathout_data_average_cov network '_all_average_cov_theta_' num2str(npoints) '.mat'], 'all_average_cov_thetas');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_theta');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_theta');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_cos_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_cos_theta');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_cos_theta_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_cos_theta');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_sync');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_sync');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_ccs_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_ccs_bin_sync');
+		load([pathout_data_phiid_ce network '_all_atoms_beta_coup_mmi_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], 'all_atoms_beta_coup_mmi_bin_sync');
 		
-		synergy_capacity_mmi = emergence_mmi.synergy_capacity_mmi;
-		downward_causation_mmi = emergence_mmi.downward_causation_mmi;
-		causal_decoupling_mmi = emergence_mmi.causal_decoupling_mmi;
-		synergy_capacity_ccs = emergence_ccs.synergy_capacity_ccs;
-		downward_causation_ccs = emergence_ccs.downward_causation_ccs;
-		causal_decoupling_ccs = emergence_ccs.causal_decoupling_ccs;
+		load([pathout_data_phiid_ce network '_ce_ccs_' num2str(npoints) '_' num2str(tau) '.mat'], 'ce_ccs');
+		load([pathout_data_phiid_ce network '_ce_mmi_' num2str(npoints) '_' num2str(tau) '.mat'], 'ce_mmi');
+		load([pathout_data_pract_ce network '_ce_pract_' num2str(npoints) '_' num2str(tau) '.mat'], 'ce_practical');
+		load([pathout_data_average_corr network '_all_average_corr_theta_' num2str(npoints) '.mat'], 'all_average_corr_theta');
+		load([pathout_data_average_cov network '_all_average_cov_theta_' num2str(npoints) '.mat'], 'all_average_cov_theta');
 		
-		synergy_capacity_practical_sigma_chi = emergence_practical.synergy_capacity_practical_sigma_chi;
-		downward_causation_practical_sigma_chi = emergence_practical.downward_causation_practical_sigma_chi;
-		causal_decoupling_practical_sigma_chi = emergence_practical.causal_decoupling_practical_sigma_chi;
-		synergy_capacity_practical_pairwise_synchrony = emergence_practical.synergy_capacity_practical_pairwise_synchrony;
-		downward_causation_practical_pairwise_synchrony = emergence_practical.downward_causation_practical_pairwise_synchrony;
-		causal_decoupling_practical_pairwise_synchrony = emergence_practical.causal_decoupling_practical_pairwise_synchrony;
 		
-		synergy_capacity_practical_sigma_chi_micro_sync = emergence_practical.synergy_capacity_practical_sigma_chi_micro_sync;
-		causal_decoupling_practical_sigma_chi_micro_sync = emergence_practical.causal_decoupling_practical_sigma_chi_micro_sync;
-		downward_causation_practical_sigma_chi_micro_sync = emergence_practical.downward_causation_practical_sigma_chi_micro_sync;
-		synergy_capacity_practical_pairwise_synchrony_micro_sync = emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_sync;
-		causal_decoupling_practical_pairwise_synchrony_micro_sync = emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_sync;
-		downward_causation_practical_pairwise_synchrony_micro_sync = emergence_practical.downward_causation_practical_pairwise_synchrony_micro_sync;
+		ce_ccs.ce_ccs_theta = ce_ccs_theta;
+		ce_ccs.cd_ccs_theta = cd_ccs_theta;
+		ce_ccs.dc_ccs_theta = dc_ccs_theta;
+		ce_mmi.ce_mmi_theta = ce_mmi_theta;
+		ce_mmi.cd_mmi_theta = cd_mmi_theta;
+		ce_mmi.dc_mmi_theta = dc_mmi_theta;
 		
-		synergy_capacity_practical_sigma_chi_micro_sync_bin = emergence_practical.synergy_capacity_practical_sigma_chi_micro_sync_bin;
-		causal_decoupling_practical_sigma_chi_micro_sync_bin = emergence_practical.causal_decoupling_practical_sigma_chi_micro_sync_bin;
-		downward_causation_practical_sigma_chi_micro_sync_bin = emergence_practical.downward_causation_practical_sigma_chi_micro_sync_bin;
-		synergy_capacity_practical_pairwise_synchrony_micro_sync_bin = emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_sync_bin;
-		causal_decoupling_practical_pairwise_synchrony_micro_sync_bin = emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_sync_bin;
-		downward_causation_practical_pairwise_synchrony_micro_sync_bin = emergence_practical.downward_causation_practical_pairwise_synchrony_micro_sync_bin ;
+		ce_ccs.ce_ccs_cos_theta = ce_ccs_cos_theta;
+		ce_ccs.cd_ccs_cos_theta = cd_ccs_cos_theta;
+		ce_ccs.dc_ccs_cos_theta = dc_ccs_cos_theta;
+		ce_mmi.ce_mmi_cos_theta = ce_mmi_cos_theta;
+		ce_mmi.cd_mmi_cos_theta = cd_mmi_cos_theta;
+		ce_mmi.dc_mmi_cos_theta = dc_mmi_cos_theta;
 		
-		synergy_capacity_practical_sigma_chi_micro_theta_cos = emergence_practical.synergy_capacity_practical_sigma_chi_micro_theta_cos;
-		causal_decoupling_practical_sigma_chi_micro_theta_cos = emergence_practical.causal_decoupling_practical_sigma_chi_micro_theta_cos;
-		downward_causation_practical_sigma_chi_micro_theta_cos = emergence_practical.downward_causation_practical_sigma_chi_micro_theta_cos;
-		synergy_capacity_practical_pairwise_synchrony_micro_theta_cos = emergence_practical.synergy_capacity_practical_pairwise_synchrony_micro_theta_cos;
-		causal_decoupling_practical_pairwise_synchrony_micro_theta_cos = emergence_practical.causal_decoupling_practical_pairwise_synchrony_micro_theta_cos;
-		downward_causation_practical_pairwise_synchrony_micro_theta_cos = emergence_practical.downward_causation_practical_pairwise_synchrony_micro_theta_cos;
+		ce_ccs.ce_ccs_sync = ce_ccs_sync;
+		ce_ccs.cd_ccs_sync = cd_ccs_sync;
+		ce_ccs.dc_ccs_sync = dc_ccs_sync;
+		ce_mmi.ce_mmi_sync = ce_mmi_sync;
+		ce_mmi.cd_mmi_sync = cd_mmi_sync;
+		ce_mmi.dc_mmi_sync = dc_mmi_sync;
+		
+		ce_ccs.ce_ccs_bin_sync = ce_ccs_bin_sync;
+		ce_ccs.cd_ccs_bin_sync = cd_ccs_bin_sync;
+		ce_ccs.dc_ccs_bin_sync = dc_ccs_bin_sync;
+		ce_mmi.ce_mmi_bin_sync = ce_mmi_bin_sync;
+		ce_mmi.cd_mmi_bin_sync = cd_mmi_bin_sync;
+		ce_mmi.dc_mmi_bin_sync = dc_mmi_bin_sync;
+		
+
+		ce_pract_sigma_chi_micro_theta= ce_practical.ce_pract_sigma_chi_micro_theta;
+		dc_pract_sigma_chi_micro_theta = ce_practical.dc_pract_sigma_chi_micro_theta;
+		cd_pract_sigma_chi_micro_theta = ce_practical.cd_pract_sigma_chi_micro_theta;
+		ce_pract_pair_sync_micro_theta = ce_practical.ce_pract_pair_sync_micro_theta;
+		dc_pract_pair_sync_micro_theta = ce_practical.dc_pract_pair_sync_micro_theta;
+		cd_pract_pair_sync_micro_theta = ce_practical.cd_pract_pair_sync_micro_theta;
+		
+		ce_pract_sigma_chi_micro_sync = ce_practical.ce_pract_sigma_chi_micro_sync;
+		cd_pract_sigma_chi_micro_sync = ce_practical.cd_pract_sigma_chi_micro_sync;
+		dc_pract_sigma_chi_micro_sync = ce_practical.dc_pract_sigma_chi_micro_sync;
+		ce_pract_pair_sync_micro_sync = ce_practical.ce_pract_pair_sync_micro_sync;
+		cd_pract_pair_sync_micro_sync = ce_practical.cd_pract_pair_sync_micro_sync;
+		dc_pract_pair_sync_micro_sync = ce_practical.dc_pract_pair_sync_micro_sync;
+		
+		ce_pract_sigma_chi_micro_bin_sync = ce_practical.ce_pract_sigma_chi_micro_bin_sync;
+		cd_pract_sigma_chi_micro_bin_sync = ce_practical.cd_pract_sigma_chi_micro_bin_sync;
+		dc_pract_sigma_chi_micro_bin_sync = ce_practical.dc_pract_sigma_chi_micro_bin_sync;
+		ce_pract_pair_sync_micro_bin_sync = ce_practical.ce_pract_pair_sync_micro_bin_sync;
+		cd_pract_pair_sync_micro_bin_sync = ce_practical.cd_pract_pair_sync_micro_bin_sync;
+		dc_pract_pair_sync_micro_bin_sync = ce_practical.dc_pract_pair_sync_micro_bin_sync ;
+		
+		ce_pract_sigma_chi_micro_cos_theta = ce_practical.ce_pract_sigma_chi_micro_cos_theta;
+		cd_pract_sigma_chi_micro_cos_theta = ce_practical.cd_pract_sigma_chi_micro_cos_theta;
+		dc_pract_sigma_chi_micro_cos_theta = ce_practical.dc_pract_sigma_chi_micro_cos_theta;
+		ce_pract_pair_sync_micro_cos_theta = ce_practical.ce_pract_pair_sync_micro_cos_theta;
+		cd_pract_pair_sync_micro_cos_theta = ce_practical.cd_pract_pair_sync_micro_cos_theta;
+		dc_pract_pair_sync_micro_cos_theta = ce_practical.dc_pract_pair_sync_micro_cos_theta;
 		
 		% axes ticks
-		if sim_index == '3'
-			x_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ...
-				'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
-			y_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ...
-				'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
-		else
-			x_axis = {'0.0', '', '0.1', '', '0.2', '', '0.3', '', '', '0.4'};
-			y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
-		end
+		x_axis = {'0.0', '', '0.1', '', '0.2', '', '0.3', '', '', '0.4'};
+		y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
+
 
 		%% double-redundancy & double-synergy
 		
 		% {
 		% heatmaps using imagesc()
 		
-		atoms = {all_atoms_beta_coup_ccs.rtr, ...
-			all_atoms_beta_coup_mmi.rtr, ...
-			all_atoms_beta_coup_ccs.sts, ...
-			all_atoms_beta_coup_mmi.sts};
-		file_names = {'_all_beta_coup_ccs_rtr', ...
-			'_all_beta_coup_mmi_rtr', ...
-			'_all_beta_coup_ccs_sts', ...
-			'_all_beta_coup_mmi_sts'};
-		titles = {{['double-redundancy ccs'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['double-redundancy mmi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['double-synergy ccs'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['double-synergy mmi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
+		atoms = {all_atoms_beta_coup_ccs_theta.rtr, ...
+			all_atoms_beta_coup_mmi_theta.rtr, ...
+			all_atoms_beta_coup_ccs_cos_theta.rtr, ...
+			all_atoms_beta_coup_mmi_cos_theta.rtr, ...
+			all_atoms_beta_coup_ccs_sync.rtr, ...
+			all_atoms_beta_coup_mmi_sync.rtr, ...
+			all_atoms_beta_coup_ccs_bin_sync.rtr, ...
+			all_atoms_beta_coup_mmi_bin_sync.rtr};
+		
+		file_names = {'_all_beta_coup_ccs_rtr_theta', ...
+			'_all_beta_coup_mmi_rtr_theta', ...
+			'_all_beta_coup_ccs_rtr_cos_theta', ...
+			'_all_beta_coup_mmi_rtr_cos_theta', ...
+			'_all_beta_coup_ccs_rtr_sync', ...
+			'_all_beta_coup_mmi_rtr_sync', ...
+			'_all_beta_coup_ccs_rtr_bin_sync', ...
+			'_all_beta_coup_mmi_rtr_bin_sync'};
+		
+		titles = {{['double-redundancy ccs micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['double-redundancy mmi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['double-redundancy ccs micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['double-redundancy mmi micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['double-redundancy ccs micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['double-redundancy mmi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['double-redundancy ccs micro bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['double-redundancy mmi micro bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
 		
 		% cmin = min([min(atoms{1}(:)), min(atoms{2}(:)), min(atoms{3}(:)), min(atoms{4}(:))]);
 		% cmax = max([max(atoms{1}(:)), max(atoms{2}(:)), max(atoms{3}(:)), max(atoms{4}(:))]);
@@ -535,9 +645,8 @@ for q = 1:length(all_npoints);
 			imagesc(atoms{i});
 			colormap(bluewhitered);
 			colorbar;
-			
-			hColorbar = colorbar;
-			set(hColorbar, 'Ticks', sort([hColorbar.Limits, hColorbar.Ticks]))
+			%hColorbar = colorbar;
+			%set(hColorbar, 'Ticks', sort([hColorbar.Limits, hColorbar.Ticks]))
 			
 			xticks(1:size(x_axis, 2));
 			yticks(1:size(y_axis, 2));
@@ -546,13 +655,8 @@ for q = 1:length(all_npoints);
 			yticklabels(y_axis);
 			xticklabels(x_axis);
 			
-			if sim_index == '3';
-				ylabel('zero coupling');
-				xlabel('zero noise correlation');
-			else
-				ylabel('A');
-				xlabel('beta');
-			end
+			ylabel('A');
+			xlabel('beta');
 			
 			title(titles{i});
 			exportgraphics(gcf, [pathout_plots network file_names{i} '.png']);
@@ -568,104 +672,160 @@ for q = 1:length(all_npoints);
 		% {
 		% heatmaps using matlab built-in function:
 		
-		atoms = {synergy_capacity_ccs, ...
-			synergy_capacity_mmi, ...
-			synergy_capacity_practical_pairwise_synchrony, ...
-			synergy_capacity_practical_sigma_chi, ...
-			synergy_capacity_practical_pairwise_synchrony_micro_sync_bin, ...
-			synergy_capacity_practical_sigma_chi_micro_sync_bin, ...
-			synergy_capacity_practical_pairwise_synchrony_micro_sync, ...
-			synergy_capacity_practical_sigma_chi_micro_sync, ...
-			synergy_capacity_practical_pairwise_synchrony_micro_theta_cos, ...
-			synergy_capacity_practical_sigma_chi_micro_theta_cos, ...
-			downward_causation_ccs, ...
-			downward_causation_mmi, ...
-			downward_causation_practical_pairwise_synchrony, ...
-			downward_causation_practical_sigma_chi, ...
-			downward_causation_practical_pairwise_synchrony_micro_sync_bin, ...
-			downward_causation_practical_sigma_chi_micro_sync_bin, ...
-			downward_causation_practical_pairwise_synchrony_micro_sync, ...
-			downward_causation_practical_sigma_chi_micro_sync, ...
-			downward_causation_practical_pairwise_synchrony_micro_theta_cos, ...
-			downward_causation_practical_sigma_chi_micro_theta_cos, ...
-			causal_decoupling_ccs, ...
-			causal_decoupling_mmi, ...
-			causal_decoupling_practical_pairwise_synchrony, ...
-			causal_decoupling_practical_sigma_chi, ...
-			causal_decoupling_practical_pairwise_synchrony_micro_sync_bin, ...
-			causal_decoupling_practical_sigma_chi_micro_sync_bin, ...
-			causal_decoupling_practical_pairwise_synchrony_micro_sync, ...
-			causal_decoupling_practical_sigma_chi_micro_sync, ...
-			causal_decoupling_practical_pairwise_synchrony_micro_theta_cos, ...
-			causal_decoupling_practical_sigma_chi_micro_theta_cos, ...
-			all_average_cov_thetas, ...
-			all_average_corr_thetas};
+		atoms = {ce_ccs_theta, ...
+			ce_mmi_theta, ...
+			ce_ccs_cos_theta, ...
+			ce_mmi_cos_theta, ...
+			ce_ccs_sync, ...
+			ce_mmi_sync, ...
+			ce_ccs_bin_sync, ...
+			ce_mmi_bin_sync, ...
+			ce_pract_pair_sync_micro_theta, ...
+			ce_pract_sigma_chi_micro_theta, ...
+			ce_pract_pair_sync_micro_bin_sync, ...
+			ce_pract_sigma_chi_micro_bin_sync, ...
+			ce_pract_pair_sync_micro_sync, ...
+			ce_pract_sigma_chi_micro_sync, ...
+			ce_pract_pair_sync_micro_cos_theta, ...
+			ce_pract_sigma_chi_micro_cos_theta, ...
+			dc_ccs_theta, ...
+			dc_mmi_theta, ...
+			dc_ccs_cos_theta, ...
+			dc_mmi_cos_theta, ...
+			dc_ccs_sync, ...
+			dc_mmi_sync, ...
+			dc_ccs_bin_sync, ...
+			dc_mmi_bin_sync, ...
+			dc_pract_pair_sync_micro_theta, ...
+			dc_pract_sigma_chi_micro_theta, ...
+			dc_pract_pair_sync_micro_bin_sync, ...
+			dc_pract_sigma_chi_micro_bin_sync, ...
+			dc_pract_pair_sync_micro_sync, ...
+			dc_pract_sigma_chi_micro_sync, ...
+			dc_pract_pair_sync_micro_cos_theta, ...
+			dc_pract_sigma_chi_micro_cos_theta, ...
+			cd_ccs_theta, ...
+			cd_mmi_theta, ...
+			cd_ccs_cos_theta, ...
+			cd_mmi_cos_theta, ...
+			cd_ccs_sync, ...
+			cd_mmi_sync, ...
+			cd_ccs_bin_sync, ...
+			cd_mmi_bin_sync, ...
+			cd_pract_pair_sync_micro_theta, ...
+			cd_pract_sigma_chi_micro_theta, ...
+			cd_pract_pair_sync_micro_bin_sync, ...
+			cd_pract_sigma_chi_micro_bin_sync, ...
+			cd_pract_pair_sync_micro_sync, ...
+			cd_pract_sigma_chi_micro_sync, ...
+			cd_pract_pair_sync_micro_cos_theta, ...
+			cd_pract_sigma_chi_micro_cos_theta, ...
+			all_average_cov_theta, ...
+			all_average_corr_theta};
 		
-		file_names = {'_all_beta_coup_ccs_synergy_capacity', ...
-			'_all_beta_coup_mmi_synergy_capacity', ...
-			'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony', ...
-			'_all_beta_coup_practical_synergy_capacity_sigma_chi', ...
-			'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony_micro_sync_bin', ...
-			'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_sync_bin', ...
-			'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony_micro_sync', ...
-			'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_sync', ...
-			'_all_beta_coup_practical_synergy_capacity_pairwise_synchrony_micro_theta_cos', ...
-			'_all_beta_coup_practical_synergy_capacity_sigma_chi_micro_theta_cos', ...
-			'_all_beta_coup_ccs_downward_causation', ...
-			'_all_beta_coup_mmi_downward_causation', ...
-			'_all_beta_coup_practical_downward_causation_pairwise_synchrony', ...
-			'_all_beta_coup_practical_downward_causation_sigma_chi', ...
-			'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_sync_bin', ...
-			'_all_beta_coup_practical_downward_causation_sigma_chi_micro_sync_bin', ...
-			'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_sync', ...
-			'_all_beta_coup_practical_downward_causation_sigma_chi_micro_sync', ...
-			'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_theta_cos', ...
-			'_all_beta_coup_practical_downward_causation_sigma_chi_micro_theta_cos', ...
-			'_all_beta_coup_ccs_causal_decoupling', ...
-			'_all_beta_coup_mmi_causal_decoupling', ...
-			'_all_beta_coup_practical_causal_decoupling_pairwise_synchrony', ...
-			'_all_beta_coup_practical_causal_decoupling_sigma_chi', ...
-			'_all_beta_coup_practical_downward_causation_pairwise_synchrony_micro_sync_bin', ...
-			'_all_beta_coup_practical_downward_causation_sigma_chi_micro_sync_bin', ...
-			'_all_beta_coup_practical_causal_decoupling_pairwise_synchrony_micro_sync', ...
-			'_all_beta_coup_practical_causal_decoupling_sigma_chi_micro_sync', ...
-			'_all_beta_coup_practical_causal_decoupling_pairwise_synchrony_micro_theta_cos', ...
-			'_all_beta_coup_practical_causal_decoupling_sigma_chi_micro_theta_cos', ...
+		file_names = {'_all_beta_coup_ccs_ce_theta', ...
+			'_all_beta_coup_mmi_ce_theta', ...
+			'_all_beta_coup_ccs_ce_cos_theta', ...
+			'_all_beta_coup_mmi_ce_cos_theta', ...
+			'_all_beta_coup_ccs_ce_sync', ...
+			'_all_beta_coup_mmi_ce_sync', ...
+			'_all_beta_coup_ccs_ce_bin_sync', ...
+			'_all_beta_coup_mmi_ce_bin_sync', ...
+			'_all_beta_coup_pract_ce_pair_sync_micro_theta', ...
+			'_all_beta_coup_pract_ce_sigma_chi_micro_theta', ...
+			'_all_beta_coup_pract_ce_pair_sync_micro_bin_sync', ...
+			'_all_beta_coup_pract_ce_sigma_chi_micro_bin_sync', ...
+			'_all_beta_coup_pract_ce_pair_sync_micro_sync', ...
+			'_all_beta_coup_pract_ce_sigma_chi_micro_sync', ...
+			'_all_beta_coup_pract_ce_pair_sync_micro_cos_theta', ...
+			'_all_beta_coup_pract_ce_sigma_chi_micro_cos_theta', ...
+			'_all_beta_coup_ccs_dc_theta', ...
+			'_all_beta_coup_mmi_dc_theta', ...
+			'_all_beta_coup_ccs_dc_cos_theta', ...
+			'_all_beta_coup_mmi_dc_cos_theta', ...
+			'_all_beta_coup_ccs_dc_sync', ...
+			'_all_beta_coup_mmi_dc_sync', ...
+			'_all_beta_coup_ccs_dc_bin_sync', ...
+			'_all_beta_coup_mmi_dc_bin_sync', ...
+			'_all_beta_coup_pract_dc_pair_sync_micro_theta', ...
+			'_all_beta_coup_pract_dc_sigma_chi_micro_theta', ...
+			'_all_beta_coup_pract_dc_pair_sync_micro_bin_sync', ...
+			'_all_beta_coup_pract_dc_sigma_chi_micro_bin_sync', ...
+			'_all_beta_coup_pract_dc_pair_sync_micro_sync', ...
+			'_all_beta_coup_pract_dc_sigma_chi_micro_sync', ...
+			'_all_beta_coup_pract_dc_pair_sync_micro_cos_theta', ...
+			'_all_beta_coup_pract_dc_sigma_chi_micro_cos_theta', ...
+			'_all_beta_coup_ccs_cd_theta', ...
+			'_all_beta_coup_mmi_cd_theta', ...
+			'_all_beta_coup_ccs_cd_cos_theta', ...
+			'_all_beta_coup_mmi_cd_cos_theta', ...
+			'_all_beta_coup_ccs_cd_sync', ...
+			'_all_beta_coup_mmi_cd_sync', ...
+			'_all_beta_coup_ccs_cd_bin_sync', ...
+			'_all_beta_coup_mmi_cd_bin_sync', ...
+			'_all_beta_coup_pract_cd_pair_sync_micro_theta', ...
+			'_all_beta_coup_pract_cd_sigma_chi_micro_theta', ...
+			'_all_beta_coup_pract_dc_pair_sync_micro_bin_sync', ...
+			'_all_beta_coup_pract_dc_sigma_chi_micro_bin_sync', ...
+			'_all_beta_coup_pract_cd_pair_sync_micro_sync', ...
+			'_all_beta_coup_pract_cd_sigma_chi_micro_sync', ...
+			'_all_beta_coup_pract_cd_pair_sync_micro_cos_theta', ...
+			'_all_beta_coup_pract_cd_sigma_chi_micro_cos_theta', ...
 			'_all_beta_coup_average_cov_theta', ...
 			'_all_beta_coup_average_corr_theta'};
 		
-		titles = {{['synergy capacity ccs'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity mmi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical pairwise synchrony'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical sigma chi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical pairwise synchrony micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical sigma chi micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical pairwise synchrony micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical sigma chi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical pairwise synchrony micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical sigma chi  micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['downward causation ccs'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['downward causation mmi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['downward causation practical pairwise synchrony'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['downward causation practical sigma chi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+		titles = {{['causal emergence ccs micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence mmi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence ccs micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence mmi micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence ccs micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence mmi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence ccs micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence mmi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence ccs micro bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence mmi micro bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical pairwise synchrony micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical sigma chi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical pairwise synchrony micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical sigma chi micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical pairwise synchrony micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical sigma chi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical pairwise synchrony micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal emergence practical sigma chi  micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation ccs micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation mmi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation ccs micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation mmi micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation ccs micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation mmi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation ccs micro bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation mmi micro bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation practical pairwise synchrony micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation practical sigma chi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical pairwise synchrony micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical sigma chi micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical pairwise synchrony micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical sigma chi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical pairwise synchrony micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical sigma chi  micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['causal decoupling ccs'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['causal decoupling mmi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['causal decoupling practical pairwise synchrony'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['causal decoupling practical sigma chi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling ccs micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling mmi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling ccs micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling mmi micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling ccs micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling mmi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling ccs micro bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling mmi bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling practical pairwise synchrony micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling practical sigma chi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical pairwise synchrony micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical sigma chi micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical pairwise synchrony micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical sigma chi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical pairwise synchrony micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical sigma chi  micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['average covariance thetas'] ['npoints = ' num2str(npoints)]}, ...
-			{['average correlation thetas'] ['npoints = ' num2str(npoints)]}};
+			{['average covariance theta'] ['npoints = ' num2str(npoints)]}, ...
+			{['average correlation theta'] ['npoints = ' num2str(npoints)]}};
 
 		for i = 1:size(atoms,2)
 			
@@ -683,17 +843,11 @@ for q = 1:length(all_npoints);
 			
 			set(gca,'TickLength',[0 0])
 			yticklabels(y_axis);
-			xticklabels(x_axis);
-			
-			if sim_index == '3'
-				ylabel('zero coupling');
-				xlabel('zero noise correlation');
-				
-			else
-				ylabel('A');
-				xlabel('beta');
-			end
-			
+			xticklabels(x_axis);	
+
+			ylabel('A');
+			xlabel('beta');
+
 			title(titles{i});
 			exportgraphics(gcf, [pathout_plots network file_names{i} '_' num2str(npoints) '_' num2str(tau) '.png']);
 			
@@ -713,40 +867,40 @@ for p = 1:length(A);
 
 g = A(p);
 
-synergy_capacity_ccs_temp = emergence_ccs.synergy_capacity_ccs(g,:);
+ce_ccs_temp = ce_ccs.ce_ccs(g,:);
 figure;
-scatter(beta_vec, synergy_capacity_ccs_temp , 60, 'filled');
-title(['emergence capcity ccs, A = ' num2str(coupling_vec(g))]);
-ylabel('emergence capacity ccs');
+scatter(beta_vec, ce_ccs_temp , 60, 'filled');
+title(['causal emergence ccs, A = ' num2str(coupling_vec(g))]);
+ylabel('causal emergemce ccs');
 xlabel('beta');
 
 a_string = num2str(coupling_vec(g));
 a_string = a_string(3:end);
-exportgraphics(gcf, [pathout_plots_phiid_ce network '_synergy_capacity_ccs_' a_string '.png']);
+exportgraphics(gcf, [pathout_plots_phiid_ce network '_ce_ccs_' a_string '.png']);
 
-synergy_capacity_mmi_temp = emergence_mmi.synergy_capacity_mmi(g,:);
+ce_mmi_temp = emergence_mmi.ce_mmi(g,:);
 figure;
-scatter(beta_vec, synergy_capacity_mmi_temp, 60, 'filled');
-title(['emergence capacity mmi, A = ' num2str(coupling_vec(g))]);
-ylabel('emergence capacity mmi');
+scatter(beta_vec, ce_mmi_temp, 60, 'filled');
+title(['causal emergence mmi, A = ' num2str(coupling_vec(g))]);
+ylabel('causal emergence mmi');
 xlabel('beta');
-exportgraphics(gcf, [pathout_plots_phiid_ce network '_synergy_capacity_mmi_' a_string '.png']);
+exportgraphics(gcf, [pathout_plots_phiid_ce network '_ce_mmi_' a_string '.png']);
 
-synergy_capacity_practical_pairwise_synchrony_temp = emergence_practical.synergy_capacity_practical_pairwise_synchrony(g,:);
+ce_pract_pair_sync_micro_theta_temp = ce_practical.ce_pract_pair_sync_micro_theta(g,:);
 figure;
-scatter(beta_vec, synergy_capacity_practical_pairwise_synchrony_temp, 60, 'filled');
-title(['emergence capacity practical, A = ' num2str(coupling_vec(g))]);
-ylabel('emergence capacity practical pairwise synchrony');
+scatter(beta_vec, ce_pract_pair_sync_micro_theta_temp, 60, 'filled');
+title(['causal emergence practical, A = ' num2str(coupling_vec(g))]);
+ylabel('causal emergence practical pairwise synchrony');
 xlabel('beta');
-exportgraphics(gcf, [pathout_plots_practical_ce network '_synergy_capacity_practical_pairwise_synchrony_' a_string '.png']);
+exportgraphics(gcf, [pathout_plots_practical_ce network '_ce_pract_pair_sync_micro_theta_' a_string '.png']);
 
-synergy_capacity_practical_sigma_chi_temp = emergence_practical.synergy_capacity_practical_sigma_chi(g,:);
+ce_pract_sigma_chi_micro_theta_temp = ce_practical.ce_pract_sigma_chi_micro_theta(g,:);
 figure;
-scatter(beta_vec, synergy_capacity_practical_sigma_chi_temp, 60, 'filled');
-title(['emergence capacity practical sigma chi, A = ' num2str(coupling_vec(g))]);
-ylabel('emergence capacity practical sigma chi');
+scatter(beta_vec, ce_pract_sigma_chi_micro_theta_temp, 60, 'filled');
+title(['causal emergence practical sigma chi, A = ' num2str(coupling_vec(g))]);
+ylabel('causal emergence practical sigma chi');
 xlabel('beta');
-exportgraphics(gcf, [pathout_plots_practical_ce network '_synergy_capacity_practical_sigma_chi_' a_string '.png']);
+exportgraphics(gcf, [pathout_plots_pract_ce network '_ce_pract_sigma_chi_micro_theta_' a_string '.png']);
 
 load([pathout_data_practical_ce network '_synchronies_ '  a_string '.mat'], 'synchronies');
 %load([PATHOUT3 network '_synchronies_ '  '21313' '_' sim_index '.mat'], 'synchronies');

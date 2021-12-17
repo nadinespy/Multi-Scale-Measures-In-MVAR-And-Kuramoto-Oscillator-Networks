@@ -21,6 +21,8 @@ javaaddpath('infodynamics.jar');
 
 pathout_data = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/'];
+pathout_data_sim_time_series = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/sim_time_series/'];
 pathout_data_synchronies = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
 	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/synchronies/'];
 pathout_data_binarized_synchronies = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
@@ -52,7 +54,7 @@ pathout_plots_distributions = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_
 
 % time-lag and number of data points in time-series (same for all simulations)
 all_npoints = [2000]; %, 10000];
-taus = [1, 100];
+taus = [10]; %, 1];
 
 % simulation method (options: statdata_coup_errors1(), statdata_coup_errors2(), statdata_random(), chimera_metastable_model())
 sim_method = @chimera_metastable_model;
@@ -141,21 +143,27 @@ for q = 1:length(all_npoints);
 	npoints = all_npoints(q);
 	disp(q)
 	
-	for z = 1:length(taus);
-		tau = taus(z);
-		disp(z)
-		
-		
-		for i = 1:1%size(coupling_matrices, 3);
-			disp(i)
+	for i = 1:size(coupling_matrices, 3);
+		disp(i)
+		coupling_string = num2str(coupling_vec(i));
+		coupling_string = coupling_string(3:end);
 			
-			coupling_matrix = coupling_matrices(:,:,i);
+		coupling_matrix = coupling_matrices(:,:,i);
 			
-			for j = 1:length(beta_vec)
+		for j = 1:length(beta_vec)
+			disp(j)
+
+			beta = beta_vec(j);
+			beta_string = num2str(beta);
+			beta_string = beta_string(3:end);
 				
-				beta = beta_vec(j);
+			[thetas, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);
+			save([pathout_data_sim_time_series network '_thetas_' num2str(npoints) '_' coupling_string '_' betastring'.mat'], 'thetas');
+			save([pathout_data_sim_time_series network '_sigma_chi_' num2str(npoints) '_' coupling_string '_' betastring '.mat'], 'sigma_chi');
+			save([pathout_data_sim_time_series network '_synchrony_' num2str(npoints) '_' coupling_string '_' betastring '.mat'], 'synchrony');
 				
-				[thetas, sigma_chi, synchrony] = sim_method(coupling_matrix, npoints, beta, intra_comm_size, n_communities);
+			for z = 1:length(taus);
+				tau = taus(z);
 				
 				% check distributions of a subset of parameters
 				if (((i == 1) && (j == 1)) || ((i == 3) && (j == 3)) || ((i == 7) && (j == 7)) || ((i == 10) && (j == 10)));
@@ -258,8 +266,8 @@ for q = 1:length(all_npoints);
 			
 		end
 		
-		save([pathout_data_average_corr network '_all_average_corr_thetas_' num2str(npoints) '.mat'], 'all_average_corr_theta');
-		save([pathout_data_average_cov network '_all_average_cov_thetas_' num2str(npoints) '.mat'], 'all_average_cov_theta');
+		save([pathout_data_average_corr network '_all_average_corr_theta_' num2str(npoints) '.mat'], 'all_average_corr_theta');
+		save([pathout_data_average_cov network '_all_average_cov_theta_' num2str(npoints) '.mat'], 'all_average_cov_theta');
 		
 		%% storing practical measures for different macro variables in struct files
 		
@@ -333,7 +341,7 @@ end
 
 %% plotting
 
-for q = 1:1 %length(all_npoints);
+for q = 1:length(all_npoints);
 	npoints = all_npoints(q);
 	disp(q)
 	
@@ -341,8 +349,8 @@ for q = 1:1 %length(all_npoints);
 		tau = taus(z);
 		
 		load([pathout_data_practical_ce network '_emergence_practical_' num2str(npoints) '_' num2str(tau) '.mat'], 'emergence_practical');
-		load([pathout_data_average_corr network '_all_average_corr_thetas_' num2str(npoints) '.mat'], 'all_average_corr_theta');
-		load([pathout_data_average_cov network '_all_average_cov_thetas_' num2str(npoints) '.mat'], 'all_average_cov_theta');
+		load([pathout_data_average_corr network '_all_average_corr_theta_' num2str(npoints) '.mat'], 'all_average_corr_theta');
+		load([pathout_data_average_cov network '_all_average_cov_theta_' num2str(npoints) '.mat'], 'all_average_cov_theta');
 		
 		synergy_capacity_practical_sigma_chi = emergence_practical.synergy_capacity_practical_sigma_chi;
 		downward_causation_practical_sigma_chi = emergence_practical.downward_causation_practical_sigma_chi;
@@ -373,16 +381,19 @@ for q = 1:1 %length(all_npoints);
 		downward_causation_practical_pairwise_synchrony_micro_theta_cos = emergence_practical.downward_causation_practical_pairwise_synchrony_micro_theta_cos;
 
 	
-		% axes ticks
-		if sim_index == '3'
-			x_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ...
-				'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
-			y_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ...
-				'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
-		else
-			x_axis = {'0.0', '', '0.1', '', '0.2', '', '0.3', '', '', '0.4'};
-			y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
-		end
+% 		% axes ticks
+% 		if sim_index == '3'
+% 			x_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ...
+% 				'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
+% 			y_axis = {'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' ''  ...
+% 				'' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' '' };
+% 		else
+% 			x_axis = {'0.0', '', '0.1', '', '0.2', '', '0.3', '', '', '0.4'};
+% 			y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
+% 		end
+		
+		x_axis = {'0.0', '', '0.1', '', '0.2', '', '0.3', '', '', '0.4'};
+		y_axis = {'0.0', '', '0.24', '', '0.43', '', '0.62', '', '', '0.9'};
 		
 		%% synergistic capacity, downward causation, causal decoupling
 		
@@ -442,24 +453,24 @@ for q = 1:1 %length(all_npoints);
 			'_all_beta_coup_average_cov_theta', ...
 			'_all_beta_coup_average_corr_theta'};
 		
-		titles = {{['synergy capacity practical pairwise synchrony'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical sigma chi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+		titles = {{['synergy capacity practical pairwise synchrony micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['synergy capacity practical sigma chi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['synergy capacity practical pairwise synchrony micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['synergy capacity practical sigma chi micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['synergy capacity practical pairwise synchrony micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['synergy capacity practical sigma chi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['synergy capacity practical pairwise synchrony micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['synergy capacity practical sigma chi  micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['downward causation practical pairwise synchrony'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['downward causation practical sigma chi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['synergy capacity practical sigma chi micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation practical pairwise synchrony micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation practical sigma chi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical pairwise synchrony micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical sigma chi micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical pairwise synchrony micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical sigma chi micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['downward causation practical pairwise synchrony micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['downward causation practical sigma chi  micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['causal decoupling practical pairwise synchrony'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['causal decoupling practical sigma chi'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['downward causation practical sigma chi micro cos theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling practical pairwise synchrony micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
+			{['causal decoupling practical sigma chi micro theta'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical pairwise synchrony micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical sigma chi micro sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['causal decoupling practical pairwise synchrony micro sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
@@ -488,21 +499,24 @@ for q = 1:1 %length(all_npoints);
 			yticklabels(y_axis);
 			xticklabels(x_axis);
 			
-			if sim_index == '3'
-				ylabel('zero coupling');
-				xlabel('zero noise correlation');
-				
-			else
-				ylabel('A');
-				xlabel('beta');
-			end
+% 			if sim_index == '3'
+% 				ylabel('zero coupling');
+% 				xlabel('zero noise correlation');
+% 				
+% 			else
+% 				ylabel('A');
+% 				xlabel('beta');
+% 			end
+			
+			ylabel('A');
+			xlabel('beta');
 			
 			title(titles{i});
 			exportgraphics(gcf, [pathout_plots network file_names{i} '_' num2str(npoints) '_' num2str(tau) '.png']);
 			
 		end
 		
-		%close all;
+		close all;
 	end 
 end 
 

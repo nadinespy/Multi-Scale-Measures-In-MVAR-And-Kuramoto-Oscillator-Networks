@@ -26,7 +26,7 @@ h = 0.05;			% Runge-Kutta method step size
 T = npoints;		% number of time steps
 ws = 2;			% window size for downsampling synchrony data
 
-
+rng(1);
 thetas(1,:) = rand(1,N)*2*pi-pi;	% random initial phases for all 256 initial oscillators (thetas will grow in rows each of which is a time-step; columns 1-8 are oscillators of 1st community, columns 9-16 are oscillators of 2nd community and so on)
 Dmean = d0+d1;					% average connections per oscillator
 synchrony = zeros(T,M);					% synchrony data
