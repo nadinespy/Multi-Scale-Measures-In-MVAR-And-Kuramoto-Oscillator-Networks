@@ -3,9 +3,9 @@
 % - fill struct file in a loop?
 % - add integrated information measures?
 
-%% 8-NODE MULTIVARIATE AUTOREGRESSIVE TIME-SERIES (MVAR) WITH GLOBAL COUPLING FACTORS & DIFFERENT MACRO VARIABLES
+%% 8-NODE MULTIVARIATE AUTOREGRESSIVE TIME-SERIES (MVAR) WITH DIFFERENT ARCHITECTURES & DIFFERENT MACRO VARIABLES
 
-% This script implements synergy capacity for 8-node MVAR models with different global coupling factors and noise correlations, and two different macro variables 
+% This script implements synergy capacity for 8-node MVAR models with different network architectures and noise correlations, and two different macro variables 
 % (one time being a summation of the raw values of X, and one time being a summation of the exponential of X).
 
 % The main purpose is to investigate the effect of doing a bipartition in PhiID: we simulate a network with the a given
@@ -23,8 +23,8 @@ addpath '/media/nadinespy/NewVolume/my_stuff/work/toolboxes_matlab'
 addpath '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/scripts/ReconcilingEmergences-master'
 javaaddpath('infodynamics.jar');
 
-pathout_data = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_mvar_global_coupling/';
-pathout_plots = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_mvar_global_coupling/';
+pathout_data = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/analyses/8node_mvar_different_architectures/';
+pathout_plots = '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/results/plots/8node_mvar_different_architectures/';
 
 %% choice of parameters
 
@@ -35,9 +35,6 @@ tau = 1;
 % simulation method (options: statdata_coup_errors1(), statdata_coup_errors2(), statdata_random(), chimera_metastable_model())
 sim_method = @statdata_coup_errors1;
 
-% save plots & matrices according to simulation method (options: '1' (for statdata_coup_errors1()), '2' (for statdata_coup_errors2()), '3' (for statdata_random(), '4' (for metastable_chimera_model())
-sim_index = '1';
-
 % network (options: '2node_mvar' for 2-node network with 100 different coupling strengths & noise correlations (if choosing sim_index = 1 or 2) OR random 2-node network with 100 zero couplings & 100 zero noise correlations (if choosing sim_index = 3);
 % '8node_mvar_different_architectures' for 8-node networks with 6 different architectures & noise correlations (if choosing sim_index = 1 or 2) OR random 8-node networks with 100 zero couplings & 100 zero correlations (if choosing sim_index = 3));
 % '8node_mvar_erdoes_renyi' for 8-node Erdös-Renyi networks with 100 different densities & noise correlations (if choosing sim_index = 1 or 2)
@@ -45,7 +42,7 @@ sim_index = '1';
 % '8node_kuramoto' for metastable chimera states with 100 different intra- and intercommunity coupling strengths & betas (if choosing sim_index = 4) 
 % '256node_kuramoto' for metastable chimera states with 100 different intra- and intercommunity coupling strengths & betas (if choosing sim_index = 5) 
 
-network = '8node_mvar_global_coupling';
+network = '8node_mvar_different_architectures';
 
 %% load files (if already existent, to, e. g., only create plots)
 
@@ -81,30 +78,34 @@ causal_decoupling_practical_exponential = emergence_practical.causal_decoupling_
 
 % {
 
+if sim_index == '3'
+
+	coupling_vec = linspace(0.0, 0.0, 100);
+	error_vec = linspace(0.0, 0.0, 100);
+		
+	coupling_matrices = []; 
+	for i = 1:length(coupling_vec);
+		coupling_matrices(:,:,i) = coupling_vec(i)*ones(8);
+	end 
+	
 % networks in all_nets.mat: phi-optimal binary network, phi-optimal weighted network, small world, 
 % fully connected, bidirectional ring, unidirectional ring
-load('all_nets.mat');								
-net_names = fields(all_nets);
-optimalB_net = all_nets.OptimalB;
-coupling_vec = linspace(0.05,0.9, 100);
-error_vec = linspace(0.01, 0.9, 100);
-coupling_matrices = [];
+else load('all_nets.mat');
 	
-% optimalB_net(optimalB_net ~= 0) = 1;				% Pedro took the original weighted network as opposed to a binary one --> why should I opt for one or the other? this decision completely changes results for some measures 
-k_vec = linspace(0.01, 0.9, 100000);
-
-for i = 1:length(k_vec)
-	sr = max(abs(eig(k_vec(i) * optimalB_net)));
-	if sr >= 1
-		sr = max(abs(eig(k_vec(i-1) * optimalB_net)));
-		k_max = k_vec(i-1);
-		break
-	else k_max = k_vec(i);
-	end
-end
-
-for o = 1:length(coupling_vec);
-	coupling_matrices(:,:,o) = k_max * coupling_vec(o) * optimalB_net;
+	net_names = fields(all_nets);
+	error_vec = linspace(0.01, 0.9, 7);
+		
+	coupling_matrices = [];
+	all_sr = [];
+	for i = 1:size(net_names,1);
+		net = all_nets.(net_names{i});					% normalise network so that spectral radius is close to but below 1
+		sr = max(abs(eig(net)));
+		all_sr.(net_names{i}) = sr;
+            net = net./(1.10*sr);
+		coupling_matrices(:,:,i) = net;
+	end 
+	save([pathout_data network '_spectral_radius.mat'], 'all_sr');
+		
 end
 
 

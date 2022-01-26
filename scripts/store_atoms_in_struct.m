@@ -1,4 +1,24 @@
 function [all_atoms_mmi, all_atoms_ccs] = store_atoms_in_struct(phiid_mmi, phiid_ccs);
+	
+	% information atoms: extract single atoms such that rows are the couplings, and columns the errors
+	
+	% rtr:  {1}{2}-->{1}{2}
+	% rtx: {1}{2}-->{1}
+	% rty: {1}{2}-->{2}
+	% rts: {1}{2}-->{12}
+	% xtr: {1}-->{1}{2}
+	% xtx: {1}-->{1}
+	% xty: {1}-->{2}
+	% xts: {1}-->{12}
+	% ytr: {2}-->{1}{2}
+	% ytx: {2}-->{1}
+	% yty: {2}-->{2}
+	% yts: {2}-->{12}
+	% str: {12}-->{1}{2}
+	% stx: {12}-->{1}
+	% sty: {12}-->{2}
+	% sts: {12}-->{12}
+	
 	all_atoms_mmi = [];
 	
 	all_atoms_mmi.rtr = squeeze(phiid_mmi(1,:,:));
