@@ -1,6 +1,6 @@
 % heatmaps using imagesc()
 
-function heatmap = plot_heatmap(variables, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots, tau) 
+function plot_heatmap(variables, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots, tau) 
 	
 	for i = 1:size(variables,2)
 			
@@ -19,15 +19,15 @@ function heatmap = plot_heatmap(variables, file_names, titles, x_axis, y_axis, x
 			yticklabels(y_axis);
 			xticklabels(x_axis);	
 
-			ylabel('A');
-			xlabel('beta');
+			ylabel(y_label);
+			xlabel(x_label);
 
 			title(titles{i});
 			
 			if nargin < 11;
-				exportgraphics(gcf, [pathout_plots network file_names{i} '_' num2str(npoints) '.png']);
+				exportgraphics(gcf, [pathout_plots network '_' file_names{i} '_' num2str(npoints) '.png']);
 			else 
-				exportgraphics(gcf, [pathout_plots network file_names{i} '_' num2str(npoints) '_' num2str(tau) '.png']);
+				exportgraphics(gcf, [pathout_plots network '_' file_names{i} '_' num2str(npoints) '_' num2str(tau) '.png']);
 			end
 			
 			close all;

@@ -69,7 +69,7 @@ pathout_plots_mean_corr = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_proj
 %% choice of parameters
 
 % time-lag and number of data points in time-series (same for all simulations)
-all_npoints = [2000] %[2000, 10000];
+all_npoints = [2000 10000]; %[2000, 10000];
 taus = [1 10 100]; %[1, 10, 100];
 
 % simulation method (options: statdata_coup_errors1(), statdata_coup_errors2(), statdata_random(), chimera_metastable_model())
@@ -97,7 +97,9 @@ sim_method = @chimera_metastable_model;
 % (if choosing sim_index = 5) 
 
 network = '8node_kuramoto';
-bin_threshold = 0.8;
+bin_threshold_sync = 0.9;
+bin_threshold_pair_sync = 0.9;
+bin_threshold_sigma_chi = 0.25;
 
 % general order of filenames: network name, variable names, value of A, value of beta, number of datapoints, time-lag
 
@@ -216,98 +218,87 @@ end
 
 %}
 
-%% calculate average covariance & average correlation, and store synchronies & binarized synchronies
+%% calculate average covariance & average correlation, and store synchronies
 
 % {
+for q = 1:length(all_npoints);
+	npoints = all_npoints(q);
 
-for i = 1:size(coupling_matrices, 3);
-	disp(i)
-	coupling_string = num2str(coupling_vec(i));
-	coupling_string = coupling_string(3:end);
-	coupling_matrix = coupling_matrices(:,:,i);
-	
-	for j = 1:length(beta_vec)
+	for i = 1:size(coupling_matrices, 3);
+		disp(i)
+		coupling_string = num2str(coupling_vec(i));
+		coupling_string = coupling_string(3:end);
+		coupling_matrix = coupling_matrices(:,:,i);
 		
-		beta = beta_vec(j);
-		beta_string = num2str(beta);
-		if j ~= 1
-			beta_string = beta_string(3:end);
-		end
-		
-		% load simulated model with given A and beta
-		load([pathout_data_sim_time_series network '_phase_'  coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
-			'phase');
-		load([pathout_data_sim_time_series network '_sigma_chi_' coupling_string '_' beta_string '_' num2str(npoints)  '.mat'], ...
-			'sigma_chi');
-		load([pathout_data_sim_time_series network '_synchrony_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
-			'synchrony');
-
-		% rows: betas; columns: communities; 3rd dimension: time-points
-		synchronies(j,:,:) = synchrony;
-		
-		% micro variables: phases, raw signal, synchronies, binarized synchronies
-		
-		% raw signal
-		raw_signal = cos(phase);
-		
-		% binarize synchronies
-		for k = 1:size(synchrony, 2);
-			for l = 1:size(synchrony,1);
-				if synchrony(l,k) >= bin_threshold;
-					bin_synchrony(l,k) = 1;
-				else bin_synchrony(l,k) = 0;
-				end
+		for j = 1:length(beta_vec)
+			
+			beta = beta_vec(j);
+			beta_string = num2str(beta);
+			if j ~= 1
+				beta_string = beta_string(3:end);
 			end
+			
+			% load simulated model with given A and beta
+			load([pathout_data_sim_time_series network '_phase_'  coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'phase');
+			load([pathout_data_sim_time_series network '_sigma_chi_' coupling_string '_' beta_string '_' num2str(npoints)  '.mat'], ...
+				'sigma_chi');
+			load([pathout_data_sim_time_series network '_synchrony_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'synchrony');
+			
+			% rows: betas; columns: communities; 3rd dimension: time-points
+			synchronies(j,:,:) = synchrony;
+			
+			% micro variables: phases, raw signal, synchronies, binarized synchronies
+			
+			% raw signal
+			raw_signal = cos(phase);
+			
+			% 		% adding error to micro variables
+			% 		cov_err  = eye(N, N);
+			% 		mu = zeros(N,1);
+			% 		E = mvnrnd(mu, cov_err, npoints)';
+			% 		raw_signal = raw_signal + E;
+			% 		phase = phase + E;
+			%
+			% 		cov_err  = eye(size(synchrony,1), size(synchrony,1));
+			% 		mu = zeros(size(synchrony,1),1);
+			% 		E = mvnrnd(mu, cov_err, npoints)';
+			% 		synchrony = synchrony + E;
+			
+			% average covariance/correlation matrix of micro variables
+			cov_phase = cov(phase');
+			all_mean_cov_phase(i,j) = mean(nonzeros(tril(cov_phase,-1)), 'all');
+			
+			corr_phase = corrcov(cov_phase);
+			all_mean_corr_phase(i,j) = mean(nonzeros(tril(corr_phase,-1)), 'all');
+			
+			cov_raw_signal = cov(raw_signal');
+			all_mean_cov_raw_signal(i,j) = mean(nonzeros(tril(cov_raw_signal,-1)), 'all');
+			
+			corr_raw_signal = corrcov(cov_raw_signal);
+			all_mean_corr_raw_signal(i,j) = mean(nonzeros(tril(corr_raw_signal,-1)), 'all');
+			
+			cov_synchrony = cov(synchrony');
+			all_mean_cov_synchronies(i,j) = mean(nonzeros(tril(cov_synchrony,-1)), 'all');
+			
+			corr_synchrony = corrcov(cov_synchrony);
+			all_mean_corr_synchronies(i,j) = mean(nonzeros(tril(corr_synchrony,-1)), 'all');
+			
+			% calculate average mutual information as opposed to correlation?
+			
 		end
 		
-		bin_synchronies(j,:,:) = bin_synchrony;
+		% save synchronies; saved filename consists of network name + variable name + value of A + number of datapoints
+		a_string = num2str(coupling_vec(i));
+		save([pathout_data_sync network '_synchronies_'  a_string(3:end) '_' num2str(npoints) '.mat'], ...
+			'synchronies');
 		
-		% adding error to micro variables
-		cov_err  = eye(N, N);
-		mu = zeros(N,1);
-		E = mvnrnd(mu, cov_err, npoints)';	
-		raw_signal = raw_signal + E;
-		phase = phase + E;
+		clear synchrony;
+		clear synchronies;
 		
-		cov_err  = eye(size(synchrony,1), size(synchrony,1));
-		mu = zeros(size(synchrony,1),1);
-		E = mvnrnd(mu, cov_err, npoints)';
-		synchrony = synchrony + E;
-		
-		% average covariance/correlation matrix of micro variables
-		cov_phase = cov(phase');
-		all_mean_cov_phase(i,j) = mean(nonzeros(tril(cov_phase,-1)), 'all');
-		
-		corr_phase = corrcov(cov_phase);
-		all_mean_corr_phase(i,j) = mean(nonzeros(tril(corr_phase,-1)), 'all');
-		
-		cov_raw_signal = cov(raw_signal');
-		all_mean_cov_raw_signal(i,j) = mean(nonzeros(tril(cov_raw_signal,-1)), 'all');
-		
-		corr_raw_signal = corrcov(cov_raw_signal);
-		all_mean_corr_raw_signal(i,j) = mean(nonzeros(tril(corr_raw_signal,-1)), 'all');
-		
-		cov_synchrony = cov(synchrony');
-		all_mean_cov_synchronies(i,j) = mean(nonzeros(tril(cov_synchrony,-1)), 'all');
-		
-		corr_synchrony = corrcov(cov_synchrony);
-		all_mean_corr_synchronies(i,j) = mean(nonzeros(tril(corr_synchrony,-1)), 'all');
-				
 	end
-	
-	% save synchronies; saved filename consists of network name + variable name + value of A + number of datapoints
-	a_string = num2str(coupling_vec(i));
-	save([pathout_data_sync network '_synchronies_'  a_string(3:end) '_' num2str(npoints) '.mat'], ...
-		'synchronies');
-	save([pathout_data_bin_sync network '_bin_synchronies_' a_string(3:end) '_' num2str(npoints) '.mat'], ...
-		'bin_synchronies');
-	
-	clear synchrony;
-	clear bin_synchrony;
-	clear synchronies;
-	clear bin_synchronies;
-	
-end
+end 
 
 % save covariances and correlations for all values of A and all values of beta; saved filenames consist of
 % network name + '_all_mean_' + 'corr_' or 'cov_' + micro variable name + number of datapoints
@@ -328,10 +319,162 @@ save([pathout_data_mean_cov network '_all_mean_cov_synchronies_' num2str(npoints
 
 %}
 
+%% binarizing variables & plotting distributions
+
+set(0,'DefaultFigureVisible','off');
+nbins = 100;
+
+for q = 1:length(all_npoints);
+	npoints = all_npoints(q);
+	
+	rng(1);
+	for i = 1:size(coupling_matrices, 3);
+		disp(i)
+		coupling_string = num2str(coupling_vec(i));
+		coupling_string = coupling_string(3:end);
+		coupling_matrix = coupling_matrices(:,:,i);
+		
+		for j = 1:length(beta_vec)
+			
+			beta = beta_vec(j);
+			beta_string = num2str(beta);
+			if j ~= 1
+				beta_string = beta_string(3:end);
+			end
+			
+			% load simulated model with given A and beta
+			load([pathout_data_sim_time_series network '_phase_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'phase');
+			load([pathout_data_sim_time_series network '_sigma_chi_' coupling_string '_' beta_string '_' num2str(npoints)  '.mat'], ...
+				'sigma_chi');
+			load([pathout_data_sim_time_series network '_synchrony_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'synchrony');
+			
+			% micro variables: phases, raw signal, synchronies
+			
+			% raw signal
+			raw_signal = cos(phase);
+			
+			% macro variables for practical measures for causal emergence:
+			% variance of synchronies & global average pairwise synchrony
+			% between communities
+			
+			% calculate global average pairwise synchrony between communities
+			grand_mean_pair_sync = zeros(1, npoints);
+			
+			for h = 1:M;
+				mean_pair_sync_temp = zeros(1, npoints);
+				for g = 1:M;
+					mean_pair_sync_temp = mean_pair_sync_temp + abs((synchrony(h,:)+synchrony(g,:))/2);
+				end
+				mean_pair_sync_temp = mean_pair_sync_temp/M;
+				grand_mean_pair_sync = grand_mean_pair_sync + mean_pair_sync_temp;
+			end
+			grand_mean_pair_sync = grand_mean_pair_sync/M;
+			
+			% check distributions of a subset of parameters
+			variables = {phase, raw_signal, synchrony, sigma_chi, grand_mean_pair_sync};
+			titles = {'phase', 'raw signal', 'synchrony', 'sigma chi', 'global average pairwise synchrony'};
+			filenames = {'phase', 'raw_signal', 'sync', 'sigma_chi', 'pair_sync'};
+			
+			if (((i == 1) && (j == 1)) || ((i == 3) && (j == 3)) || ((i == 7) && (j == 7)) || ((i == 10) && (j == 10)));
+				
+				for h = 1:length(variables);
+					variable = variables{h};
+					
+					num_var = size(variable, 1);
+					r = randi([1 num_var],1,3);
+					
+					for k = 1:length(r);
+						a_string = num2str(coupling_vec(i));
+						a_string = a_string(3:end);
+						
+						figure;
+						histogram(variable(r(k),:)', nbins);
+						title({['distribution of ', titles{h}]  ['var #', num2str(r(k)), ', A = ', num2str(coupling_vec(i)), ', beta = ', num2str(beta_vec(j))]});
+						ylabel('frequency');
+						xlabel(['values of ', titles{h}, ', var #', num2str(r(k))]);
+						exportgraphics(gcf, [pathout_plots_distributions network '_distr_' filenames{h} '_' num2str(r(k)) '_' a_string '_' num2str(npoints) '.png']);
+					
+						figure;
+						plot(variable(r(k),1800:2000));
+						title({['time-series of ', titles{h}]  ['var #', num2str(r(k)), ', A = ', num2str(coupling_vec(i)), ', beta = ', num2str(beta_vec(j))]});
+						ylabel('value');
+						xlabel('time');
+						exportgraphics(gcf, [pathout_plots_distributions network '_time_series_' filenames{h} '_' num2str(r(k)) '_' a_string '_' num2str(npoints) '.png']);
+					
+					end
+					close all;
+					
+				end
+			end
+			
+			% binarize all variables
+			
+			% binarize phase & raw signal
+			for k = 1:size(phase, 2);
+				for l = 1:size(phase,1);
+					if phase(l,k) >= 0;
+						bin_phase(l,k) = 1;
+					else bin_phase(l,k) = 0;
+					end
+					
+					if raw_signal(l,k) >= 0;
+						bin_raw_signal(l,k) = 1;
+					else bin_raw_signal(l,k) = 0;
+					end
+				end
+			end
+			
+			% binarize synchronies
+			for k = 1:size(synchrony, 2);
+				for l = 1:size(synchrony,1);
+					if synchrony(l,k) >= bin_threshold_sync;
+						bin_synchrony(l,k) = 1;
+					else bin_synchrony(l,k) = 0;
+					end
+				end
+			end
+			
+			% binarize sigma chi & global average pairwise synchrony
+			for k = 1:size(sigma_chi, 2);
+				if sigma_chi(k) >= bin_threshold_sigma_chi;
+					bin_sigma_chi(k) = 1;
+				else bin_sigma_chi(k) = 0;
+				end
+				if grand_mean_pair_sync(k) >= bin_threshold_pair_sync;
+					bin_grand_mean_pair_sync(k) = 1;
+				else bin_grand_mean_pair_sync(k) = 0;
+				end
+			end
+			
+			% load simulated model with given A and beta
+			save([pathout_data_sim_time_series network '_bin_phase_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'bin_phase');
+			save([pathout_data_sim_time_series network '_bin_raw_signal_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'bin_raw_signal');
+			save([pathout_data_sim_time_series network '_bin_sigma_chi_' coupling_string '_' beta_string '_' num2str(npoints)  '.mat'], ...
+				'bin_sigma_chi');
+			save([pathout_data_sim_time_series network '_bin_synchrony_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'bin_synchrony');
+			save([pathout_data_sim_time_series network '_bin_pair_sync_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+				'bin_grand_mean_pair_sync');
+			
+		end
+	end
+	
+	clear bin_phase;
+	clear bin_synchrony;
+	clear raw_signal;
+	clear bin_grand_mean_pair_sync;
+	clear sigma_chi;
+	
+end 
+
+				
 %% calculating information atoms & practical measures
 
 % {
-nbins = 100;
 
 for q = 1:length(all_npoints);
 	npoints = all_npoints(q);
@@ -355,91 +498,49 @@ for q = 1:length(all_npoints);
 				end
 				
 				% load simulated model with given A and beta
-				load([pathout_data_sim_time_series network '_phase_'  coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
-					'phase');
-				load([pathout_data_sim_time_series network '_sigma_chi_' coupling_string '_' beta_string '_' num2str(npoints)  '.mat'], ...
-					'sigma_chi');
-				load([pathout_data_sim_time_series network '_synchrony_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
-					'synchrony');
+				load([pathout_data_sim_time_series network '_bin_phase_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+					'bin_phase');
+				load([pathout_data_sim_time_series network '_bin_raw_signal_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+					'bin_raw_signal');
+				load([pathout_data_sim_time_series network '_bin_synchrony_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+					'bin_synchrony');
+				load([pathout_data_sim_time_series network '_bin_pair_sync_' coupling_string '_' beta_string  '_' num2str(npoints) '.mat'], ...
+					'bin_grand_mean_pair_sync');
+				load([pathout_data_sim_time_series network '_bin_sigma_chi_' coupling_string '_' beta_string '_' num2str(npoints)  '.mat'], ...
+					'bin_sigma_chi');
 				
-				% micro variables: phases, raw signal, synchronies, binarized synchronies
+% 				% adding error to micro & macro variables
+% 				cov_err  = eye(N, N);
+% 				mu = zeros(N,1);
+% 				E = mvnrnd(mu, cov_err, npoints)';	
+% 				raw_signal = raw_signal + E;
+% 				phase = phase + E;
+% 		
+% 				cov_err = eye(size(synchrony,1), size(synchrony,1));
+% 				mu = zeros(size(synchrony,1),1);
+% 				E = mvnrnd(mu, cov_err, npoints)';
+% 				synchrony = synchrony + E;
+% 				
+% 				cov_err  = eye(size(sigma_chi,1), size(sigma_chi,1));
+% 				mu = zeros(size(sigma_chi,1),1);
+% 				E = mvnrnd(mu, cov_err, npoints)';
+% 				sigma_chi = sigma_chi + E;
+% 				grand_mean_pair_sync = grand_mean_pair_sync + E;
 				
-				% raw signal
-				raw_signal = cos(phase);
-				
-				% binarize synchronies
-				for k = 1:size(synchrony, 2);
-					for l = 1:size(synchrony,1);
-						if synchrony(l,k) >= bin_threshold;
-							bin_synchrony(l,k) = 1;
-						else bin_synchrony(l,k) = 0;
-						end
-					end
-				end
-				
-				% macro variables for practical measures for causal emergence:
-				% variance of synchronies & global average pairwise synchrony
-				% between communities
-				
-				% calculate global average pairwise synchrony between communities
-				grand_mean_pair_sync = zeros(1, npoints);
-				
-				for h = 1:M;
-					mean_pair_sync_temp = zeros(1, npoints);
-					for g = 1:M;
-						mean_pair_sync_temp = mean_pair_sync_temp + abs((synchrony(h,:)+synchrony(g,:))/2);
-					end
-					mean_pair_sync_temp = mean_pair_sync_temp/M;
-					grand_mean_pair_sync = grand_mean_pair_sync + mean_pair_sync_temp;
-				end
-				grand_mean_pair_sync = grand_mean_pair_sync/M;
-				
-				% adding error to micro & macro variables
-				cov_err  = eye(N, N);
-				mu = zeros(N,1);
-				E = mvnrnd(mu, cov_err, npoints)';	
-				raw_signal = raw_signal + E;
-				phase = phase + E;
-		
-				cov_err = eye(size(synchrony,1), size(synchrony,1));
-				mu = zeros(size(synchrony,1),1);
-				E = mvnrnd(mu, cov_err, npoints)';
-				synchrony = synchrony + E;
-				
-				cov_err  = eye(size(sigma_chi,1), size(sigma_chi,1));
-				mu = zeros(size(sigma_chi,1),1);
-				E = mvnrnd(mu, cov_err, npoints)';
-				sigma_chi = sigma_chi + E;
-				grand_mean_pair_sync = grand_mean_pair_sync + E;
-		
-				% check distributions of a subset of parameters
-				variables = {phase, raw_signal, synchrony, bin_synchrony, sigma_chi, grand_mean_pair_sync};
-				titles = {'phase', 'raw signal', 'synchrony', 'binarized synchrony', 'sigma chi', 'global average pairwise synchrony'};
-				filenames = {'phase', 'raw_signal', 'sync', 'bin_sync', 'sigma_chi', 'pair_sync'};
-				
-				if (((i == 1) && (j == 1)) || ((i == 3) && (j == 3)) || ((i == 7) && (j == 7)) || ((i == 10) && (j == 10)));
-					
-					for h = 1:length(variables);
-						variable = variables{h};
-						
-						num_var = size(variable, 1);
-						r = randi([1 num_var],1,3);
-						
-						for k = 1:length(r);
-							a_string = num2str(coupling_vec(i));
-							a_string = a_string(3:end);
-							
-							figure;
-							histogram(variable(r(k),:)', nbins);
-							title({['distribution of ', titles{h}]  ['var #', num2str(r(k)), ', A = ', num2str(coupling_vec(i)), ', beta = ', num2str(beta_vec(j))]});
-							ylabel('frequency');
-							xlabel(['values of ', titles{h}, ', var #', num2str(r(k))]);
-							exportgraphics(gcf, [pathout_plots_distributions network '_distr_' filenames{h} '_' num2str(r(k)) '_' a_string '_' num2str(npoints) '.png']);
-						end
-						close all;
-					
-					end 
-				end
+% 				% take summation of phases and synchrony as (meaningless) macro variables
+% 				macro_var_sum1 = zeros(1, npoints);
+% 				for k = 1:(size(phase,1));
+% 					macro_var_sum1 = macro_var_sum1 + phase(k,:);
+% 				end
+% 				
+% 				macro_var_sum2 = zeros(1, npoints);
+% 				for k = 1:(size(synchrony,1));
+% 					macro_var_sum2 = macro_var_sum2 + synchrony(k,:);
+% 				end
+% 				
+% 				sigma_chi = macro_var_sum1;
+% 				grand_mean_pair_sync = macro_var_sum2;
+
 				
 				% ---------------------------------------------------------------------------------------------------------------------------------------
 				% integrated information decomposition (PhiID)
@@ -450,55 +551,43 @@ for q = 1:length(all_npoints);
 				
 				% do PhiID with PHASES as micro variables
 				try
-					phiid_all_beta_coup_mmi_phase(:,i,j) = struct2array(PhiIDFull(phase, tau, 'MMI'))';
+					phiid_all_beta_coup_mmi_phase(:,i,j) = struct2array(PhiIDFullDiscrete(bin_phase, tau, 'MMI'))';
 				catch
 					phiid_all_beta_coup_mmi_phase(:,i,j) = NaN;
 				end
 				
 				try
-					phiid_all_beta_coup_ccs_phase(:,i,j) = struct2array(PhiIDFull(phase, tau, 'ccs'))';
+					phiid_all_beta_coup_ccs_phase(:,i,j) = struct2array(PhiIDFullDiscrete(bin_phase, tau, 'ccs'))';
 				catch
 					phiid_all_beta_coup_ccs_phase(:,i,j) = NaN;
 				end
 				
 				% do PhiID with RAW SIGNAL as micro variables
 				try
-					phiid_all_beta_coup_mmi_raw_signal(:,i,j) = struct2array(PhiIDFull(raw_signal, tau, 'MMI'))';
+					phiid_all_beta_coup_mmi_raw_signal(:,i,j) = struct2array(PhiIDFullDiscrete(bin_raw_signal, tau, 'MMI'))';
 				catch
 					phiid_all_beta_coup_mmi_raw_signal(:,i,j) = NaN;
 				end
 				
 				try
-					phiid_all_beta_coup_ccs_raw_signal(:,i,j) = struct2array(PhiIDFull(raw_signal, tau, 'ccs'))';
+					phiid_all_beta_coup_ccs_raw_signal(:,i,j) = struct2array(PhiIDFullDiscrete(bin_raw_signal, tau, 'ccs'))';
 				catch
 					phiid_all_beta_coup_ccs_raw_signal(:,i,j) = NaN;
 				end
 				
 				% do PhiID with SYNCHRONIES as micro variables
 				try
-					phiid_all_beta_coup_mmi_sync(:,i,j) = struct2array(PhiIDFull(synchrony, tau, 'MMI'))';
+					phiid_all_beta_coup_mmi_sync(:,i,j) = struct2array(PhiIDFullDiscrete(bin_synchrony, tau, 'MMI'))';
 				catch
 					phiid_all_beta_coup_mmi_sync(:,i,j) = NaN;
 				end
 				
 				try
-					phiid_all_beta_coup_ccs_sync(:,i,j) = struct2array(PhiIDFull(synchrony, tau, 'ccs'))';
+					phiid_all_beta_coup_ccs_sync(:,i,j) = struct2array(PhiIDFullDiscrete(bin_synchrony, tau, 'ccs'))';
 				catch
 					phiid_all_beta_coup_ccs_sync(:,i,j) = NaN;
 				end
-				
-				% do PhiID with BINARIZED SYNCHRONIES as micro variables
-				try
-					phiid_all_beta_coup_mmi_bin_sync(:,i,j) = struct2array(PhiIDFull(bin_synchrony, tau, 'MMI'))';
-				catch
-					phiid_all_beta_coup_mmi_bin_sync(:,i,j) = NaN;
-				end
-				
-				try
-					phiid_all_beta_coup_ccs_bin_sync(:,i,j) = struct2array(PhiIDFull(bin_synchrony, tau, 'ccs'))';
-				catch
-					phiid_all_beta_coup_ccs_bin_sync(:,i,j) = NaN;
-				end
+
 				
 				% ---------------------------------------------------------------------------------------------------------------------------------------
 				% practical causal emergence
@@ -509,44 +598,38 @@ for q = 1:length(all_npoints);
 				
 				% practical causal emergence with PHASES as "micro" variables
 				% & sigma chi and global average pairwise synchrony as macro variables;
-				ce_pract_sigma_chi_phase(i,j) = EmergencePsi(phase', sigma_chi', tau);
-				ce_pract_pair_sync_phase(i,j) = EmergencePsi(phase', grand_mean_pair_sync', tau);
-				dc_pract_sigma_chi_phase(i,j) = EmergenceDelta(phase', sigma_chi', tau);
-				dc_pract_pair_sync_phase(i,j) = EmergenceDelta(phase', grand_mean_pair_sync', tau);
+				ce_pract_sigma_chi_phase(i,j) = EmergencePsi(bin_phase', bin_sigma_chi', tau, 'discrete');
+				ce_pract_pair_sync_phase(i,j) = EmergencePsi(bin_phase', bin_grand_mean_pair_sync', tau, 'discrete');
+				dc_pract_sigma_chi_phase(i,j) = EmergenceDelta(bin_phase', bin_sigma_chi', tau, 'discrete');
+				dc_pract_pair_sync_phase(i,j) = EmergenceDelta(bin_phase', bin_grand_mean_pair_sync', tau, 'discrete');
 				cd_pract_sigma_chi_phase(i,j) = ce_pract_sigma_chi_phase(i,j) - dc_pract_sigma_chi_phase(i,j);
 				cd_pract_pair_sync_phase(i,j) = ce_pract_pair_sync_phase(i,j) - dc_pract_pair_sync_phase(i,j);
 				
 				% practical causal emergence with SYNCHRONIES as "micro" variables
 				% & sigma chi and global average pairwise synchrony as macro variables
-				ce_pract_sigma_chi_sync(i,j) = EmergencePsi(synchrony', sigma_chi', tau);
-				ce_pract_pair_sync_sync(i,j) = EmergencePsi(synchrony', grand_mean_pair_sync', tau);
-				dc_pract_sigma_chi_sync(i,j) = EmergenceDelta(synchrony', sigma_chi', tau);
-				dc_pract_pair_sync_sync(i,j) = EmergenceDelta(synchrony', grand_mean_pair_sync', tau);
+				ce_pract_sigma_chi_sync(i,j) = EmergencePsi(bin_synchrony', bin_sigma_chi', tau, 'discrete');
+				ce_pract_pair_sync_sync(i,j) = EmergencePsi(bin_synchrony', bin_grand_mean_pair_sync', tau, 'discrete');
+				dc_pract_sigma_chi_sync(i,j) = EmergenceDelta(bin_synchrony', bin_sigma_chi', tau, 'discrete');
+				dc_pract_pair_sync_sync(i,j) = EmergenceDelta(bin_synchrony', bin_grand_mean_pair_sync', tau, 'discrete');
 				cd_pract_sigma_chi_sync(i,j) = ce_pract_sigma_chi_sync(i,j) - dc_pract_sigma_chi_sync(i,j);
 				cd_pract_pair_sync_sync(i,j) = ce_pract_pair_sync_sync(i,j) - dc_pract_pair_sync_sync(i,j);
 				
-				% doing the same, albeit with BINARIZED SYNCHRONIES as "micro" variables
-				% & sigma chi and global average pairwise synchrony as macro variables
-				ce_pract_sigma_chi_bin_sync(i,j) = EmergencePsi(bin_synchrony', sigma_chi', tau, 'discrete');
-				ce_pract_pair_sync_bin_sync(i,j) = EmergencePsi(bin_synchrony', grand_mean_pair_sync', tau, 'discrete');
-				dc_pract_sigma_chi_bin_sync(i,j) = EmergenceDelta(bin_synchrony', sigma_chi', tau, 'discrete');
-				dc_pract_pair_sync_bin_sync(i,j) = EmergenceDelta(bin_synchrony', grand_mean_pair_sync', tau, 'discrete');
-				cd_pract_sigma_chi_bin_sync(i,j) = ce_pract_sigma_chi_bin_sync(i,j) - dc_pract_sigma_chi_bin_sync(i,j);
-				cd_pract_pair_sync_bin_sync(i,j) = ce_pract_pair_sync_bin_sync(i,j) - dc_pract_pair_sync_bin_sync(i,j);
-				
 				% practical causal emergence with RAW SIGNAL as the "true" micro variables
 				% & sigma chi and global average pairwise synchrony as macro variables
-				ce_pract_sigma_chi_raw_signal(i,j) = EmergencePsi(raw_signal', sigma_chi', tau);
-				ce_pract_pair_sync_raw_signal(i,j) = EmergencePsi(raw_signal', grand_mean_pair_sync', tau);
-				dc_pract_sigma_chi_raw_signal(i,j) = EmergenceDelta(raw_signal', sigma_chi', tau);
-				dc_pract_pair_sync_raw_signal(i,j) = EmergenceDelta(raw_signal', grand_mean_pair_sync', tau);
+				ce_pract_sigma_chi_raw_signal(i,j) = EmergencePsi(bin_raw_signal', bin_sigma_chi', tau, 'discrete');
+				ce_pract_pair_sync_raw_signal(i,j) = EmergencePsi(bin_raw_signal', bin_grand_mean_pair_sync', tau, 'discrete');
+				dc_pract_sigma_chi_raw_signal(i,j) = EmergenceDelta(bin_raw_signal', bin_sigma_chi', tau, 'discrete');
+				dc_pract_pair_sync_raw_signal(i,j) = EmergenceDelta(bin_raw_signal', bin_grand_mean_pair_sync', tau, 'discrete');
 				cd_pract_sigma_chi_raw_signal(i,j) = ce_pract_sigma_chi_raw_signal(i,j) - dc_pract_sigma_chi_raw_signal(i,j);
 				cd_pract_pair_sync_raw_signal(i,j) = ce_pract_pair_sync_raw_signal(i,j) - dc_pract_pair_sync_raw_signal(i,j);
 				
 			end 
 			
 			clear synchrony;
-			clear bin_synchrony;
+			clear raw_signal;
+			clear phase;
+			clear grand_mean_pair_sync;
+			clear sigma_chi;
 			
 		end
 		
@@ -558,8 +641,6 @@ for q = 1:length(all_npoints);
 			store_atoms_in_struct(phiid_all_beta_coup_mmi_raw_signal, phiid_all_beta_coup_ccs_raw_signal);
 		[phiid_all_beta_coup_mmi_sync, phiid_all_beta_coup_ccs_sync] =  ...
 			store_atoms_in_struct(phiid_all_beta_coup_mmi_sync, phiid_all_beta_coup_ccs_sync);
-		[phiid_all_beta_coup_mmi_bin_sync, phiid_all_beta_coup_ccs_bin_sync] =  ...
-			store_atoms_in_struct(phiid_all_beta_coup_mmi_bin_sync, phiid_all_beta_coup_ccs_bin_sync);
 		
 		% saved filenames consist of
 		% network name + '_phiid_' + parameters involved (here 'all_beta_coup_') + redundancy function +
@@ -578,11 +659,6 @@ for q = 1:length(all_npoints);
 			'phiid_all_beta_coup_ccs_sync');
 		save([pathout_data_phiid network '_phiid_all_beta_coup_mmi_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'phiid_all_beta_coup_mmi_sync');
-		
-		save([pathout_data_phiid network '_phiid_all_beta_coup_ccs_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
-			'phiid_all_beta_coup_ccs_bin_sync');
-		save([pathout_data_phiid network '_phiid_all_beta_coup_mmi_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
-			'phiid_all_beta_coup_mmi_bin_sync');
 		
 		%% calculate phiid-based synergistic/emergent capacity, downward causation, causal decoupling
 		
@@ -631,29 +707,21 @@ for q = 1:length(all_npoints);
 			dc_phiid_ccs_sync, ...
 			cd_phiid_ccs_sync] = phiid_ce(phiid_all_beta_coup_mmi_sync, phiid_all_beta_coup_ccs_sync);
 		
-		% causal emergence with binarized synchrony as micro variables
-		[ce_phiid_mmi_bin_sync, ...
-			dc_phiid_mmi_bin_sync, ...
-			cd_phiid_mmi_bin_sync, ...
-			ce_phiid_ccs_bin_sync, ...
-			dc_phiid_ccs_bin_sync, ...
-			cd_phiid_ccs_bin_sync] = phiid_ce(phiid_all_beta_coup_mmi_bin_sync, phiid_all_beta_coup_ccs_bin_sync);
-		
 		% save variables in a struct
 		
 		[ce_phiid_ccs, ce_phiid_mmi, ce_practical] = store_ce_in_struct_2x4(...
-			ce_phiid_mmi_phase, ce_phiid_mmi_raw_signal, ce_phiid_mmi_sync, ce_phiid_mmi_bin_sync,...
-			dc_phiid_mmi_phase, dc_phiid_mmi_raw_signal, dc_phiid_mmi_sync, dc_phiid_mmi_bin_sync, ...
-			cd_phiid_mmi_phase, cd_phiid_mmi_raw_signal, cd_phiid_mmi_sync, cd_phiid_mmi_bin_sync,...
-			ce_phiid_ccs_phase, ce_phiid_ccs_raw_signal, ce_phiid_ccs_sync, ce_phiid_ccs_bin_sync,...
-			dc_phiid_ccs_phase, dc_phiid_ccs_raw_signal, dc_phiid_ccs_sync, dc_phiid_ccs_bin_sync, ...
-			cd_phiid_ccs_phase, cd_phiid_ccs_raw_signal, cd_phiid_ccs_sync, cd_phiid_ccs_bin_sync,...
-			ce_pract_sigma_chi_phase, ce_pract_sigma_chi_raw_signal, ce_pract_sigma_chi_sync, ce_pract_sigma_chi_bin_sync,...
-			dc_pract_sigma_chi_phase, dc_pract_sigma_chi_raw_signal, dc_pract_sigma_chi_sync, dc_pract_sigma_chi_bin_sync, ...
-			cd_pract_sigma_chi_phase, cd_pract_sigma_chi_raw_signal, cd_pract_sigma_chi_sync, cd_pract_sigma_chi_bin_sync,...
-			ce_pract_pair_sync_phase, ce_pract_pair_sync_raw_signal, ce_pract_pair_sync_sync, ce_pract_pair_sync_bin_sync,...
-			dc_pract_pair_sync_phase, dc_pract_pair_sync_raw_signal, dc_pract_pair_sync_sync, dc_pract_pair_sync_bin_sync,...
-			cd_pract_pair_sync_phase, cd_pract_pair_sync_raw_signal, cd_pract_pair_sync_sync, cd_pract_pair_sync_bin_sync);
+			ce_phiid_mmi_phase, ce_phiid_mmi_raw_signal, ce_phiid_mmi_sync, ce_phiid_mmi_sync,...
+			dc_phiid_mmi_phase, dc_phiid_mmi_raw_signal, dc_phiid_mmi_sync, dc_phiid_mmi_sync, ...
+			cd_phiid_mmi_phase, cd_phiid_mmi_raw_signal, cd_phiid_mmi_sync, cd_phiid_mmi_sync,...
+			ce_phiid_ccs_phase, ce_phiid_ccs_raw_signal, ce_phiid_ccs_sync, ce_phiid_ccs_sync,...
+			dc_phiid_ccs_phase, dc_phiid_ccs_raw_signal, dc_phiid_ccs_sync, dc_phiid_ccs_sync, ...
+			cd_phiid_ccs_phase, cd_phiid_ccs_raw_signal, cd_phiid_ccs_sync, cd_phiid_ccs_sync,...
+			ce_pract_sigma_chi_phase, ce_pract_sigma_chi_raw_signal, ce_pract_sigma_chi_sync, ce_pract_sigma_chi_sync,...
+			dc_pract_sigma_chi_phase, dc_pract_sigma_chi_raw_signal, dc_pract_sigma_chi_sync, dc_pract_sigma_chi_sync, ...
+			cd_pract_sigma_chi_phase, cd_pract_sigma_chi_raw_signal, cd_pract_sigma_chi_sync, cd_pract_sigma_chi_sync,...
+			ce_pract_pair_sync_phase, ce_pract_pair_sync_raw_signal, ce_pract_pair_sync_sync, ce_pract_pair_sync_sync,...
+			dc_pract_pair_sync_phase, dc_pract_pair_sync_raw_signal, dc_pract_pair_sync_sync, dc_pract_pair_sync_sync,...
+			cd_pract_pair_sync_phase, cd_pract_pair_sync_raw_signal, cd_pract_pair_sync_sync, cd_pract_pair_sync_sync);
 		
 		% saved filenames consist of
 		% network name + type of causal emergence + number of datapoints + time-lag
@@ -673,8 +741,6 @@ for q = 1:length(all_npoints);
 		clear phiid_all_beta_coup_mmi_raw_signal;
 		clear phiid_all_beta_coup_ccs_sync;
 		clear phiid_all_beta_coup_mmi_sync;
-		clear phiid_all_beta_coup_ccs_bin_sync;
-		clear phiid_all_beta_coup_mmi_bin_sync;
 		clear ce_pract_sigma_chi_phase;
 		clear ce_pract_pair_sync_phase;
 		clear dc_pract_sigma_chi_phase;
@@ -687,12 +753,6 @@ for q = 1:length(all_npoints);
 		clear dc_pract_pair_sync_sync;
 		clear cd_pract_sigma_chi_sync;
 		clear cd_pract_pair_sync_sync;
-		clear ce_pract_sigma_chi_bin_sync;
-		clear ce_pract_pair_sync_bin_sync;
-		clear dc_pract_sigma_chi_bin_sync;
-		clear dc_pract_pair_sync_bin_sync;
-		clear cd_pract_sigma_chi_bin_sync;
-		clear cd_pract_pair_sync_bin_sync;
 		clear ce_pract_sigma_chi_raw_signal;
 		clear ce_pract_pair_sync_raw_signal;
 		clear dc_pract_sigma_chi_raw_signal;
@@ -709,29 +769,26 @@ end
 
 %% plotting
 
+set(0,'DefaultFigureVisible','off')
+
 for q = 1:length(all_npoints);
 	npoints = all_npoints(q);
-	disp(q)
 	
 	for z = 1:length(taus);
 		tau = taus(z);
 		
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_ccs_phase_' num2str(npoints) '_' num2str(tau) '.mat'], ...
+		load([pathout_data_phiid network '_phiid_all_beta_coup_ccs_phase_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'phiid_all_beta_coup_ccs_phase');
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_mmi_phase_' num2str(npoints) '_' num2str(tau) '.mat'], ...
+		load([pathout_data_phiid network '_phiid_all_beta_coup_mmi_phase_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'phiid_all_beta_coup_mmi_phase');
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_ccs_raw_signal_' num2str(npoints) '_' num2str(tau) '.mat'], ...
+		load([pathout_data_phiid network '_phiid_all_beta_coup_ccs_raw_signal_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'phiid_all_beta_coup_ccs_raw_signal');
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_mmi_raw_signal_' num2str(npoints) '_' num2str(tau) '.mat'], ...
+		load([pathout_data_phiid network '_phiid_all_beta_coup_mmi_raw_signal_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'phiid_all_beta_coup_mmi_raw_signal');
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_ccs_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
+		load([pathout_data_phiid network '_phiid_all_beta_coup_ccs_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'phiid_all_beta_coup_ccs_sync');
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_mmi_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
+		load([pathout_data_phiid network '_phiid_all_beta_coup_mmi_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'phiid_all_beta_coup_mmi_sync');
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_ccs_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
-			'phiid_all_beta_coup_ccs_bin_sync');
-		load([pathout_data_phiid_ce network '_phiid_all_beta_coup_mmi_bin_sync_' num2str(npoints) '_' num2str(tau) '.mat'], ...
-			'phiid_all_beta_coup_mmi_bin_sync');
 		
 		load([pathout_data_phiid_ce network '_ce_phiid_ccs_' num2str(npoints) '_' num2str(tau) '.mat'], ...
 			'ce_phiid_ccs');
@@ -757,27 +814,21 @@ for q = 1:length(all_npoints);
 			phiid_all_beta_coup_ccs_raw_signal.rtr, ...
 			phiid_all_beta_coup_mmi_raw_signal.rtr, ...
 			phiid_all_beta_coup_ccs_sync.rtr, ...
-			phiid_all_beta_coup_mmi_sync.rtr, ...
-			phiid_all_beta_coup_ccs_bin_sync.rtr, ...
-			phiid_all_beta_coup_mmi_bin_sync.rtr};
+			phiid_all_beta_coup_mmi_sync.rtr};
 		
 		file_names = {'_all_beta_coup_ccs_rtr_phase', ...
 			'_all_beta_coup_mmi_rtr_phase', ...
 			'_all_beta_coup_ccs_rtr_raw_signal', ...
 			'_all_beta_coup_mmi_rtr_raw_signal', ...
 			'_all_beta_coup_ccs_rtr_sync', ...
-			'_all_beta_coup_mmi_rtr_sync', ...
-			'_all_beta_coup_ccs_rtr_bin_sync', ...
-			'_all_beta_coup_mmi_rtr_bin_sync'};
+			'_all_beta_coup_mmi_rtr_sync'};
 		
 		titles = {{['double-redundancy ccs, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['double-redundancy mmi, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['double-redundancy ccs, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['double-redundancy mmi, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['double-redundancy ccs, micro: synchronies'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['double-redundancy mmi, micro: synchronies'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['double-redundancy ccs, micro: bin synchronies'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['double-redundancy mmi, micro: bin synchronies'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
+			{['double-redundancy mmi, micro: synchronies'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
 		
 		plot_heatmap(double_red, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots_phiid_double_red, tau);
 
@@ -790,168 +841,132 @@ for q = 1:length(all_npoints);
 		% PhiID-based CE, DC, & CD for different micro variables, using CCS
 		variables = {ce_phiid_ccs.ce_phiid_ccs_phase, ...
 			ce_phiid_ccs.ce_phiid_ccs_raw_signal, ...
-			ce_phiid_ccs.ce_phiid_ccs_sync, ...
-			ce_phiid_ccs.ce_phiid_ccs_bin_sync, ...			
+			ce_phiid_ccs.ce_phiid_ccs_sync, ...			
 			ce_phiid_ccs.dc_phiid_ccs_phase, ...
 			ce_phiid_ccs.dc_phiid_ccs_raw_signal, ...
-			ce_phiid_ccs.dc_phiid_ccs_sync, ...
-			ce_phiid_ccs.dc_phiid_ccs_bin_sync, ...			
+			ce_phiid_ccs.dc_phiid_ccs_sync, ...		
 			ce_phiid_ccs.cd_phiid_ccs_phase, ...
 			ce_phiid_ccs.cd_phiid_ccs_raw_signal, ...
-			ce_phiid_ccs.cd_phiid_ccs_sync, ...
-			ce_phiid_ccs.cd_phiid_ccs_bin_sync};		
+			ce_phiid_ccs.cd_phiid_ccs_sync};		
 			
 		file_names = {'_all_beta_coup_ccs_ce_phase', ...
 			'_all_beta_coup_ccs_ce_raw_signal', ...
-			'_all_beta_coup_ccs_ce_sync', ...
-			'_all_beta_coup_ccs_ce_bin_sync', ...			
+			'_all_beta_coup_ccs_ce_sync', ...			
 			'_all_beta_coup_ccs_dc_phase', ...
 			'_all_beta_coup_ccs_dc_raw_signal', ...
-			'_all_beta_coup_ccs_dc_sync', ...
-			'_all_beta_coup_ccs_dc_bin_sync', ...			
+			'_all_beta_coup_ccs_dc_sync', ...		
 			'_all_beta_coup_ccs_cd_phase', ...
 			'_all_beta_coup_ccs_cd_raw_signal', ...
-			'_all_beta_coup_ccs_cd_sync', ...
-			'_all_beta_coup_ccs_cd_bin_sync'};
+			'_all_beta_coup_ccs_cd_sync'};
 		
 		titles = {{['PhiID-based CE ccs, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CE ccs, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CE ccs, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based CE ccs, micro: bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based DC ccs, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based DC ccs, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based DC ccs, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based DC ccs, micro: bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CD ccs, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CD ccs, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based CD ccs, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based CD ccs, micro: bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
+			{['PhiID-based CD ccs, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
 		
 		plot_heatmap(variables, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots_phiid_ce_ccs, tau);
 		
 		% PhiID-based CE, DC, & CD for different micro variables, using MMI
 		variables = {ce_phiid_mmi.ce_phiid_mmi_phase, ...
 			ce_phiid_mmi.ce_phiid_mmi_raw_signal, ...
-			ce_phiid_mmi.ce_phiid_mmi_sync, ...
-			ce_phiid_mmi.ce_phiid_mmi_bin_sync, ...		
+			ce_phiid_mmi.ce_phiid_mmi_sync, ...	
 			ce_phiid_mmi.dc_phiid_mmi_phase, ...
 			ce_phiid_mmi.dc_phiid_mmi_raw_signal, ...
-			ce_phiid_mmi.dc_phiid_mmi_sync, ...
-			ce_phiid_mmi.dc_phiid_mmi_bin_sync, ...			
+			ce_phiid_mmi.dc_phiid_mmi_sync, ...			
 			ce_phiid_mmi.cd_phiid_mmi_phase, ...
 			ce_phiid_mmi.cd_phiid_mmi_raw_signal, ...
-			ce_phiid_mmi.cd_phiid_mmi_sync, ...
-			ce_phiid_mmi.cd_phiid_mmi_bin_sync};
+			ce_phiid_mmi.cd_phiid_mmi_sync};
 		
 		file_names = {'_all_beta_coup_mmi_ce_phase', ...
 			'_all_beta_coup_mmi_ce_raw_signal', ...
-			'_all_beta_coup_mmi_ce_sync', ...
-			'_all_beta_coup_mmi_ce_bin_sync', ...			
+			'_all_beta_coup_mmi_ce_sync', ...		
 			'_all_beta_coup_mmi_dc_phase', ...
 			'_all_beta_coup_mmi_dc_raw_signal', ...
-			'_all_beta_coup_mmi_dc_sync', ...
-			'_all_beta_coup_mmi_dc_bin_sync', ...			
+			'_all_beta_coup_mmi_dc_sync', ...			
 			'_all_beta_coup_mmi_cd_phase', ...
 			'_all_beta_coup_mmi_cd_raw_signal', ...
-			'_all_beta_coup_mmi_cd_sync', ...
-			'_all_beta_coup_mmi_cd_bin_sync'};
+			'_all_beta_coup_mmi_cd_sync'};
 		
 		titles = {{['PhiID-based CE mmi, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CE mmi, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CE mmi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based CE mmi, micro: bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based DC mmi, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based DC mmi, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based DC mmi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based DC mmi, micro: bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CD mmi, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['PhiID-based CD mmi, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based CD mmi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['PhiID-based CD mmi, micro: bin sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
+			{['PhiID-based CD mmi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
 		
 		plot_heatmap(variables, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots_phiid_ce_mmi, tau);
 		
 		% practical CE, DC, & CD for different micro variables, macro: mean pairwise synchrony
 		variables = {ce_practical.ce_pract_pair_sync_phase, ...
 			ce_practical.ce_pract_pair_sync_raw_signal, ...
-			ce_practical.ce_pract_pair_sync_sync, ...
-			ce_practical.ce_pract_pair_sync_bin_sync, ...			
+			ce_practical.ce_pract_pair_sync_sync, ...		
 			ce_practical.dc_pract_pair_sync_phase, ...
 			ce_practical.dc_pract_pair_sync_raw_signal, ...
-			ce_practical.dc_pract_pair_sync_sync, ...
-			ce_practical.dc_pract_pair_sync_bin_sync, ...			
+			ce_practical.dc_pract_pair_sync_sync, ...		
 			ce_practical.cd_pract_pair_sync_phase, ...
 			ce_practical.cd_pract_pair_sync_raw_signal, ...
-			ce_practical.cd_pract_pair_sync_sync, ...
-			ce_practical.cd_pract_pair_sync_bin_sync};
+			ce_practical.cd_pract_pair_sync_sync};
 		
 		file_names = {'_all_beta_coup_pract_ce_pair_sync_phase', ...
 			'_all_beta_coup_pract_ce_pair_sync_raw_signal', ...
-			'_all_beta_coup_pract_ce_pair_sync_sync', ...
-			'_all_beta_coup_pract_ce_pair_sync_bin_sync', ...			
+			'_all_beta_coup_pract_ce_pair_sync_sync', ...			
 			'_all_beta_coup_pract_dc_pair_sync_phase', ...
 			'_all_beta_coup_pract_dc_pair_sync_raw_signal', ...
-			'_all_beta_coup_pract_dc_pair_sync_sync', ...
-			'_all_beta_coup_pract_dc_pair_sync_bin_sync', ...		
+			'_all_beta_coup_pract_dc_pair_sync_sync', ...		
 			'_all_beta_coup_pract_cd_pair_sync_phase', ...
 			'_all_beta_coup_pract_cd_pair_sync_raw_signal', ...
-			'_all_beta_coup_pract_cd_pair_sync_sync', ...
-			'_all_beta_coup_pract_cd_pair_sync_bin_sync'};
+			'_all_beta_coup_pract_cd_pair_sync_sync'};
 		
 		titles = {{['practical CE, macro: mean pairwise sync, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CE, macro: mean pairwise sync, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CE, macro: mean pairwise sync, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical CE, macro: mean pairwise sync, micro: sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical DC, macro: mean pairwise sync, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical DC, macro: mean pairwise sync, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical DC, macro: mean pairwise sync, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical DC, macro: mean pairwise sync, micro: sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CD, macro: mean pairwise sync, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CD, macro: mean pairwise sync, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical CD, macro: mean pairwise sync, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical CD, macro: mean pairwise sync, micro: sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
+			{['practical CD, macro: mean pairwise sync, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
 		
 		plot_heatmap(variables, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots_pract_ce_pair_sync, tau);
 		
 		% practical CE, DC, & CD for different micro variables, macro: sigma chi
 		variables = {ce_practical.ce_pract_sigma_chi_phase, ...
 			ce_practical.ce_pract_sigma_chi_raw_signal, ...
-			ce_practical.ce_pract_sigma_chi_bin_sync, ...
 			ce_practical.ce_pract_sigma_chi_sync, ...			
 			ce_practical.dc_pract_sigma_chi_phase, ...
 			ce_practical.dc_pract_sigma_chi_raw_signal, ...
-			ce_practical.dc_pract_sigma_chi_sync, ...
-			ce_practical.dc_pract_sigma_chi_bin_sync, ...			
+			ce_practical.dc_pract_sigma_chi_sync, ...		
 			ce_practical.cd_pract_sigma_chi_phase, ...
 			ce_practical.cd_pract_sigma_chi_sync, ...
-			ce_practical.cd_pract_sigma_chi_bin_sync, ...
 			ce_practical.cd_pract_sigma_chi_raw_signal};
 		
 		file_names = {'_all_beta_coup_pract_ce_sigma_chi_phase', ...
 			'_all_beta_coup_pract_ce_sigma_chi_raw_signal', ...
 			'_all_beta_coup_pract_ce_sigma_chi_sync', ...
-			'_all_beta_coup_pract_ce_sigma_chi_bin_sync', ...
 			'_all_beta_coup_pract_dc_sigma_chi_phase', ...
 			'_all_beta_coup_pract_dc_sigma_chi_raw_signal', ...
 			'_all_beta_coup_pract_dc_sigma_chi_sync', ...
-			'_all_beta_coup_pract_dc_sigma_chi_bin_sync', ...
 			'_all_beta_coup_pract_cd_sigma_chi_phase', ...
-			'_all_beta_coup_pract_cd_sigma_chi_bin_sync', ...
 			'_all_beta_coup_pract_cd_sigma_chi_sync', ...
 			'_all_beta_coup_pract_cd_sigma_chi_raw_signal'};
 		
 		titles = {{['practical CE, macro: sigma chi, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CE, macro: sigma chi, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CE, macro: sigma chi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical CE, macro: sigma chi, micro: sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical DC, macro: sigma chi, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical DC, macro: sigma chi, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical DC, macro: sigma chi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical DC, macro: sigma chi, micro: sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CD, macro: sigma chi, micro: phase'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
 			{['practical CD, macro: sigma chi, micro: raw signal'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical CD, macro: sigma chi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}, ...
-			{['practical CD, macro: sigma chi, micro: sync bin'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
+			{['practical CD, macro: sigma chi, micro: sync'] ['npoints = ' num2str(npoints) ', tau = ' num2str(tau)]}};
 		
 		plot_heatmap(variables, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots_pract_ce_sigma_chi, tau);
 
@@ -967,23 +982,18 @@ for q = 1:length(all_npoints);
 		'all_mean_corr_raw_signal');
 	load([pathout_data_mean_corr network '_all_mean_corr_synchronies_' num2str(npoints) '.mat'], ...
 		'all_mean_corr_synchronies');
-	load([pathout_data_mean_corr network '_all_mean_corr_bin_synchronies_' num2str(npoints) '.mat'], ...
-		'all_mean_corr_bin_synchronies');
 	
 	variables = {all_mean_corr_phase, ...
 		all_mean_corr_raw_signal, ...
-		all_mean_corr_synchronies, ...
-		all_mean_corr_bin_synchronies};
+		all_mean_corr_synchronies};
 	
 	file_names = {'_all_beta_coup_mean_corr_phase', ...
 		'_all_beta_coup_mean_corr_raw_signal', ...
-		'_all_beta_coup_mean_corr_synchronies', ...
-		'_all_beta_coup_mean_corr_bin_synchronies'}
+		'_all_beta_coup_mean_corr_synchronies'};
 	
 	titles = {{['average correlation of phases'] ['npoints = ' num2str(npoints)]}, ...
 		{['average correlation of raw signal'] ['npoints = ' num2str(npoints)]}, ...
-		{['average correlation of synchronies'] ['npoints = ' num2str(npoints)]}, ...
-		{['average correlation of bin synchronies'] ['npoints = ' num2str(npoints)]}};
+		{['average correlation of synchronies'] ['npoints = ' num2str(npoints)]}};
 	
 	plot_heatmap(variables, file_names, titles, x_axis, y_axis, x_label, y_label, network, npoints, pathout_plots_mean_corr);
 
