@@ -8,7 +8,7 @@ function plot_scatterplot_met_chi(variables, A, beta_vec, file_names, titles, ..
 	for i = 1:size(variables,2)
 
 		variable_temp = variables{i};
-		title_temp = [titles{i}, {['A = ' A]}];
+		title_temp = [titles{i}, {['A = ' num2str(A)]}];
 		
 		figure;
 		scatter(beta_vec, variable_temp, 60, 'filled');

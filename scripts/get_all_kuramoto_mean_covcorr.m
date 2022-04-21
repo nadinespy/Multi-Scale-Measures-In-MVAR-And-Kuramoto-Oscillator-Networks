@@ -23,8 +23,10 @@ function get_all_kuramoto_mean_covcorr(network, A_vec, beta_vec, all_npoints, ..
 					'raw_signal');
 				load([pathout_data_sim_time_series network '_sigma_chi_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
 					'sigma_chi');
+				load([pathout_data_sim_time_series network '_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'pair_sync');
 				load([pathout_data_sim_time_series network '_mean_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
-					'grand_mean_pair_sync');
+					'mean_pair_sync');
 				
 				% MEAN COVARIANCES/CORRELATIONS (calculate mean MI as opposed to correlation?)
 				
@@ -32,17 +34,24 @@ function get_all_kuramoto_mean_covcorr(network, A_vec, beta_vec, all_npoints, ..
 				[mean_cov_phase(i,j), mean_corr_phase(i,j)] = get_mean_covcorr_one_matrix(phase');
 				[mean_cov_raw_signal(i,j), mean_corr_raw_signal(i,j)] = get_mean_covcorr_one_matrix(raw_signal');
 				[mean_cov_synchrony(i,j), mean_corr_synchrony(i,j)] = get_mean_covcorr_one_matrix(synchrony');
+				[mean_cov_pair_sync(i,j), mean_corr_pair_sync(i,j)] = get_mean_covcorr_one_matrix(pair_sync');
 				
 				% between micro and macro variables
 				[mean_cov_phase_sigma_chi(i,j), mean_corr_phase_sigma_chi(i,j)] = get_mean_covcorr_two_matrices(phase', sigma_chi');
-				[mean_cov_phase_pair_sync(i,j), mean_corr_phase_pair_sync(i,j)] = get_mean_covcorr_two_matrices(phase', grand_mean_pair_sync');
+				[mean_cov_phase_mean_pair_sync(i,j), mean_corr_phase_mean_pair_sync(i,j)] = get_mean_covcorr_two_matrices(phase', mean_pair_sync');
+				[mean_cov_phase_synchrony(i,j), mean_corr_phase_synchrony(i,j)] = get_mean_covcorr_two_matrices(phase', synchrony');
+				[mean_cov_phase_pair_sync(i,j), mean_corr_phase_pair_sync(i,j)] = get_mean_covcorr_two_matrices(phase', pair_sync');
 				
 				[mean_cov_raw_signal_sigma_chi(i,j), mean_corr_raw_signal_sigma_chi(i,j)] = get_mean_covcorr_two_matrices(raw_signal', sigma_chi');
-				[mean_cov_raw_signal_pair_sync(i,j), mean_corr_raw_signal_pair_sync(i,j)] = get_mean_covcorr_two_matrices(raw_signal', grand_mean_pair_sync');
+				[mean_cov_raw_signal_mean_pair_sync(i,j), mean_corr_raw_signal_mean_pair_sync(i,j)] = get_mean_covcorr_two_matrices(raw_signal', mean_pair_sync');
+				[mean_cov_raw_signal_synchrony(i,j), mean_corr_raw_signal_synchrony(i,j)] = get_mean_covcorr_two_matrices(raw_signal', synchrony');
+				[mean_cov_raw_signal_pair_sync(i,j), mean_corr_raw_signal_pair_sync(i,j)] = get_mean_covcorr_two_matrices(raw_signal', pair_sync');
 				
 				[mean_cov_synchrony_sigma_chi(i,j), mean_corr_synchrony_sigma_chi(i,j)] = get_mean_covcorr_two_matrices(synchrony', sigma_chi');
-				[mean_cov_synchrony_pair_sync(i,j), mean_corr_synchrony_pair_sync(i,j)] = get_mean_covcorr_two_matrices(synchrony', grand_mean_pair_sync');
+				[mean_cov_synchrony_mean_pair_sync(i,j), mean_corr_synchrony_mean_pair_sync(i,j)] = get_mean_covcorr_two_matrices(synchrony', mean_pair_sync');
 				
+				[mean_cov_pair_sync_sigma_chi(i,j), mean_corr_pair_sync_sigma_chi(i,j)] = get_mean_covcorr_two_matrices(pair_sync', sigma_chi');
+				[mean_cov_pair_sync_mean_pair_sync(i,j), mean_corr_pair_sync_mean_pair_sync(i,j)] = get_mean_covcorr_two_matrices(pair_sync', mean_pair_sync');
 				
 			end
 		end
@@ -66,40 +75,76 @@ function get_all_kuramoto_mean_covcorr(network, A_vec, beta_vec, all_npoints, ..
 		save([pathout_data_mean_cov network '_mean_cov_synchrony_' num2str(npoints) '.mat'], ...
 			'mean_cov_synchrony');
 		
+		save([pathout_data_mean_corr network 'mean_corr_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_corr_pair_sync');
+		save([pathout_data_mean_cov network 'mean_cov_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_cov_pair_sync');
+		
 		% micro and macro variables
 		
-		% phase
+		% phase + macro variables
 		save([pathout_data_mean_corr network '_mean_corr_phase_sigma_chi_' num2str(npoints) '.mat'], ...
 			'mean_corr_phase_sigma_chi');
 		save([pathout_data_mean_cov network '_mean_cov_phase_sigma_chi_' num2str(npoints) '.mat'], ...
 			'mean_cov_phase_sigma_chi');
 		
+		save([pathout_data_mean_corr network '_mean_corr_phase_mean_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_corr_phase_mean_pair_sync');
+		save([pathout_data_mean_cov network '_mean_cov_phase_mean_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_cov_phase_mean_pair_sync');
+		
+		save([pathout_data_mean_corr network '_mean_corr_phase_synchrony_' num2str(npoints) '.mat'], ...
+			'mean_corr_phase_synchrony');
+		save([pathout_data_mean_cov network '_mean_cov_phase_synchrony_' num2str(npoints) '.mat'], ...
+			'mean_cov_phase_synchrony');
+
 		save([pathout_data_mean_corr network '_mean_corr_phase_pair_sync_' num2str(npoints) '.mat'], ...
 			'mean_corr_phase_pair_sync');
 		save([pathout_data_mean_cov network '_mean_cov_phase_pair_sync_' num2str(npoints) '.mat'], ...
 			'mean_cov_phase_pair_sync');
 		
-		% raw signal
+		% raw signal + macro variables
 		save([pathout_data_mean_corr network '_mean_corr_raw_signal_sigma_chi_' num2str(npoints) '.mat'], ...
 			'mean_corr_raw_signal_sigma_chi');
 		save([pathout_data_mean_cov network '_mean_cov_raw_signal_sigma_chi_' num2str(npoints) '.mat'], ...
 			'mean_cov_raw_signal_sigma_chi');
 		
+		save([pathout_data_mean_corr network '_mean_corr_raw_signal_mean_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_corr_raw_signal_mean_pair_sync');
+		save([pathout_data_mean_cov network '_mean_cov_raw_signal_mean_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_cov_raw_signal_mean_pair_sync');
+		
+		save([pathout_data_mean_corr network '_mean_corr_raw_signal_synchrony_' num2str(npoints) '.mat'], ...
+			'mean_corr_raw_signal_synchrony');
+		save([pathout_data_mean_cov network '_mean_cov_raw_signal_synchrony_' num2str(npoints) '.mat'], ...
+			'mean_cov_raw_signal_synchrony');
+
 		save([pathout_data_mean_corr network '_mean_corr_raw_signal_pair_sync_' num2str(npoints) '.mat'], ...
 			'mean_corr_raw_signal_pair_sync');
 		save([pathout_data_mean_cov network '_mean_cov_raw_signal_pair_sync_' num2str(npoints) '.mat'], ...
 			'mean_cov_raw_signal_pair_sync');
 		
-		% synchrony
+		% synchrony + macro variables
 		save([pathout_data_mean_corr network '_mean_corr_synchrony_sigma_chi_' num2str(npoints) '.mat'], ...
 			'mean_corr_synchrony_sigma_chi');
 		save([pathout_data_mean_cov network '_mean_cov_synchrony_sigma_chi_' num2str(npoints) '.mat'], ...
 			'mean_cov_synchrony_sigma_chi');
 		
-		save([pathout_data_mean_corr network '_mean_corr_synchrony_pair_sync_' num2str(npoints) '.mat'], ...
-			'mean_corr_synchrony_pair_sync');
-		save([pathout_data_mean_cov network '_mean_cov_synchrony_pair_sync_' num2str(npoints) '.mat'], ...
-			'mean_cov_synchrony_pair_sync');
+		save([pathout_data_mean_corr network '_mean_corr_synchrony_mean_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_corr_synchrony_mean_pair_sync');
+		save([pathout_data_mean_cov network '_mean_cov_synchrony_mean_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_cov_synchrony_mean_pair_sync');
+		
+		% pairwise synchrony + macro variables
+		save([pathout_data_mean_corr network '_mean_corr_pair_sync_sigma_chi_' num2str(npoints) '.mat'], ...
+			'mean_corr_pair_sync_sigma_chi');
+		save([pathout_data_mean_cov network '_mean_cov_pair_sync_sigma_chi_' num2str(npoints) '.mat'], ...
+			'mean_cov_pair_sync_sigma_chi');
+		
+		save([pathout_data_mean_corr network '_mean_corr_pair_sync_mean_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_corr_pair_sync_mean_pair_sync');
+		save([pathout_data_mean_cov network '_mean_cov_pair_sync_pair_sync_' num2str(npoints) '.mat'], ...
+			'mean_cov_pair_sync_mean_pair_sync');
 		
 	end
 

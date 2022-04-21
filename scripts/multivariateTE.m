@@ -66,6 +66,7 @@ result3_bits = result3_nats/(1/log(2));
 % "Specifically, this class implements the pairwise or apparent transfer entropy; i.e. we compute the 
 % transfer that appears to come from a single source variable, without examining any other potential sources"
 
+
 numObservations = 100;
 sourceArray=(rand(numObservations,2)>0.5)*1;
 sourceArray2=(rand(numObservations,2)>0.5)*1;

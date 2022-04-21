@@ -1,5 +1,17 @@
-function get_all_kuramoto_distr_plots(nbins, network, A_vec, beta_vec, all_npoints, ...
+function get_all_kuramoto_distr_plots(data, nbins, network, A_vec, beta_vec, all_npoints, ...
 		pathout_data_sim_time_series, pathout_plots_distributions) 
+	
+	if strcmp(data, 'raw');
+		prefix = '_';
+	else
+		prefix = ['_' data '_'];
+	end 
+	
+	if strcmp(data, 'raw');
+		prefix2 = [];
+	else
+		prefix2 = [data '_'];
+	end
 	
 	set(0,'DefaultFigureVisible','off');
 
@@ -18,21 +30,25 @@ function get_all_kuramoto_distr_plots(nbins, network, A_vec, beta_vec, all_npoin
 				% macro variables for practical measures for causal emergence -
 				% variance of synchronies & global average pairwise synchrony
 				% between communities
-				load([pathout_data_sim_time_series network '_phase_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
-					'phase');
-				load([pathout_data_sim_time_series network '_synchrony_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
-					'synchrony');
-				load([pathout_data_sim_time_series network '_raw_signal_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
-					'raw_signal');
-				load([pathout_data_sim_time_series network '_sigma_chi_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
-					'sigma_chi');
-				load([pathout_data_sim_time_series network '_mean_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
-					'grand_mean_pair_sync');
+				var1 = load([pathout_data_sim_time_series network prefix 'phase_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					[prefix2 'phase']);
+				var2 = load([pathout_data_sim_time_series network prefix 'synchrony_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					[prefix2 'synchrony']);
+				var3 = load([pathout_data_sim_time_series network prefix 'raw_signal_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					[prefix2 'raw_signal']);
+				var4 = load([pathout_data_sim_time_series network prefix 'sigma_chi_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					[prefix2 'sigma_chi']);
+				var5 = load([pathout_data_sim_time_series network prefix 'pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					[prefix2 'pair_sync']);
+				var6 = load([pathout_data_sim_time_series network prefix 'mean_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					[prefix2 'mean_pair_sync']);
 				
 				% check distributions of a subset of parameters
-				variables = {phase, raw_signal, synchrony, sigma_chi, grand_mean_pair_sync};
-				titles = {'phase', 'raw signal', 'synchrony', 'sigma chi', 'global mean pairwise synchrony'};
-				filenames = {'phase', 'raw_signal', 'sync', 'sigma_chi', 'pair_sync'};
+				variables = {var1, var2, var3, var4, var5, var6};
+				titles = {[prefix2 'phase'], [prefix2 'synchrony'], [prefix2 'raw signal'], [prefix2 'sigma chi'], ...
+					[prefix2 'pairwise synchrony'], [prefix2 'mean pairwise synchrony']};
+				filenames = {[prefix2 'phase'], [prefix2 'sync'], [prefix2 'raw_signal'], [prefix2 'sigma_chi'], ...
+					[prefix2 'pair_sync'], [prefix2 'mean_pair_sync']};
 				
 				starting_point = npoints/2;
 				end_point = (npoints/2)+100;
@@ -40,7 +56,7 @@ function get_all_kuramoto_distr_plots(nbins, network, A_vec, beta_vec, all_npoin
 				if (((i == 1) && (j == 1)) || ((i == 3) && (j == 3)) || ((i == 7) && (j == 7)) || ((i == 10) && (j == 10)));
 					
 					for h = 1:length(variables);
-						variable = variables{h};
+						variable = struct2array(variables{h});
 						
 						num_var = size(variable, 1);
 						r = randi([1 num_var],1,3);

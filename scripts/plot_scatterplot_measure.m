@@ -1,4 +1,5 @@
-function plot_scatterplot_practCE(variables, A_vec, beta_vec, file_names, titles, x_label, y_label, network, npoints, pathout_plots, tau) 
+function plot_scatterplot_measure(variables, A_vec, beta_vec, file_names, titles, x_label, y_label, network, ...
+		npoints, pathout_plots, tau) 
 	
 	% coupling_vec(20) = 0.2131
 	n_A = length(A_vec);

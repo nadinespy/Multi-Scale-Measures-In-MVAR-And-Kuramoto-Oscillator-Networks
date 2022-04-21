@@ -36,16 +36,19 @@ function get_all_kuramoto_variables(network, intra_comm_size, n_communities, kur
 				%	- phases,
 				%	- raw signal,
 				%	- synchronies
+				%	- pair_sync
 				
 				% raw signal
 				raw_signal = cos(phase);
 			
 				% MACRO VARIABLES for practical measures for causal emergence:
+				%	- synchronies
+				%	- pairwise synchrony
 				%	- variance of synchronies (sigma_chi)
-				%	- global mean pairwise synchrony between communities (grand_mean_pair_sync)
+				%	- mean pairwise synchrony between communities (mean_pair_sync)
 				
 				% global mean pairwise synchrony
-				grand_mean_pair_sync = get_kuramoto_grand_mean_pair_sync(n_communities, synchrony, npoints);
+				[pair_sync, mean_pair_sync] = get_kuramoto_pair_sync(n_communities, synchrony, npoints);
 				
 				% variable names consist of  network name + variable name + value of A + value of beta + number of datapoints
 				save([pathout_data_sim_time_series network '_phase_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
@@ -54,8 +57,10 @@ function get_all_kuramoto_variables(network, intra_comm_size, n_communities, kur
 					'sigma_chi');
 				save([pathout_data_sim_time_series network '_synchrony_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
 					'synchrony');
+				save([pathout_data_sim_time_series network '_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'pair_sync');
 				save([pathout_data_sim_time_series network '_mean_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
-					'grand_mean_pair_sync');
+					'mean_pair_sync');
 				save([pathout_data_sim_time_series network '_raw_signal_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
 					'raw_signal');
 			end
