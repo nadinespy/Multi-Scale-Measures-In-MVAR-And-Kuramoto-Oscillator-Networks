@@ -1,4 +1,4 @@
-%% initialize paths for 256 kuramoto oscillators
+%% initialize paths for n kuramoto oscillators
 
 cd '/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/EmergenceComplexityMeasuresComparison_Matlab/scripts'
 addpath '/media/nadinespy/NewVolume/my_stuff/work/toolboxes_matlab'
@@ -7,54 +7,56 @@ javaaddpath('infodynamics.jar');
 
 % directories for generated data
 pathout_data = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/'];
 pathout_data_sim_time_series = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/sim_time_series/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/sim_time_series/'];
 pathout_data_sync = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/synchronies/'];
-pathout_data_bin_sync = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/binarized_synchronies/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/synchronies/'];
 pathout_data_phiid = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/phiid/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/phiid/'];
 pathout_data_pract_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/practical_ce/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/practical_ce/'];
 pathout_data_phiid_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/phiid_ce/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/phiid_ce/'];
 pathout_data_dd = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/dd/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/dd/'];
 pathout_data_mean_corr = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/average_corr/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/average_corr/'];
 pathout_data_mean_cov = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/256node_kuramoto/average_cov/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/analyses/' n_oscillators 'node_kuramoto/average_cov/'];
 
 % directories for generated plots
 pathout_plots = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/'];
 
 pathout_plots_pract_ce = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/practical_ce/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/practical_ce/'];
 pathout_plots_pract_ce_mean_pair_sync = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/practical_ce/mean_pair_sync/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/practical_ce/mean_pair_sync/'];
 pathout_plots_pract_ce_sigma_chi = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/practical_ce/sigma_chi/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/practical_ce/sigma_chi/'];
+pathout_plots_pract_ce_control_vars = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/practical_ce/control_vars/'];
 
 pathout_plots_dd = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/dd/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/dd/'];
 pathout_plots_dd_mean_pair_sync = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/dd/mean_pair_sync/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/dd/mean_pair_sync/'];
 pathout_plots_dd_sigma_chi = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/dd/sigma_chi/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/dd/sigma_chi/'];
 pathout_plots_dd_pair_sync = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/dd/pair_sync/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/dd/pair_sync/'];
 pathout_plots_dd_synchrony = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/dd/synchrony/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/dd/synchrony/'];
+pathout_plots_dd_control_vars = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/dd/control_vars/'];
 
 pathout_plots_sigma_met = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/sigma_met/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/sigma_met/'];
 pathout_plots_sigma_chi = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/sigma_chi/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/sigma_chi/'];
 pathout_plots_distributions = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/distributions/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/distributions/'];
 pathout_plots_mean_corr = ['/media/nadinespy/NewVolume/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparison/', ...
-	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/256node_kuramoto/mean_corr/'];
+	'EmergenceComplexityMeasuresComparison_Matlab/results/plots/' n_oscillators 'node_kuramoto/mean_corr/'];
 

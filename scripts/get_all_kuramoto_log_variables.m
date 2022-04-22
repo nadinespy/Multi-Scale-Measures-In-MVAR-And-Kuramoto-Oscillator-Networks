@@ -29,14 +29,21 @@ function get_all_kuramoto_log_variables(network, A_vec, beta_vec, all_npoints, p
 					'pair_sync');
 				load([pathout_data_sim_time_series network '_mean_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
 					'mean_pair_sync');
+				load([pathout_data_sim_time_series network '_shuffled_sigma_chi_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'shuffled_sigma_chi');
+				load([pathout_data_sim_time_series network '_shuffled_phase_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'shuffled_phase');
 				
-				% binarize all variables
+				% binarize all variables (add constant to all values 
+				% so that there are no negative values)
 				log_phase = log(phase+constant);
 				log_raw_signal = log(raw_signal+constant);
 				log_synchrony = log(synchrony+constant);
 				log_pair_sync = log(pair_sync+constant);
 				log_mean_pair_sync = log(mean_pair_sync+constant);
 				log_sigma_chi = log(sigma_chi+constant);
+				log_shuffled_sigma_chi = log(shuffled_sigma_chi+constant);
+				log_shuffled_phase = log(shuffled_phase+constant);
 				
 				% load simulated model with given A and beta
 				save([pathout_data_sim_time_series network '_log_phase_' A_str '_' beta_str  '_' num2str(npoints) '.mat'], ...
@@ -51,6 +58,10 @@ function get_all_kuramoto_log_variables(network, A_vec, beta_vec, all_npoints, p
 					'log_mean_pair_sync');
 				save([pathout_data_sim_time_series network '_log_pair_sync_' A_str '_' beta_str  '_' num2str(npoints) '.mat'], ...
 					'log_pair_sync');
+				save([pathout_data_sim_time_series network '_log_shuffled_sigma_chi_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'log_shuffled_sigma_chi');
+				save([pathout_data_sim_time_series network '_log_shuffled_phase_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'log_shuffled_phase');
 				
 			end
 		end

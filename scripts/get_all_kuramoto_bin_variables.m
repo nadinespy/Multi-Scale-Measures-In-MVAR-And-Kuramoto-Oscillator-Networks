@@ -29,6 +29,10 @@ function get_all_kuramoto_bin_variables(network, A_vec, beta_vec, all_npoints, b
 					'pair_sync');
 				load([pathout_data_sim_time_series network '_mean_pair_sync_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
 					'mean_pair_sync');
+				load([pathout_data_sim_time_series network '_shuffled_sigma_chi_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'shuffled_sigma_chi');
+				load([pathout_data_sim_time_series network '_shuffled_phase_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'shuffled_phase');
 				
 				% binarize all variables
 				bin_phase = get_binarized_variables(phase, bin_threshold_phase);
@@ -37,6 +41,8 @@ function get_all_kuramoto_bin_variables(network, A_vec, beta_vec, all_npoints, b
 				bin_pair_sync = get_binarized_variables(pair_sync, bin_threshold_pair_sync);
 				bin_mean_pair_sync = get_binarized_variables(mean_pair_sync, bin_threshold_pair_sync);
 				bin_sigma_chi = get_binarized_variables(sigma_chi, bin_threshold_sigma_chi);
+				bin_shuffled_sigma_chi = get_binarized_variables(shuffled_sigma_chi, bin_threshold_sigma_chi);
+				bin_shuffled_phase = get_binarized_variables(shuffled_phase, bin_threshold_phase);
 				
 				% load simulated model with given A and beta
 				save([pathout_data_sim_time_series network '_bin_phase_' A_str '_' beta_str  '_' num2str(npoints) '.mat'], ...
@@ -51,6 +57,10 @@ function get_all_kuramoto_bin_variables(network, A_vec, beta_vec, all_npoints, b
 					'bin_mean_pair_sync');
 				save([pathout_data_sim_time_series network '_bin_pair_sync_' A_str '_' beta_str  '_' num2str(npoints) '.mat'], ...
 					'bin_pair_sync');
+				save([pathout_data_sim_time_series network '_bin_shuffled_sigma_chi_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'bin_shuffled_sigma_chi');
+				save([pathout_data_sim_time_series network '_bin_shuffled_phase_' A_str '_' beta_str '_' num2str(npoints) '.mat'], ...
+					'bin_shuffled_phase');
 				
 			end
 		end

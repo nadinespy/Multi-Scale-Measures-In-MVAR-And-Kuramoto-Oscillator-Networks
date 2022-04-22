@@ -14,9 +14,10 @@
 
 %% KURAMOTO OSCILLATORS WITH DIFFERENT COUPLINGS, BETAS, MACRO & MICRO VARIABLES
 
-% This script implements practical synergy capacity for 256-node Kuramoto oscillators with different couplings and phase lags, two different macro variables 
-% (variance of synchronies & global average pairwise synchrony between communities), and three different micro variables (thetas, cos(thetas), synchronies, and 
-% binarized synchronies).
+% This script implements practical synergy capacity for 256-node Kuramoto oscillators with different couplings and phase lags, 
+% two different top-level macro variables (variance of synchronies & global average pairwise synchrony between communities), 
+% two mid-level macro variables (synchronies & pairwise synchronies), and four different micro variables (phases, raw signal, 
+% synchronies, and pairwise synchronies).
 
 % major sections in this script:
 %	- choice of parameters (time-lag, data length, and thresholds)
@@ -24,8 +25,9 @@
 %	- create coupling matrices & noise correlation vectors					--> get_kuramoto_coupling_matrix()
 %
 %	- simulate Kuramoto models, including all micro and macro variables,			--> get_all_kuramoto_variables();
-%	  for all values of A and all values of beta							    uses get_kuramoto_mean_pair_sync(), and
-%															    sim_kuramoto_oscillators()
+%	  for all values of A and all values of beta							    uses get_kuramoto_mean_pair_sync(),
+%															    sim_kuramoto_oscillators(), and
+%															    shuffle_rows()
 %
 %	- binarize micro and macro variables								--> get_all_kuramoto_bin_variables();
 %															    uses get_binarized_variables()
@@ -68,7 +70,8 @@ close all;
 clc;
 
 % initialize necessary paths and directories for generated data & plots
-get_256kuramoto_directories(); 
+n_oscillators = '12';
+get_all_kuramoto_directories(); 
 
 %% model parameter specification 
 
@@ -84,14 +87,14 @@ beta_vec =				linspace(0.04, 0.4, 10);	% noise correlation vector: use beta valu
 										% sigma chi will be a non-varying zero macro variable, yielding erroneous 
 										% values for emergence 
 																				
-all_npoints =			[2000]; %, 10000];		% number of data points in time-series
-taus =				[10]; %, 10, 100];		% time-lags
+all_npoints =			[10000]; %, 10000];		% number of data points in time-series
+taus =				[3]; %, 10, 100];			% time-lags
 
 bin_threshold_phase =		0;
 bin_threshold_raw_signal =	0;
-bin_threshold_sync =		0.9;
-bin_threshold_pair_sync =	0.9;
-bin_threshold_sigma_chi =	0.25;
+bin_threshold_sync =		0.85;
+bin_threshold_pair_sync =	0.85;
+bin_threshold_sigma_chi =	0.15;
 
 %% measure parameter specification
 
@@ -114,8 +117,6 @@ data = 'raw';
 
 x_axis_heatmaps = {'0.04', '', '', '0.16', '', '', '0.28', '', '', '0.4'};
 y_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
-%x_axis_heatmaps = {'0.04', '0.4'};
-%y_axis_heatmaps = {'0.08', '0.8'};
 
 y_label_heatmaps = 'A';
 x_label_heatmaps = 'beta';
@@ -153,7 +154,7 @@ end
 %	- average pairwise synchrony	(MACRO)
 %	- chimera-index			(MACRO)
 
-% {
+%{
 
 get_all_kuramoto_variables(network, intra_comm_size, n_communities, kuramoto_coupling_matrices, ...
 		A_vec, beta_vec, all_npoints, pathout_data_sim_time_series, pathout_data_sync);
@@ -162,7 +163,7 @@ get_all_kuramoto_variables(network, intra_comm_size, n_communities, kuramoto_cou
 
 %% binarize micro and macro variables 
 
-% { 
+%{ 
 
 get_all_kuramoto_bin_variables(network, A_vec, beta_vec, all_npoints, bin_threshold_phase, ...
 		bin_threshold_raw_signal, bin_threshold_sync, bin_threshold_pair_sync, ...
@@ -172,7 +173,7 @@ get_all_kuramoto_bin_variables(network, A_vec, beta_vec, all_npoints, bin_thresh
 
 %% log transform micro and macro variables
 
-% {
+%{
 
 get_all_kuramoto_log_variables(network, A_vec, beta_vec, all_npoints, pathout_data_sim_time_series)
 
@@ -182,7 +183,7 @@ get_all_kuramoto_log_variables(network, A_vec, beta_vec, all_npoints, pathout_da
 
 % loop over all values of A, beta, npoints
 
-% {
+%{
 
 get_all_kuramoto_mean_covcorr(network, A_vec, beta_vec, all_npoints, ...
 	pathout_data_sim_time_series, ...
@@ -209,87 +210,4 @@ get_all_kuramoto_practCE(network, A_vec, beta_vec, kuramoto_coupling_matrices, t
 get_all_kuramoto_DD(network, A_vec, beta_vec, kuramoto_coupling_matrices, taus, tau_steps, all_npoints, ...
 		method_DD, pathout_data_sim_time_series, pathout_data_dd, kraskov_param)
 
-%}
-
-%% plotting
-
-%% distribution plots of micro and macro variables (selected nodes)
-
-% loop over all values of npoints
-
-% {
-  
-get_all_kuramoto_distr_plots(data, nbins, network, A_vec, beta_vec, all_npoints, ...
-		pathout_data_sim_time_series, pathout_plots_distributions);
-		
-%}
-
-%% correlations between micro & macro variables
-
-% loop over all values of npoints
-
-% {
-
-get_all_kuramoto_corr_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, pathout_data_mean_corr, pathout_plots_mean_corr)
-
-%}
-	
-%% practical CE, DC, and CD for discretized variables
-
-% loop over all values of npoints, tau, A, beta
-
-% {
-
-get_all_kuramoto_practCE_heatmaps(network, taus, all_npoints, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, pathout_data_pract_ce, pathout_plots_pract_ce_mean_pair_sync, ...
-	pathout_plots_pract_ce_sigma_chi)
-
-%}
-
-%% dynamical dependence for non-Gaussian continuous variables
-
-% loop over all values of npoints, tau, A, beta
-
-% {
-
-get_all_kuramoto_DD_heatmaps(network, taus, all_npoints, x_axis_heatmaps, y_axis_heatmaps, x_label_heatmaps, ...
-	y_label_heatmaps, pathout_data_dd, pathout_plots_dd_mean_pair_sync, pathout_plots_dd_sigma_chi, ...
-	pathout_plots_dd_pair_sync, pathout_plots_dd_synchrony)
-
-%}
-	
-%% scatter plots for practical CE for discretized variables, with fixed A, and varying beta
-
-% loop over all values of npoints, tau
-
-% {
-
-get_all_kuramoto_practCE_scatterplots(network, A_vec, beta_vec, taus, all_npoints, x_label_practCE_scatterplots, ...
-		y_label_practCE_scatterplots, pathout_data_pract_ce, pathout_plots_pract_ce_sigma_chi, ...
-		pathout_plots_pract_ce_mean_pair_sync)
-	
-%} 
-
-%% scatter plots for dynamical dependence with non-Gaussian, continuous variables, with fixed A, and varying beta
-
-% loop over all values of npoints, tau
-
-% {
-
-get_all_kuramoto_DD_scatterplots(network, A_vec, beta_vec, taus, all_npoints, x_label_DD_scatterplots, ...
-		y_label_DD_scatterplots, pathout_data_dd, pathout_plots_dd_mean_pair_sync, pathout_plots_dd_sigma_chi, ...
-		pathout_plots_dd_pair_sync, pathout_plots_dd_synchrony)
-	
-%} 
-
-%% scatter plots for sigma met mean & sigma chi mean, with fixed A, and varying beta
-
-% loop over all values of npoints 
-
-% {
-
-get_all_kuramoto_met_chi_scatterplots(network, A_vec, beta_vec, all_npoints, x_label_chi_met, y_label_chi_met, ...
-		pathout_data_sync, pathout_plots_sigma_chi, pathout_plots_sigma_met)
-	
 %}
