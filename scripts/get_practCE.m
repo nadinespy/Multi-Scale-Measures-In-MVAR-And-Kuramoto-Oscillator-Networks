@@ -22,8 +22,8 @@ function all_practCE = get_practCE(micro_variables, macro_variables, tau, method
 
 			% calculate practical CE, DC, and CE for a given micro-macro combination, and store 
 			% results in struct
-			practCE.pract_ce = EmergencePsi(micro, macro, tau, method);
-			practCE.pract_dc = EmergenceDelta(micro, macro, tau, method);
+			practCE.pract_ce = EmergencePsi(micro', macro', tau, method);
+			practCE.pract_dc = EmergenceDelta(micro', macro', tau, method);
 			practCE.pract_cd = practCE.pract_ce - practCE.pract_dc;
 			
 			% store struct in another struct with micro-macro combination as fieldname

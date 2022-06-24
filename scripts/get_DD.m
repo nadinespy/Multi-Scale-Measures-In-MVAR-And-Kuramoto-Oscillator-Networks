@@ -13,12 +13,12 @@ function all_DD = get_DD(micro_variables, macro_variables, method, tau_history, 
 	fieldnames_macro = fieldnames(macro_variables);
 	fieldnames_micro = fieldnames(micro_variables);
 	
-	if method == 'Kraskov'
+	if strcmp(method, 'Kraskov')
 		teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov');
 		teCalc.setProperty('k', num2str(kraskov_param));
-	elseif method == 'Gaussian';
+	elseif strcmp(method, 'Gaussian');
 		teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorMultiVariateGaussian');
-	elseif method == 'Discrete';
+	elseif strcmp(method, 'Discrete');
 		teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 4, tau_history);
 		% 4: base - number of symbols for each variable. E.g. binary variables are in base-2.
 	end 

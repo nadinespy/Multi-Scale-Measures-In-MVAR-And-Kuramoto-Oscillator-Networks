@@ -11,6 +11,7 @@
 % - search for best subsets in micro and macro that maximize DD and practical CE
 
 % - for Kuramoto oscillators with lots of nodes: do dim reduction
+% - store time-series, CE, DD etc. in structs for all model parameters?
 
 %% KURAMOTO OSCILLATORS WITH DIFFERENT COUPLINGS, BETAS, MACRO & MICRO VARIABLES
 
@@ -69,6 +70,8 @@ clear java;
 close all;
 clc;
 
+cd /media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/EmergenceComplexityMeasuresComparison_Matlab/scripts
+
 % initialize necessary paths and directories for generated data & plots
 n_oscillators = '12';
 get_all_kuramoto_directories(); 
@@ -78,7 +81,7 @@ get_all_kuramoto_directories();
 % model name for saving files
 network = '12kuramoto';
 
-% parameter specification
+% kuramoto parameter specification
 intra_comm_size =			4;					% intra-community size
 n_communities =			3;					% number of communities		
 A_vec =				linspace(0.08, 0.8, 10);	% A vector
@@ -86,10 +89,16 @@ beta_vec =				linspace(0.04, 0.4, 10);	% noise correlation vector: use beta valu
 										% sigma chi turn out to be zero for greater values of beta; in these cases, 
 										% sigma chi will be a non-varying zero macro variable, yielding erroneous 
 										% values for emergence 
-																				
+									
 all_npoints =			[10000]; %, 10000];		% number of data points in time-series
-taus =				[3]; %, 10, 100];			% time-lags
+taus =				[3]; % , 10, 100];		% time-lags
 
+% parameters for different discretization methods
+disc_method =			['quant']; %, 'disc', 'bin'];
+bin_number =			[4]; % , 3, 5, 7];		% number of bins to do discretization for method 'disc'
+quantile_number =			[5]; % , 3, 4, 7];		% number of quantiles to do discretization for method 'quant'
+
+% thresholds to do discretization for method 'bin'
 bin_threshold_phase =		0;
 bin_threshold_raw_signal =	0;
 bin_threshold_sync =		0.85;
@@ -99,39 +108,12 @@ bin_threshold_sigma_chi =	0.15;
 %% measure parameter specification
 
 % method for practical CE - 'Gaussian' or 'discrete'
-method_practCE = 'discrete';
+method_practCE =	['discrete']; % , 'Gaussian']; % to be expanded with 'Kraskov'
 
 % method for dynamical dependence (DD) - 'Kraskov', 'Gaussian', or 'Discrete'
-method_DD = 'Kraskov';
-tau_steps = 1;
-kraskov_param = 4;
-
-%% plotting parameter specification
-
-% data and number of bins for plotting histograms of micro and macro variables
-% data can be 'log' or 'raw'
-nbins = 100;								
-data = 'raw'; 
-
-% axes ticks for heatmaps with beta on x-axis, and A on y-axis
-
-x_axis_heatmaps = {'0.04', '', '', '0.16', '', '', '0.28', '', '', '0.4'};
-y_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
-
-y_label_heatmaps = 'A';
-x_label_heatmaps = 'beta';
-
-% axes ticks for scatterplots with beta on x-axis, and practical CE on y-axis
-y_label_practCE_scatterplots = 'practical CE';
-x_label_practCE_scatterplots = 'beta';
-
-% axes ticks for scatterplots with beta on x-axis, and dynamical dependence on y-axis
-y_label_DD_scatterplots = 'dynamical dependence';
-x_label_DD_scatterplots = 'beta';
-
-% axes ticks for scatterplots with beta on x-axis, and sigma chi/sigma met on y-axis
-y_label_chi_met = ' ';
-x_label_chi_met = 'beta';
+method_DD =		['Kraskov']; % 'Gaussian', 'Discrete'];
+tau_steps =		[1]; % , 2, 3];
+kraskov_param =	[4]; % , 5, 6];
 
 %% create coupling matrices for each A
 
@@ -154,20 +136,49 @@ end
 %	- average pairwise synchrony	(MACRO)
 %	- chimera-index			(MACRO)
 
-%{
+% {
 
 get_all_kuramoto_variables(network, intra_comm_size, n_communities, kuramoto_coupling_matrices, ...
-		A_vec, beta_vec, all_npoints, pathout_data_sim_time_series, pathout_data_sync);
+		all_npoints, A_vec, beta_vec, pathout_data_sim_time_series, pathout_data_sync);
 
 %}
 
-%% binarize micro and macro variables 
+%% load all micro and macro variables
 
-%{ 
+%{
 
-get_all_kuramoto_bin_variables(network, A_vec, beta_vec, all_npoints, bin_threshold_phase, ...
-		bin_threshold_raw_signal, bin_threshold_sync, bin_threshold_pair_sync, ...
-		bin_threshold_sigma_chi, pathout_data_sim_time_series);
+[phase, sigma_chi, synchrony, pair_sync, mean_pair_sync, raw_signal, shuffled_sigma_chi, shuffled_phase] = load_all_kuramoto_variables(network, A_vec, beta_vec, all_npoints, pathout_data_sim_time_series, ...
+	pathout_data_sync);
+
+%}
+
+%% get mean of variance of synchronies across time & mean of variance of synchronies across communities
+
+% {
+
+get_all_kuramoto_met_chi(network, A_vec, all_npoints, ...
+		pathout_data_sync)
+	
+%}
+
+%% quantilize micro and macro variables 
+
+% { 
+
+micro_variable_names = {'raw_signal', 'phase', 'synchrony'};
+macro_variable_names = {'mean_pair_sync', 'sigma_chi'};
+
+get_all_quant_variables(network, all_npoints, A_vec, beta_vec, micro_variable_names, ...
+	macro_variable_names, quantile_number, pathout_data_sim_time_series);
+
+% discretizing
+% get_all_disc_variables(network, A_vec, beta_vec, all_npoints, micro_variable_names, ...
+% 	macro_variable_names, bin_number, pathout_data_sim_time_series);
+
+% binarizing
+% get_all_kuramoto_bin_variables(network, A_vec, beta_vec, all_npoints, bin_threshold_phase, ...
+% 		bin_threshold_raw_signal, bin_threshold_sync, bin_threshold_pair_sync, ...
+% 		bin_threshold_sigma_chi, pathout_data_sim_time_series);
 
 %}
 
@@ -192,15 +203,15 @@ get_all_kuramoto_mean_covcorr(network, A_vec, beta_vec, all_npoints, ...
 
 %}
 	
-%% calculate practical CE for discretized variables
+%% calculate practical CE for quantilized variables
 
 % loop over all values of npoints, tau, A, beta
 
 % {
 
-get_all_kuramoto_practCE(network, A_vec, beta_vec, kuramoto_coupling_matrices, taus, all_npoints, method_practCE, ...
-		pathout_data_sim_time_series, pathout_data_pract_ce)
-
+get_all_kuramoto_practCE(network, all_npoints, taus, A_vec, beta_vec, method_practCE, disc_method, ...
+		micro_variable_names, macro_variable_names, pathout_data_sim_time_series, pathout_data_pract_ce)
+	
 %}
 
 %% calculate dynamical dependence for non-Gaussian continuous variables

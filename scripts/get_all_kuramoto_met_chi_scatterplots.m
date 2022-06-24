@@ -22,16 +22,17 @@ function get_all_kuramoto_met_chi_scatterplots(network, A_vec, beta_vec, all_npo
 			sigma_met_mean = [];
 			for i = 1:length(beta_vec);
 				sigma_met = squeeze(synchronies(i,:,:));
-				sigma_met_mean(i) = mean(var(sigma_met'));
-			end
+				sigma_met_mean(i) = mean(var(sigma_met')); % sigma_met': time x synchronies
+			end							       % mean of variance over time for each synchrony
 			
 			% calculate chimera states
 			sigma_chi_mean = [];
 			for i = 1:length(beta_vec);
 				sigma_chi = squeeze(synchronies(i,:,:));
-				sigma_chi_mean(i) = mean(var(sigma_chi));
-			end
-
+				sigma_chi_mean(i) = mean(var(sigma_chi));  % sigma_chi: synchronies x time
+			end								 % mean of variance over synchronies for each time-point
+			
+			
 			variables = {sigma_chi_mean, sigma_met_mean};
 			
 			file_names = {'sigma_chi_mean', ...

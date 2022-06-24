@@ -79,7 +79,6 @@ x_label_DD_scatterplots = 'beta';
 y_label_chi_met = ' ';
 x_label_chi_met = 'beta';
 
-
 %% plotting
 %% distribution plots of micro and macro variables (selected nodes)
 
@@ -92,6 +91,16 @@ get_all_kuramoto_distr_plots(data, nbins, network, A_vec, beta_vec, all_npoints,
 		
 %}
 
+%% heatmaps for metastability & chimera index
+
+% {
+
+get_all_kuramoto_met_chi_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_heatmaps, ...
+	x_label_heatmaps, y_label_heatmaps, pathout_data_sync, pathout_plots_sigma_chi, ...
+	pathout_plots_sigma_met)
+
+%}
+	
 %% correlations between micro & macro variables
 
 % loop over all values of npoints
@@ -110,8 +119,7 @@ get_all_kuramoto_corr_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_hea
 % {
 
 get_all_kuramoto_practCE_heatmaps(network, taus, all_npoints, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, pathout_data_pract_ce, pathout_plots_pract_ce_mean_pair_sync, ...
-	pathout_plots_pract_ce_sigma_chi, pathout_plots_pract_ce_control_vars)
+	x_label_heatmaps, y_label_heatmaps, pathout_data_pract_ce, pathout_plots_pract_ce)
 
 %}
 
