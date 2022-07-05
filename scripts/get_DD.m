@@ -5,6 +5,10 @@ function all_DD = get_DD(micro_variables, macro_variables, method, tau_history, 
 	% returns a structure where cells denote different combinations of micro and macro variables; 
 	% each cell, in turn, is a structure with practical CE, DC, & CD
 	
+	if ~exist('kraskov_param')
+		kraskov_param = [4];
+	end 
+		
 	% get number of micro and macro variables, respectively
 	n_micro_variables = length(fieldnames(micro_variables)); 
 	n_macro_variables = length(fieldnames(macro_variables)); 
@@ -31,8 +35,8 @@ function all_DD = get_DD(micro_variables, macro_variables, method, tau_history, 
 			macro = macro_variables.(fieldnames_macro{j});
 	
 			if strcmp(method, 'Kraskov') | strcmp(method, 'Gaussian');
-				micro_dim = size(micro, 2);
-				macro_dim = size(macro, 2);
+				micro_dim = size(micro, 1);
+				macro_dim = size(macro, 1);
 				
 				% "Specifically, this class implements the pairwise or apparent transfer entropy, i.e. we compute the
 				% transfer that appears to come from a single source variable, without examining any other potential sources"
@@ -40,8 +44,8 @@ function all_DD = get_DD(micro_variables, macro_variables, method, tau_history, 
 				teCalc.setProperty('k_TAU', num2str(tau_steps));
 				teCalc.initialise(1, micro_dim, macro_dim);
 				
-				teCalc.setObservations(octaveToJavaDoubleMatrix(micro), ...
-					octaveToJavaDoubleMatrix(macro));
+				teCalc.setObservations(octaveToJavaDoubleMatrix(micro'), ...
+					octaveToJavaDoubleMatrix(macro'));
 				
 				DD_nats = teCalc.computeAverageLocalOfObservations();
 				DD = DD_nats/(1/log(2));

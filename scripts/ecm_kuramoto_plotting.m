@@ -31,33 +31,69 @@ clear java;
 close all;
 clc;
 
+directories = @get_all_kuramoto_directories;
+
 % initialize necessary paths and directories for generated data & plots
 n_oscillators = '12';
-get_all_kuramoto_directories(); 
+directories(); 
+
+%% model parameter specification 
 
 %% model parameter specification 
 
 % model name for saving files
-network = '12kuramoto';
+network = '12km';
 
-% parameter specification
+% kuramoto parameter specification
 intra_comm_size =			4;					% intra-community size
 n_communities =			3;					% number of communities		
-A_vec =				linspace(0.08, 0.8, 10);	% A vector
-beta_vec =				linspace(0.04, 0.4, 10);	% noise correlation vector: use beta values only up to 0.4, as sigma met & 
-										% sigma chi turn out to be zero for greater values of beta; in these cases, 
-										% sigma chi will be a non-varying zero macro variable, yielding erroneous 
-										% values for emergence 
-																				
-all_npoints =			[10000]; %, 10000];		% number of data points in time-series
-taus =				[3]; %, 10, 100];			% time-lags
+A =					linspace(0.08, 0.8, 10);	% vector with different values for A
+beta =				linspace(0.04, 0.4, 10);	% vector with different values for noise correlation: use beta values only 
+										% up to 0.4, as sigma met & sigma chi turn out to be zero for greater 
+										% values of beta; in these cases, sigma chi will be a non-varying 
+										% zero macro variable, yielding erroneous values for emergence 
+										
+npoints =				[10000]; %, 10000];		% number of data points in time-series
+
+% parameters for different discretization methods
+disc_method =			{'quant'}; %, 'even', 'bin']; % choose discretization method: 'quant' for using quantiles, 
+										% 'even' for discretizing into evenly spaced sections of the state space, 
+										% 'bin' for binarizing
+										
+bins =				[1, 4]; % , 3, 4, 7];		% number of bins to do discretization for method 'quant' and 'disc'
+
+% % thresholds to do discretization for method 'bin'		% not recently modified
+% bin_threshold_phase =		0;
+% bin_threshold_raw =		0;
+% bin_threshold_sync =		0.85;
+% bin_threshold_p_sync =		0.85;
+% bin_threshold_chi =		0.15;
+
+%% measure parameter specification
+
+tau =				[1, 3]; % , 10, 100];		% time-lags
+
+% method for measures based on standard Shannon-information (i.e., Dynamical Independence (DD), and 
+% practical Causal Emergence (practCE)); can be 'Discrete', 'Gaussian' or 'Kraskov' 
+% ('Kraskov' so far only works for dynamical independence)
+method_standard_mi =	{'Discrete'}; % , 'Gaussian', 'Kraskov'}; % to be expanded with 'Kraskov' for practCE
+kraskov_param =		[3]; % , 5, 6];
+
+% not yet built into the loops
+tau_steps =			[1]; % , 2, 3];
+
+%% assign generic variable names further used in the script
+
+model_params = {A, beta, intra_comm_size, n_communities};				% model parameters for kuramoto oscillators;
+													% must be in that order
+measure_params = {tau, method_standard_mi, kraskov_param, disc_method, bins};	% measure parameters common to both practCE and DD;
+													% must be in that order
+measure_params_dd = {tau_steps};								% measure parameters specific to DD
 
 %% plotting parameter specification
 
-% data and number of bins for plotting histograms of micro and macro variables
-% data can be 'log' or 'raw'
+% number of bins for plotting histograms of micro and macro variables
 nbins = 100;								
-data = 'raw'; 
 
 % axes ticks for heatmaps with beta on x-axis, and A on y-axis
 
@@ -84,7 +120,7 @@ x_label_chi_met = 'beta';
 
 % loop over all values of npoints
 
-% {
+%{
   
 get_all_kuramoto_distr_plots(data, nbins, network, A_vec, beta_vec, all_npoints, ...
 		pathout_data_sim_time_series, pathout_plots_distributions);
@@ -93,7 +129,7 @@ get_all_kuramoto_distr_plots(data, nbins, network, A_vec, beta_vec, all_npoints,
 
 %% heatmaps for metastability & chimera index
 
-% {
+%{
 
 get_all_kuramoto_met_chi_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_heatmaps, ...
 	x_label_heatmaps, y_label_heatmaps, pathout_data_sync, pathout_plots_sigma_chi, ...
@@ -105,7 +141,7 @@ get_all_kuramoto_met_chi_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_
 
 % loop over all values of npoints
 
-% {
+%{
 
 get_all_kuramoto_corr_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_heatmaps, ...
 	x_label_heatmaps, y_label_heatmaps, pathout_data_mean_corr, pathout_plots_mean_corr)
@@ -118,7 +154,7 @@ get_all_kuramoto_corr_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_hea
 
 % {
 
-get_all_kuramoto_practCE_heatmaps(network, taus, all_npoints, x_axis_heatmaps, y_axis_heatmaps, ...
+get_all_practCE_heatmaps(network, npoints, measure_params, x_axis_heatmaps, y_axis_heatmaps, ...
 	x_label_heatmaps, y_label_heatmaps, pathout_data_pract_ce, pathout_plots_pract_ce)
 
 %}
@@ -129,9 +165,8 @@ get_all_kuramoto_practCE_heatmaps(network, taus, all_npoints, x_axis_heatmaps, y
 
 % {
 
-get_all_kuramoto_DD_heatmaps(network, taus, all_npoints, x_axis_heatmaps, y_axis_heatmaps, x_label_heatmaps, ...
-	y_label_heatmaps, pathout_data_dd, pathout_plots_dd_mean_pair_sync, pathout_plots_dd_sigma_chi, ...
-	pathout_plots_dd_pair_sync, pathout_plots_dd_synchrony, pathout_plots_dd_control_vars)
+get_all_DD_heatmaps(network, npoints, measure_params, x_axis_heatmaps, y_axis_heatmaps, ...
+	x_label_heatmaps, y_label_heatmaps, pathout_data_dd, pathout_plots_dd)
 
 %}
 	
