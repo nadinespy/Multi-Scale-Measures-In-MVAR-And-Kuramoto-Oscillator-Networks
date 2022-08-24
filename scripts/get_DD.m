@@ -33,10 +33,12 @@ function all_DD = get_DD(micro_variables, macro_variables, method, tau_history, 
 		
 		for j = 1:n_macro_variables;
 			macro = macro_variables.(fieldnames_macro{j});
+			
+			micro_dim = size(micro, 1);
+			macro_dim = size(macro, 1);
 	
 			if strcmp(method, 'Kraskov') | strcmp(method, 'Gaussian');
-				micro_dim = size(micro, 1);
-				macro_dim = size(macro, 1);
+
 				
 				% "Specifically, this class implements the pairwise or apparent transfer entropy, i.e. we compute the
 				% transfer that appears to come from a single source variable, without examining any other potential sources"
@@ -66,8 +68,8 @@ function all_DD = get_DD(micro_variables, macro_variables, method, tau_history, 
 				% We need to construct the joint values of the dest and source before we pass them in,
 				% and need to use the matrix conversion routine when calling from Matlab/Octave:
 				mUtils = javaObject('infodynamics.utils.MatrixUtils');
-				teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro), 12), ...
-					mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(macro), 1));
+				teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro'), micro_dim), ...
+					mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(macro'), macro_dim));
 				DD = teCalc.computeAverageLocalOfObservations()
 				
 				all_DD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = DD;

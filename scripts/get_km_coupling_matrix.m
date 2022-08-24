@@ -1,4 +1,4 @@
-function kuramoto_coupling_matrix = get_kuramoto_coupling_matrix(intra_comm_size, n_communities, A); 
+function kuramoto_coupling_matrix = get_km_coupling_matrix(intra_comm_size, n_communities, A); 
 
 d0 = intra_comm_size; 	
 d1 = intra_comm_size;							% numbers of connections at different community levels

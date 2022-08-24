@@ -1,5 +1,5 @@
 function get_all_practCE_heatmaps(network, time_series_length, measure_params, x_axis, y_axis, x_label, y_label, ...
-		pathout_data_pract_ce, pathout_plots_pract_ce)
+		ce_variable_name, pathout_data_pract_ce, pathout_plots_pract_ce)
 
 	set(0,'DefaultFigureVisible','off');
 	
@@ -9,7 +9,7 @@ function get_all_practCE_heatmaps(network, time_series_length, measure_params, x
 		
 		for z = 1:length(measure_param1);
 			
-			load([pathout_data_pract_ce network '_all_practCE_' num2str(time_series_length(q)) '_' num2str(measure_param1(z)) '.mat'], ...
+			load([pathout_data_pract_ce network '_all_practCE_' ce_variable_name '_' num2str(time_series_length(q)) '_' num2str(measure_param1(z)) '.mat'], ...
 				'all_practCE');
 			
 			fieldnames_all_practCE = fieldnames(all_practCE);
@@ -21,6 +21,7 @@ function get_all_practCE_heatmaps(network, time_series_length, measure_params, x
 				% disc number/pract CE method + time-series length + measure param1
 				file_names{k} = fieldnames_all_practCE{k,1};
 				titles{k} = {[fieldnames_all_practCE{k,1}] ['npoints = ' num2str(time_series_length(q)) ', tau = ' num2str(measure_param1(z))]};
+				titles{k} = strrep(titles{k},'_',' ');
 				
 			end
 		

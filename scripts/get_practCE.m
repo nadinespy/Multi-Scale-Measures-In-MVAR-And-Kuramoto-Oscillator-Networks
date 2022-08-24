@@ -24,7 +24,7 @@ function all_practCE = get_practCE(micro_variables, macro_variables, tau, method
 			% results in struct
 			practCE.pract_ce = EmergencePsi(micro', macro', tau, method);
 			practCE.pract_dc = EmergenceDelta(micro', macro', tau, method);
-			practCE.pract_cd = practCE.pract_ce - practCE.pract_dc;
+			practCE.pract_cd = EmergenceGamma(micro', macro', tau, method);
 			
 			% store struct in another struct with micro-macro combination as fieldname
 			all_practCE.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = practCE;

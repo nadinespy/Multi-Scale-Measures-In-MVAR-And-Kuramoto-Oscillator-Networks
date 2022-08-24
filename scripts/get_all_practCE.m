@@ -1,5 +1,5 @@
 function get_all_practCE(network, time_series_length, measure_params, model_params, ...
-	micro_variable_names, macro_variable_names, pathout_data_sim_time_series, pathout_data_pract_ce)
+	micro_variable_names, macro_variable_names, ce_variable_name, pathout_data_sim_time_series, pathout_data_pract_ce)
 	
 	% should do separate loops for Gaussian & discrete methods
 
@@ -38,14 +38,14 @@ function get_all_practCE(network, time_series_length, measure_params, model_para
 									
 									% load all micro variables into one struct 'micro_variables'
 									for k = 1:length(micro_variable_names)
-										micro_variables(1).([measure_param4{p} '_' micro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' measure_param4{p} '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_series_length_str '_' num2str(measure_param5(o)) '.mat'], ...
-											[measure_param4{p} '_' micro_variable_names{k}]));
+										micro_variables(1).([measure_param4{p} num2str(measure_param5(o)) '_' micro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' measure_param4{p} num2str(measure_param5(o)) '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_series_length_str '.mat'], ...
+											[measure_param4{p} num2str(measure_param5(o)) '_' micro_variable_names{k}]));
 									end
 									
 									% load all macro variables into one struct 'macro_variables'
 									for k = 1:length(macro_variable_names)
-										macro_variables(1).([measure_param4{p} '_' macro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' measure_param4{p} '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_series_length_str '_' num2str(measure_param5(o)) '.mat'], ...
-											[measure_param4{p} '_' macro_variable_names{k}]));
+										macro_variables(1).([measure_param4{p} num2str(measure_param5(o)) '_' macro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' measure_param4{p} num2str(measure_param5(o)) '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_series_length_str '.mat'], ...
+											[measure_param4{p} num2str(measure_param5(o)) '_' macro_variable_names{k}]));
 									end
 									
 								else
@@ -92,14 +92,14 @@ function get_all_practCE(network, time_series_length, measure_params, model_para
 								fieldnames_temp_practCE = fieldnames(temp_practCE);
 								
 								if strcmp(lower(measure_param2(b)), 'discrete');	
-									% fieldnames consist of measure (practical CE, DC, or CD) + micro variable + macro variable + disc number
+									% fieldnames consist of measure (practical CE, DC, or CD) + micro variable (with bin number) + macro variable (with bin number)
 									for l = 1:length(fieldnames_temp_practCE);
-										new_fieldnames_temp_practCE{l} = [fieldnames_temp_practCE{l} '_' num2str(measure_param5(o))];
+										new_fieldnames_temp_practCE{l} = [fieldnames_temp_practCE{l}];
 									end
 								else 
 									% fieldnames consist of measure (practical CE, DC, or CD) + micro variable + macro variable + pract CE method
 									for l = 1:length(fieldnames_temp_practCE);
-										new_fieldnames_temp_practCE{l} = [fieldnames_temp_practCE{l} '_' measure_param2{b}];
+										new_fieldnames_temp_practCE{l} = [fieldnames_temp_practCE{l} '_gauss'];
 									end
 								end
 								
@@ -122,7 +122,7 @@ function get_all_practCE(network, time_series_length, measure_params, model_para
 			
 			% saved filenames consist of
 			% network name + type of causal emergence + number of datapoints + time-lag
-			save([pathout_data_pract_ce network '_all_practCE_' time_series_length_str '_' measure_param1_str '.mat'], ...
+			save([pathout_data_pract_ce network '_all_practCE_' ce_variable_name '_' time_series_length_str '_' measure_param1_str '.mat'], ...
 				'all_practCE');
 			
 		end
@@ -130,5 +130,5 @@ function get_all_practCE(network, time_series_length, measure_params, model_para
 		clear all_practCE;
 		
 	end
-
+	
 end 
