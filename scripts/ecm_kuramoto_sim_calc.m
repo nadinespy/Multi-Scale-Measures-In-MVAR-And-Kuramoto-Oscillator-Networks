@@ -115,16 +115,6 @@ get_variables(network, npoints, model_params, coupling_matrices, ...
 
 %}
 
-%% define what micro and macro variables to use to calculate emergence measures
-
-% {
-
-% group names of variables generated in get_all_variables() into micro and macro variabels
-micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', 'rica12_phase'};
-macro_variable_names = {'mp_sync', 'chi', 'sum_phase', 'sum_rica6_phase', 'sum_rica12_phase'};
-
-%}
-
 %% load all micro and macro variables
 
 %{
@@ -193,8 +183,6 @@ get_all_kuramoto_mean_covcorr(network, model_param1, model_param2, npoints, ...
 % choose specific file name which will consist of 
 % [n_oscillators + network + '_all_practCE_' + ce_veriable_name + time_series_length + tau]
 
-ce_variable_name = 'blubb';
-
 get_all_practCE(network, npoints, measure_params, model_params, micro_variable_names, ...
 	macro_variable_names, ce_variable_name, pathout_data_sim_time_series, pathout_data_pract_ce);
 
@@ -206,7 +194,6 @@ get_all_practCE(network, npoints, measure_params, model_params, micro_variable_n
 
 % choose specific file name which will consist of 
 % [n_oscillators + network + '_all_practCE_' + ce_veriable_name + time_series_length + tau]
-dd_variable_name = 'blubb';
 
 get_all_DD(network, npoints, measure_params, measure_params_dd, model_params, micro_variable_names, ...
 	macro_variable_names, dd_variable_name, pathout_data_sim_time_series, pathout_data_dd);

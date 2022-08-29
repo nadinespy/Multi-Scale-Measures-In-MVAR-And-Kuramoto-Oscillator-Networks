@@ -6,7 +6,7 @@
 % beginning, and keeping all other scripts flexible for varying			a set of variables to every function, even if some 
 % numbers/names of micro and macro variables						variables of that set are not needed in some of them)
 %  
-% - yeat another step would be to keep model parameters flexible,			DONE (also for measure parameters)
+% - yet another step would be to keep model parameters flexible,			DONE (also for measure parameters)
 % and only hard-code them at the beginning 
 %
 % - get model parameters for which variables are Gaussian, and get DD/CE
@@ -20,10 +20,13 @@
 % - search for best subsets in micro and macro that maximize DD and CE
 %
 % - for Kuramoto oscillators with lots of nodes: do dim reduction
+%
 % - model parameters (e. g., values for noise correlation & coupling 
 % matrix) for CE, DD should be explicit in structs
 
 %% KURAMOTO OSCILLATORS WITH DIFFERENT COUPLINGS, BETAS, MACRO & MICRO VARIABLES
+
+% DESSCRIPTION NEEDS TO BE UPDATED
 
 % This script implements practical synergy capacity for 256-node Kuramoto oscillators with different couplings and phase lags, 
 % two different top-level macro variables (variance of synchronies & global average pairwise synchrony between communities), 
@@ -91,7 +94,7 @@ directories();
 
 %% model parameter specification 
 
-% model name for saving files
+% model name for saving files (type and size of model)
 network =				'12km';
 
 % kuramoto parameter specification
@@ -104,6 +107,8 @@ beta =				linspace(0.08, 0.8, 10);		% vector with different values for noise cor
 										% zero macro variable, yielding erroneous values for emergence 
 										
 npoints =				[10000]; %, 10000];		% number of data points in time-series
+
+%% measure parameter specification
 
 % parameters for different discretization methods
 disc_method =			{'quant'}; %, 'even', 'bin']; % choose discretization method: 'quant' for using quantiles, 
@@ -119,7 +124,6 @@ bins =				[1, 3, 7]; % , 1, 7];		% number of bins to do discretization for metho
 % bin_threshold_p_sync =	0.85;
 % bin_threshold_chi =		0.15;
 
-%% measure parameter specification
 
 tau =					[1, 3, 10]; % , 1, 10];		% time-lags
 
@@ -127,7 +131,8 @@ tau =					[1, 3, 10]; % , 1, 10];		% time-lags
 % Independence (DD), and practical Causal Emergence (practCE)); can be 
 % 'Discrete', 'Gaussian' or 'Kraskov' ('Kraskov' so far only works for DD)
 
-method_standard_mi =		{'Gaussian'};		% , 'Gaussian', 'Kraskov'}; % to be expanded with 'Kraskov' for practCE
+method_standard_mi =		{'Gaussian'};		% , 'Gaussian', 'Kraskov', 'Discrete'}; % to be expanded with 'Kraskov' for practCE
+method_pid_mi =			{'MMI', 'CCS'};
 kraskov_param =			[2, 3, 4];			% , 3, 4];	% not yet implemented in loops
 
 % not yet built into the loops
@@ -136,12 +141,12 @@ tau_steps =				[1, 3, 10]; % , 3, 10];
 %% assign generic variable names further used in the script
 
 % modify the following functions according to model
-get_variables =			@get_km_variables;
-get_coupling_matrix =		@get_km_coupling_matrix;
-get_coupling_matrices =		@get_km_coupling_matrices;
+get_variables =			@get_km_variables;					% function to get micro/macro variables of interest
+get_coupling_matrix =		@get_km_coupling_matrix;				% function to get coupling matrix for one model
+get_coupling_matrices =		@get_km_coupling_matrices;				% function to get coupling matrices for all models
 
 % put all coupling parameters into one cell structure
-coupling_params =			{A, intra_comm_size, n_communities};		% must be in that order for 
+coupling_params =			{A, intra_comm_size, n_communities};		% must be in that order 
 
 % put all model parameters into one cell structure
 model_params =			{A, beta, intra_comm_size, n_communities};	% model parameters for kuramoto oscillators;
@@ -157,7 +162,15 @@ measure_params_dd =		{tau_steps};
 
 %% simulate, calculate, plot
 
-%{
+% {
+
+% group names of variables generated in get_all_variables() into micro and macro variabels
+micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', 'rica12_phase'};
+macro_variable_names = {'mp_sync', 'chi', 'sum_phase', 'sum_rica6_phase', 'sum_rica12_phase'};
+
+% file prefixes to distinguish different DD & CE struct files, and not overwrite them
+ce_variable_name = 'standard';
+dd_variable_name = 'standard';
 
 ecm_kuramoto_sim_calc();
 
