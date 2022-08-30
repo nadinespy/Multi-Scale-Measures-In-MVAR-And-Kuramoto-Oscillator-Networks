@@ -1,149 +1,114 @@
-% model name for saving files (type and size of model)
-network =				'12km';
+function emergence_struct = get_all_emergence(network, model_calc_params, ...
+		measure_params, micro_variable_names, macro_variable_names, variable_name, ...
+		pathout_data_sim_time_series, pathout_emergence, varargin)
 
-%% model parameter specification 
-
-% kuramoto parameter specification
-intra_comm_size =			4;					% intra-community size
-n_communities =			3;					% number of communities		
-A =					linspace(0.08, 0.8, 10);	% vector with different values for A
-beta =				linspace(0.08, 0.8, 10);	% vector with different values for noise correlation: use beta values only 
-										% up to 0.4, as sigma met & sigma chi turn out to be zero for greater 
-										% values of beta; in these cases, sigma chi will be a non-varying 
-										% zero macro variable, yielding erroneous values for emergence 
- 
-%% measure parameter specification
-% -------------------------------------------------------------------------
-% necessary input arguments
-
-measures =				{'ShannonCE', 'PhiIDCE', 'DD'};			% emergence measures
-methods =				{'Gaussian', 'Kraskov', 'Discrete'};		% to be expanded with 'Kraskov' for practCE
-time_lags =				[1, 3, 10];							% time-lags
-time_lengths =			[2000, 10000];
-
-% -------------------------------------------------------------------------
-% optional input arguments (depending on method)
-
-kraskov_params =			[2, 3, 4];							% not yet implemented in loops
-disc_methods =			{'quant'}; %, 'even', 'bin'};				% choose discretization method: 'quant' for using quantiles, 
-													% 'even' for discretizing into evenly spaced sections of the state space, 
-													% 'bin' for binarizing (scripts for latter two not yet modified)
-										
-bins =				[1, 3, 7];							% number of bins to do discretization for method 'quant' and 'disc'
-
-% -------------------------------------------------------------------------
-% input arguments specific to measures
-
-% PhiID-CE
-red_funcs =				{'MMI', 'CCS'};
-% DD
-time_steps =			[1, 3, 10]; 
-
-%% put all parameters into cell structures
-
-% -------------------------------------------------------------------------
-% model parameters
-
-% model parameters for simulating kuramoto oscillators; must be in that order
-model_sim_params.A			= A ;		 
-model_sim_params.beta			= beta;				
-model_sim_params.intra_comm_size	= intra_comm_size;
-model_sim_params.n_communities	= n_communities;
-
-% model parameters to calculate emergence for; must be in that order
-model_calc_params.A			= A ;		 
-model_calc_params.beta			= beta;								
-														
-
-% -------------------------------------------------------------------------														
-% put all common measure parameters common to Shannon CE, PhiID-CE & DD 
-% into one cell structure
-
-measure_params.measures = measures;
-measure_params.methods = methods;
-measure_params.time_lags = time_lags;
-measure_params.time_lengths = time_lengths;
-measure_params.kraskov_params = kraskov_params;
-measure_params.disc_methods = disc_methods;
-measure_params.bins = bins;
-
-% -------------------------------------------------------------------------
-% put measure parameters specific to DD into one cell structure
-measure_params_dd.time_steps = time_steps;
-
-% put measure parameters specific to PhiID-CE into one cell structure
-measure_params_phiid_ce.red_funcs = red_funcs;
-
-% -------------------------------------------------------------------------
-% pathouts for output
-pathout_emergence.pathout_data_shannon_ce = pathout_data_shannon_ce;
-pathout_emergence.pathout_data_phiid_ce = pathout_data_phiid_ce;
-pathout_emergence.pathout_data_dd = pathout_data_dd;
-
-% pathin
-pathout_input_sim_time_series.pathout_data_sim_time_series = pathout_data_sim_time_series;
-
-% -------------------------------------------------------------------------
-% group names of variables generated in get_all_variables() into 
-% micro and macro variabels
-micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', ...
-	'rica12_phase'};
-macro_variable_names = {'mp_sync', 'chi', 'sum_phase', ...
-	'sum_rica6_phase', 'sum_rica12_phase'};
-
-% file prefixes to distinguish different struct files, and not overwrite them
-variable_name = 'standard';
-
-%% calculate emergence
-
-function emergence_results = get_all_emergence(network, model_params, measure_params, ...
-		measure_params_dd, measure_params_phiid_ce, ...
-		micro_variable_names, macro_variable_names, variable_name, ...
-		pathout_data_sim_time_series, pathout_emergence)
-
+	% Inputs:	
+	%
+	% Required:	network				string
+	%		model_calc_params			1x1 struct with fields 
+	%							model_params1, model_params2, 
+	%							each of which contain 
+	%							float arrays
+	%
+	%		measure_params			1x1 struct with fields
+	%							'measures', 'methods',
+	%							'time_lags', 'time_lengths',
+	%							'kraskov_params', 'disc_methods',
+	%							' bins'
+	%
+	%							'measures': cell array with chars
+	%							'methods':cell array with chars
+	%							'time_lags': int array
+	%							'time_lengths': int array
+	%							'kraskov_params': int array
+	%							'disc_methods': cell arrays with chars
+	%							'bins': int array
+	%
+	%		micro_variable_names		cell array with chars
+	%		macro_variable_names		cell array with chars
+	%		variable_name			char
+	%		pathout_data_sim_time_series	char
+	%		pathout_emergence			1x1 struct with fields 
+	%							'pathout_data_shannon_ce',
+	%							'pathout_data_phiid_ce',
+	%							'pathout_data_dd', each of
+	%							which contain a char array
+	%
+	% Optional: measure_params_dd			1x1 struct with fields 
+	%							'time_steps': int array
+	%		measure_params_phiid_ce		1x1 struct with fields 
+	%							'red_funcs': cell array with chars
+	%
+	% Outputs: emergence_results			struct with fields 
+	%
+	%							'time_length',
+	%							'measure', 
+	%							'method', 
+	%							'time_lag', 
+	%							'disc_method', 
+	%							'bin_number', 
+	%							'kraskov_param',
+	%							'time_step',
+	%							'red_func',
+	%							'results'
+	%
+	%							where 'results' contains
+	%							fieldnames according to
+	%							micro-macro combinations,
+	%							each of which contain a 
+	%							table with emergence results,
+	%							with model_params1
+	%							and model_params2 as rows/
+	%							columns; all oother fields
+	%							contain one value from the 
+	%							structs' variables 
+	%							described above
+	
 	p = inputParser;
-	addRequired(p,'network', @isstring);
-	addRequired(p,'model_params', @isstruct);
+	addRequired(p,'network', @ischar);
+	addRequired(p,'model_calc_params', @isstruct);
 	addRequired(p,'measure_params', @isstruct);
-	addRequired(p,'micro_variable_names', @isstruct);
-	addRequired(p,'macro_variable_names', @isstruct);
-	addRequired(p,'variable_name', @isstring);
-	addRequired(p,'pathout_data_sim_time_series', @isstruct);
+	addRequired(p,'micro_variable_names', @iscell);
+	addRequired(p,'macro_variable_names', @iscell);
+	addRequired(p,'variable_name', @ischar);
+	addRequired(p,'pathout_data_sim_time_series', @ischar);
 	addRequired(p,'pathout_emergence', @isstruct);
 	
-	default_measure_params_dd = struct();
+	default_measure_params_dd = struct('time_steps', [1]);
 	addOptional(p,'measure_params_dd', default_measure_params_dd, ...
 		@isstruct);
-	default_measure_params_phiid_ce = struct();
+	default_measure_params_phiid_ce = struct('red_funcs', {'MMI', 'CCS'});
 	addOptional(p,'measure_params_phiid_ce', ...
 		default_measure_params_phiid_ce, @isstruct);
 	
-	parse(p, network, model_params, measure_params, ...
+	parse(p, network, model_calc_params, measure_params, ...
 		micro_variable_names, macro_variable_names, variable_name, ...
 		pathout_data_sim_time_series, pathout_emergence, varargin{:});
 	
-	network  =					p.Results.network;
-	model_params =				p.Results.model_params;
-	measure_params  =				p.Results.measure_params;
-	micro_variable_names =			p.Results.micro_variable_names;
-	macro_variable_names =			p.Results.macro_variable_names;
-	variable_name =				p.Results.variable_name;
-	pathout_data_sim_time_series =	p.Results.pathout_data_sim_time_series;
-	pathout_emergence =			p.Results.pathout_emergence;
-	% measure_params_dd =			p.Results.measure_params_dd;
-	% measure_params_phiid_ce =		p.Results.measure_params_phiid_ce;
+	network				= p.Results.network;
+	model_calc_params			= p.Results.model_calc_params;
+	measure_params			= p.Results.measure_params;
+	micro_variable_names		= p.Results.micro_variable_names;
+	macro_variable_names		= p.Results.macro_variable_names;
+	variable_name			= p.Results.variable_name;
+	pathout_data_sim_time_series	= p.Results.pathout_data_sim_time_series;
+	pathout_emergence			= p.Results.pathout_emergence;
+	measure_params_dd			= p.Results.measure_params_dd;
+	measure_params_phiid_ce		= p.Results.measure_params_phiid_ce;
 	
 	model_calc_params_fieldnames	= fieldnames(model_calc_params);
 	measure_params_fieldnames	= fieldnames(measure_params);
-	% measures		= measure_params.(strcmp(measure_params, 'measures'));
 	
-	model_param1	= model_calc_params.(model_calc_params_fieldnames{1});
-	model_param2	= model_calc_params.(model_calc_params_fieldnames{2});
+	% extract cell arrays from structs
+	model_params1	= model_calc_params.(model_calc_params_fieldnames{1});
+	model_params2	= model_calc_params.(model_calc_params_fieldnames{2});
 	
 	measures		= measure_params.measures;
 	methods		= measure_params.methods;
 	time_lags		= measure_params.time_lags;	
 	time_lengths	= measure_params.time_lengths;
+	time_steps		= measure_params_dd.time_steps;
+	red_funcs		= measure_params_phiid_ce.red_funcs;
 	
 	if length(measure_params_fieldnames) > 4
 		for g = 1:length(measure_params_fieldnames)
@@ -157,191 +122,222 @@ function emergence_results = get_all_emergence(network, model_params, measure_pa
 		end
 	end
 	
-	if exist measure_params_dd
-		time_steps = measure_params_dd.time_steps;
-	end
-	
-	if exist measure_params_phiid_ce
-		red_funcs = measure_params_phiid_ce.red_funcs;
-	end 
+% 	if exist('measure_params_dd')
+% 		time_steps = measure_params_dd.time_steps;
+% 	end
+% 	
+% 	if exist('measure_params_phiid_ce')
+% 		red_funcs = measure_params_phiid_ce.red_funcs;
+% 	end 
 
-	for n = 1:length(model_param1)
-		model_param1_str = param2str(model_param1(n));
+	model_params1_str = {};
+	for t = 1:length(model_params1)
+		model_params1_str{t} = num2str(model_params1(t));
+	end 
 		
-		for o = 1:length(model_param2)
-			model_param2_str = param2str(model_param2(n));
+	for e = 1:length(model_params2)
+		model_params2_str{e} = num2str(model_params1(e));
+	end 
+		
+	
+	% initialise master structure
+	emergence_struct = struct('time_length', [], 'measure', [], 'method', [], ...
+		'time_lag', [], 'disc_method', [], 'bin_number', [], ...
+		'kraskov_param', [], 'time_step', [], 'red_func', [], ...
+		'results', struct([]));
+	
+	% initialise fields with micro-macro combinations in  
+	% [emergence_struct.results] as well as fields for model parameters in 
+	% [emergence_struct.results.([micro_variable_names{u} '_' macro_variable_names{w}])]
+	
+	for u = 1:length(micro_variable_names);
+		
+		for w = 1:length(macro_variable_names);
 			
-			for j = 1:length(time_lengths)
-				time_length = time_lengths(j);
-				time_length_str = num2str(time_length);
+			emergence_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]) = ...
+				zeros(length(model_params1),length(model_params2));
+			
+			emergence_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]) = ...
+				array2table(emergence_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]), 'RowNames', model_params1_str, ...
+				'VariableNames', model_params2_str);
+			
+		end
+	end
+
+	% placeholder structs to fill in emergence results for measure specific parameters
+	temp_emergence_struct_time_steps(1,1:length(time_steps)) = emergence_struct;
+	temp_emergence_struct_red_funcs(1,1:length(red_funcs)) = emergence_struct;
+	
+	fieldnames_results = fieldnames(emergence_struct(1,1).results(1,1));
+	
+	% run the big loop over time lengths, measures, time lags, methods, 
+	% discretization methods & number of bins (for method 'discrete'), 
+	% K-nearest neighbours (for method 'kraskov'), time steps (in DD), 
+	% and reduncancy functions (in PhiIDCE)!
+	
+	for j = 1:length(time_lengths)
+		time_length = time_lengths(j);
+		
+		for q = 1:length(measures);
+			measure = measures{q};
+			
+			for z = 1:length(methods);
+				method = methods{z};
 				
-				% load all micro variables into one struct 'micro_variables'
-				for k = 1:length(micro_variable_names)
-					micro_variables(1).(micro_variable_names{k}) = struct2array(load([pathout_data_sim_time_series network '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-						micro_variable_names{k}));
-				end
-				
-				% load all macro variables into one struct 'macro_variables'
-				for k = 1:length(macro_variable_names)
-					macro_variables(1).(macro_variable_names{k}) = struct2array(load([pathout_data_sim_time_series network '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-						macro_variable_names{k}));
-				end
-				
-				for q = 1:length(measures);
-					measure = measures{q};
-					% measure_function = @DD;		% define measure function to get
-					% rid of redundant loops for measures
-					% below
-					for z = 1:length(methods);
-						method = methods{z};
+				for i = 1:length(time_lags);
+					time_lag = time_lags(i);
+					
+					% ------------------------------------------------------
+					% method 'discrete'
+					% ------------------------------------------------------
+					if strcmp(lower(method), 'discrete');
 						
-						for i = 1:length(time_lags);
-							time_lag = time_lags(i);
+						for c = 1:length(disc_methods)
+							disc_method = disc_methods{c};
 							
-							if strcmp(lower(method), 'discrete');
+							for l = 1:length(bins)
+								bin_number = bins(l);
+								bin_number_str = num2str(bin_number);
+								fprintf('get all emergence - loop indices: time_length: %d, measure: %d, method: %d, time_lag: %d, disc_method: %d, bin_number: %d\n', j, q, z, i, c, l);
 								
-								for k = 1:length(disc_methods)
-									disc_method = disc_methods{k};
+								% ------------------------------------------------------
+								% PhiID CE
+								% ------------------------------------------------------
+								if strcmp(measure, 'PhiIDCE');
 									
-									for l = 1:length(bins)
-										bin = bins(l);
-										
-										% load all micro variables into one struct 'micro_variables'
-										for k = 1:length(micro_variable_names)
-											micro_variables(1).([disc_method '_' micro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' disc_method bin '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-												[disc_method bin '_' micro_variable_names{k}]));
-										end
-										
-										% load all macro variables into one struct 'macro_variables'
-										for k = 1:length(macro_variable_names)
-											macro_variables(1).([disc_method '_' macro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' disc_method bin '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-												[disc_method bin '_' macro_variable_names{k}]));
-										end
-										
-										if strcmp(measure, 'PhiIDCE')
-											
-											% do calculation for PhiID CE
-										elseif strcmp(measure, 'ShannonCE')
-											
-											% do calculation for Shannon Ce
-											
-											% ---------------------------------------------------------------------------------------------------------------------------------------
-											% dynamical dependence
-											% ---------------------------------------------------------------------------------------------------------------------------------------
-										elseif strcmp(measure, 'DD')
-											
-											for a = 1:length(time_steps)
-												time_step = time_steps(a)
-												
-												if time_step <= time_lag
-													
-													% calculate dynamical independence (DD)
-%% CONTINUE HERE
-													fprintf('get_all_DD - loop indices: time_series_length: %d, measure_param1: %d, model_param1: %d, model_param2: %d, measure_param2: %d, measure_param3: %d, measure_param1_dd: %d\n', q, z, i, j, b, c, d);
-													
-													% get DD for all combinations of micro and top-level macro variables
-													DD = get_DD(micro_variables, macro_variables, method, time_lag, time_step);
-													
-													fieldnames_DD = fieldnames(DD);
-													
-													for l = 1:length(fieldnames(DD));
-														temp_DD(1).(['dd_' fieldnames_DD{l,1}])(i,j) = DD.(fieldnames_DD{l,1});
-													end
-													
-													fieldnames_temp_DD = fieldnames(temp_DD);
-													
-													% fieldnames consist of measure (practical CE, DC, or CD) + micro variable + macro variable + kraskov number + time-step
-													for l = 1:length(fieldnames_temp_DD);
-														new_fieldnames_temp_DD{l} = [fieldnames_temp_DD{l} '_krask' num2str(measure_param3(c)) '_tstep' num2str(measure_param1_dd(d))];
-													end
-													
-													for l = 1:length(new_fieldnames_temp_DD);
-														all_DD(1).(new_fieldnames_temp_DD{l}) = temp_DD(1).(fieldnames_temp_DD{l});
-													end
-													
-													clear DD;
-													clear macro_variables;
-													clear micro_variables;
-												else
-													continue
-												end
-												% do calculation for DD
-											end
-										end
-									end
-								end
-								
-								% alternative
-								% emergence = measure_function(inputs)
-								
-							elseif strcmp(lower(method), 'kraskov')
-								
-								for k = 1:length(kraskov_params)
+									% do calculation for PhiID CE
 									
-									for n = 1:length(model_param1)
-										
-										for o = 1:length(model_param2)
-											
-											if strcmp(measure, 'PhiIDCE')
-												
-												% do calculation for PhiID CE
-											elseif strcmp(measure, 'ShannonCE')
-												
-												% do calculation for Shannon Ce
-											elseif strcmp(measure, 'DD')
-												
-												% do calculation for DD
-											end
-											
-											% alternative
-											% emergence = measure_function(inputs)
-										end
-									end
-								end
-								
-							elseif strcmp(lower(method), 'gaussian')
-								
-								for n = 1:length(model_param1)
+									% ------------------------------------------------------
+									% Shannon CE
+									% ------------------------------------------------------
+								elseif strcmp(measure, 'ShannonCE');
 									
-									for o = 1:length(model_param2)
-										
-										if strcmp(measure, 'PhiIDCE')
-											
-											% do calculation for PhiID CE
-										elseif strcmp(measure, 'ShannonCE')
-											
-											% do calculation for Shannon Ce
-										elseif strcmp(measure, 'DD')
-											
-											% do calculation for DD
-										end
-										
-										% alternative
-										% emergence = measure_function(inputs)
-									end
+									% do calculation for Shannon Ce
+									
+									% ------------------------------------------------------
+									% dynamical dependence
+									% ------------------------------------------------------
+								elseif strcmp(measure, 'DD');
+									
+									% include this at some point as optional argument
+									kraskov_param = [];
+									
+									% loop over time_steps, model_params1, and model_params2
+									emergence_struct(1,end:length(time_steps)) = get_all_DD(temp_emergence_struct_time_steps(1,1:length(time_steps)), ...
+										model_params1, ...
+										model_params2, ...
+										measure, ...
+										time_length, ...
+										method, ...
+										time_lag, ...
+										time_steps, ...
+										micro_variable_names, ...
+										macro_variable_names, ...
+										network, ...
+										pathout_data_sim_time_series, ...
+										kraskov_param, ...
+										disc_method, ...
+										bin_number);
+									
+									emergence_struct(1,end+length(time_steps))
 								end
 							end
 						end
+						
+						% ------------------------------------------------------
+						% method 'kraskov'
+						% ------------------------------------------------------
+					elseif strcmp(lower(method), 'kraskov');
+						
+						for h = 1:length(kraskov_params);
+							kraskov_param = kraskov_params(h);
+							fprintf('get all emergence - loop indices: time_length: %d, measure: %d, method: %d, time_lag: %d, kraskov_param: %d\n', j, q, z, i, h);
+							
+							% ------------------------------------------------------
+							% PhiID CE
+							% ------------------------------------------------------
+							if strcmp(measure, 'PhiIDCE');
+								
+								% do calculation for PhiID CE
+								
+								% ------------------------------------------------------
+								% Shannon CE
+								% ------------------------------------------------------
+							elseif strcmp(measure, 'ShannonCE');
+								
+								% do calculation for Shannon Ce
+								
+								% ------------------------------------------------------
+								% dynamical dependence
+								% ------------------------------------------------------
+							elseif strcmp(measure, 'DD');
+								
+								% include those at some point as optional arguments
+								disc_method = [];
+								bin_number = [];
+								
+								% loop over time_steps, model_params1, and model_params2
+								emergence_struct(1,end:length(time_steps)) = get_all_DD(temp_emergence_struct_time_steps(1,1:length(time_steps)), ...
+									model_params1, ...
+									model_params2, ...
+									measure, ...
+									time_length, ...
+									method, ...
+									time_lag, ...
+									time_steps, ...
+									micro_variable_names, ...
+									macro_variable_names, ...
+									network, ...
+									pathout_data_sim_time_series, ...
+									kraskov_param, ...
+									disc_method, ...
+									bin_number);
+								
+								
+							end
+							% alternative
+							% emergence = measure_function(inputs)
+						end
+						
+						% ------------------------------------------------------
+						% method 'gaussian'
+						% ------------------------------------------------------
+					elseif strcmp(lower(method), 'gaussian')
+						
+						fprintf('get all emergence - loop indices: time_length: %d, measure: %d, method: %d, time_lag: %d, ', j, q, z, i);
+						
+						% ------------------------------------------------------
+						% PhiID CE
+						% ------------------------------------------------------
+						if strcmp(measure, 'PhiIDCE')
+							
+							% do calculation for PhiID CE
+							
+							% ------------------------------------------------------
+							% Shannon CE
+							% ------------------------------------------------------
+						elseif strcmp(measure, 'ShannonCE')
+							
+							% do calculation for Shannon Ce
+							
+							% ------------------------------------------------------
+							% dynamical dependence
+							% ------------------------------------------------------
+						elseif strcmp(measure, 'DD')
+							
+							% do calculation for DD
+						end
+						
+						% alternative
+						% emergence = measure_function(inputs)
+						
 					end
 				end
 			end
 		end
 	end
-end
 
-								
-
-
-			
-%% saving practical measures for different micro & macro variables
-
-% saved filenames consist of
-% network name + type of causal emergence + number of datapoints + time-lag
-save([pathout_data_dd network '_all_DD_' dd_variable_name '_' num2str(time_series_length(q)) '_' num2str(measure_param1(z)) '.mat'], ...
-	'all_DD');
-				
-clear all_DD;
-	
-	
-	
-
+end	

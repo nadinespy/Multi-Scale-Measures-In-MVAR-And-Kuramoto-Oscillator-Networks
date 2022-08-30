@@ -97,83 +97,105 @@ directories();
 % model name for saving files (type and size of model)
 network =				'12km';
 
+%% model parameter specification 
+
 % kuramoto parameter specification
-intra_comm_size =			4;					% intra-community size
-n_communities =			3;					% number of communities		
-A =					linspace(0.08, 0.8, 10);		% vector with different values for A
-beta =				linspace(0.08, 0.8, 10);		% vector with different values for noise correlation: use beta values only 
+intra_comm_size		= 4;						% intra-community size
+n_communities		= 3;						% number of communities		
+A				= linspace(0.08, 0.8, 1);		% vector with different values for A
+beta				= linspace(0.08, 0.8, 1);		% vector with different values for noise correlation: use beta values only 
 										% up to 0.4, as sigma met & sigma chi turn out to be zero for greater 
 										% values of beta; in these cases, sigma chi will be a non-varying 
 										% zero macro variable, yielding erroneous values for emergence 
-										
-npoints =				[10000]; %, 10000];		% number of data points in time-series
 
-%% measure parameter specification
-
-% parameters for different discretization methods
-disc_method =			{'quant'}; %, 'even', 'bin']; % choose discretization method: 'quant' for using quantiles, 
+disc_methods		= {'quant'}; %, 'even', 'bin'};	% choose discretization method: 'quant' for using quantiles, 
 										% 'even' for discretizing into evenly spaced sections of the state space, 
 										% 'bin' for binarizing (scripts for latter two not yet modified)
 										
-bins =				[1, 3, 7]; % , 1, 7];		% number of bins to do discretization for method 'quant' and 'disc'
+bins				= [1]; %, 3, 7];				% number of bins to do discretization for method 'quant' and 'disc'
 
-% thresholds to do discretization for method 'bin'		% not recently modified
-% bin_threshold_phase =		0;
-% bin_threshold_raw =		0;
-% bin_threshold_sync =		0.85;
-% bin_threshold_p_sync =	0.85;
-% bin_threshold_chi =		0.15;
+%% measure parameter specification
+% -------------------------------------------------------------------------
+% necessary input arguments
 
+measures			= {'DD'}; %, 'ShannonCE', 'PhiIDCE'};			% emergence measures
+methods			= {'Kraskov'}; %, 'Gaussian', 'Discrete'};		% to be expanded with 'Kraskov' for practCE
+time_lags			= [3]; %, 3, 10];							% time-lags
+time_lengths		= [10000]; %, 2000];
 
-tau =					[1, 3, 10]; % , 1, 10];		% time-lags
+% -------------------------------------------------------------------------
+% optional input arguments (depending on method)
 
-% method for measures based on standard Shannon-information (i.e., Dynamical
-% Independence (DD), and practical Causal Emergence (practCE)); can be 
-% 'Discrete', 'Gaussian' or 'Kraskov' ('Kraskov' so far only works for DD)
+kraskov_params		= [2]; %, 3, 4];							
 
-method_standard_mi =		{'Gaussian'};		% , 'Gaussian', 'Kraskov', 'Discrete'}; % to be expanded with 'Kraskov' for practCE
-method_pid_mi =			{'MMI', 'CCS'};
-kraskov_param =			[2, 3, 4];			% , 3, 4];	% not yet implemented in loops
+% -------------------------------------------------------------------------
+% input arguments specific to measures
 
-% not yet built into the loops
-tau_steps =				[1, 3, 10]; % , 3, 10];
+% PhiID-CE
+red_funcs			= {'MMI'}; %, 'CCS'};
 
-%% assign generic variable names further used in the script
+% DD
+time_steps			= [1, 3]; %, 3, 10]; 
 
-% modify the following functions according to model
-get_variables =			@get_km_variables;					% function to get micro/macro variables of interest
-get_coupling_matrix =		@get_km_coupling_matrix;				% function to get coupling matrix for one model
-get_coupling_matrices =		@get_km_coupling_matrices;				% function to get coupling matrices for all models
+%% put all parameters into cell structures
 
-% put all coupling parameters into one cell structure
-coupling_params =			{A, intra_comm_size, n_communities};		% must be in that order 
+% -------------------------------------------------------------------------
+% model parameters
 
-% put all model parameters into one cell structure
-model_params =			{A, beta, intra_comm_size, n_communities};	% model parameters for kuramoto oscillators;
-													% must be in that order
+% model parameters for simulating kuramoto oscillators; must be in that order
+model_sim_params.A			= A ;		 
+model_sim_params.beta			= beta;				
+model_sim_params.intra_comm_size	= intra_comm_size;
+model_sim_params.n_communities	= n_communities;
 
-% put all measure parameters common to practCE & DD into one cell structure
-measure_params =			{tau, method_standard_mi, kraskov_param, ...	% measure parameters common to both practCE and DD;
-					disc_method, bins};					% must be in that order
+% model parameters to calculate emergence for; must be in that order
+model_calc_params.A			= A ;		 
+model_calc_params.beta			= beta;																					
 
+% -------------------------------------------------------------------------														
+% put all common measure parameters common to Shannon CE, PhiID-CE & DD 
+% into one cell structure
+
+measure_params.measures = measures;
+measure_params.methods = methods;
+measure_params.time_lags = time_lags;
+measure_params.time_lengths = time_lengths;
+measure_params.kraskov_params = kraskov_params;
+measure_params.disc_methods = disc_methods;
+measure_params.bins = bins;
+
+% -------------------------------------------------------------------------
 % put measure parameters specific to DD into one cell structure
-measure_params_dd =		{tau_steps};						
+measure_params_dd.time_steps = time_steps;
 
+% put measure parameters specific to PhiID-CE into one cell structure
+measure_params_phiid_ce.red_funcs = red_funcs;
 
-%% simulate, calculate, plot
+% -------------------------------------------------------------------------
+% pathouts for output
+pathout_emergence.pathout_data_shannon_ce = pathout_data_shannon_ce;
+pathout_emergence.pathout_data_phiid_ce = pathout_data_phiid_ce;
+pathout_emergence.pathout_data_dd = pathout_data_dd;
 
-% {
+% pathin
+pathout_input_sim_time_series.pathout_data_sim_time_series = pathout_data_sim_time_series;
 
-% group names of variables generated in get_all_variables() into micro and macro variabels
-micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', 'rica12_phase'};
-macro_variable_names = {'mp_sync', 'chi', 'sum_phase', 'sum_rica6_phase', 'sum_rica12_phase'};
+% -------------------------------------------------------------------------
+% group names of variables generated in get_all_variables() into 
+% micro and macro variabels
+micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', ...
+	'rica12_phase'};
+macro_variable_names = {'mp_sync', 'chi', 'sum_phase', ...
+	'sum_rica6_phase', 'sum_rica12_phase'};
 
-% file prefixes to distinguish different DD & CE struct files, and not overwrite them
-ce_variable_name = 'standard';
-dd_variable_name = 'standard';
+%% calculate emergence
 
-ecm_kuramoto_sim_calc();
+% file prefixes to distinguish different struct files, and not overwrite them
+variable_name = 'standard';
 
-ecm_kuramoto_plot();
+emergence_results = get_all_emergence(network, model_calc_params, measure_params, ...
+		micro_variable_names, macro_variable_names, variable_name, ...
+		pathout_data_sim_time_series, pathout_emergence, measure_params_dd, ...
+		measure_params_phiid_ce);
 
 %}
