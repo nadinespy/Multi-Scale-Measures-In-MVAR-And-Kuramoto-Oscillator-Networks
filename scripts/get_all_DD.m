@@ -1,20 +1,26 @@
-function output_struct = get_all_DD(input_struct, ...
+function output_struct = get_all_DD(network, ...
 		model_params1, ...
 		model_params2, ...
-		measure, ...
 		time_length, ...
+		measure, ...
 		method, ...
 		time_lag, ...
 		time_steps, ...
 		micro_variable_names, ...
 		macro_variable_names, ...
-		network, ...
-		pathout_data_sim_time_series, ...
-		kraskov_param, ...
-		disc_method, ...
-		bin_number);
+		input_struct, ...
+		pathin_sim_time_series, ...
+		varargin);
 	
-	% Inputs:	input_struct			struct with fields 
+	% Function description: get_all_DD() takes as inputs scalar parameter 
+	% values common to all emergence calculations, and arrays with 
+	% parameter values specific to DD. It then loops over the DD-specific
+	% parameters.
+	
+	% Inputs:	
+	%
+	% Required: input_struct			1x(length(time_steps))struct 
+	%							with fields 
 	%
 	%							'time_length',
 	%							'measure', 
@@ -30,8 +36,8 @@ function output_struct = get_all_DD(input_struct, ...
 	%							where 'results' contains
 	%							fieldnames according to
 	%							micro-macro combinations,
-	%							each of which contain a 
-	%							table with model_params1
+	%							each of which is valued with  
+	%							a table with model_params1
 	%							and model_params2 as rows/
 	%							columns, initialized with 
 	%							zeros; all other fields
@@ -39,29 +45,88 @@ function output_struct = get_all_DD(input_struct, ...
 	% 
 	%		model_params1			float array
 	%		model_params2			float array
-	%		measure				string
-	%		time_length				int
-	%		method				string
-	%		time_lag				int
-	%		time_steps				int array
+	%		measure				char array
+	%		time_length				double
+	%		method				char array
+	%		time_lag				double
+	%		time_steps				double array
 	%		micro_variable_names		cell array with chars
 	%		macro_variable_names		cell array with chars
-	%		network				string
-	%		pathout_data_sim_time_series	string
-	%		kraskov_param			int
-	%		disc_method				string
-	%		bin_number				int	
+	%		network				char array
+	%		pathin_sim_time_series		1x1 struct with field 
+	%							indicating path to input, 
+	%							and char array as value
+	%
+	% Optional: kraskov_param			double
+	%		disc_method				char array
+	%		bin_number				double	
 	%
 	% Outputs: output_struct			same struct as input_struct,
 	%							but with DD values (as 
-	%							opposed to zeros) for 
-	%							different micro/macro 
-	%							combinations, and different
-	%							model parameters in 
-	%							output_struct.results
+	%							opposed to zeros) in where							where 'results' contains
+	%							fieldnames according to
+	%							micro-macro combinations,
+	%							each of which contain a 
+	%							table with emergence results,
+	%							with model_params1
+	%							and model_params2 as rows/
+	%							columns; all other fields
+	%							contain one value from the 
+	%							structs' variables 
+	%							described above;
+	
+	% use inputParser to declare required & optional variables
+	p = inputParser;
+	
+	% required variables
+	addRequired(p,'network', @ischar);
+	addRequired(p,'model_params1', @isvector);
+	addRequired(p,'model_params2', @isvector);
+	addRequired(p,'time_length', @isdouble);
+	addRequired(p,'measure', @ischar);
+	addRequired(p,'method', @ischar);
+	addRequired(p,'time_lag', @isdouble);
+	addRequired(p,'time_steps', @isvector);
+	addRequired(p,'micro_variable_names', @iscell);
+	addRequired(p,'macro_variable_names', @iscell);
+	addRequired(p,'input_struct', @isstruct);
+	addRequired(p,'pathin_sim_time_series', @isstruct);
+	
+	% optional name-value pair variables: 
+	default_kraskov_param = 3;
+	addParameter(p,'kraskov_param', default_kraskov_param, @isdouble);
+	default_disc_method = 'quant';
+	addParameter(p,'disc_method', default_disc_method, @ischar);
+	default_bin_number = 3;
+	addParameter(p,'bin_number', default_bin_number, @isdouble);
+	
+	parse(p, network, model_params1, model_params2, time_length, ...
+		measure, method, time_lag, time_steps, ...
+		micro_variable_names, macro_variable_names, input_struct, ...
+		pathin_sim_time_series, varargin{:});
+
+	network				= p.Results.network;
+	model_params1			= p.Results.model_params1;
+	model_params2			= p.Results.model_params2;
+	measure				= p.Results.measure;
+	time_length				= p.Results.time_length;
+	time_lag				= p.Results.time_lag;
+	time_steps				= p.Results.time_steps;
+	micro_variable_names		= p.Results.micro_variable_names;
+	macro_variable_names		= p.Results.macro_variable_names;
+	input_struct			= p.Results.input_struct;
+	pathin_sim_time_series		= p.Results.pathin_sim_time_series;
+	kraskov_param			= p.Results.kraskov_param;
+	disc_method				= p.Results.disc_method;
+	bin_number				= p.Results.bin_number;
+	
 	
 	output_struct = input_struct;
 	fieldnames_results = fieldnames(input_struct(1,1).results(1,1));
+	
+	fieldnames_pathin = fieldnames(pathin_sim_time_series);
+	pathin = getfield(pathin_sim_time_series, fieldnames_pathin{1});
+	
 	time_length_str = num2str(time_length);
 	
 	% loop over time_steps, model_params1, model_params2
@@ -81,13 +146,13 @@ function output_struct = get_all_DD(input_struct, ...
 						
 						% load all micro variables into one struct 'micro_variables'
 						for k = 1:length(micro_variable_names)
-							micro_variables(1).(micro_variable_names{k}) = struct2array(load([pathout_data_sim_time_series network '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+							micro_variables(1).(micro_variable_names{k}) = struct2array(load([pathin network '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 								micro_variable_names{k}));
 						end
 						
 						% load all macro variables into one struct 'macro_variables'
 						for k = 1:length(macro_variable_names)
-							macro_variables(1).(macro_variable_names{k}) = struct2array(load([pathout_data_sim_time_series network '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+							macro_variables(1).(macro_variable_names{k}) = struct2array(load([pathin network '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 								macro_variable_names{k}));
 						end
 
@@ -96,13 +161,13 @@ function output_struct = get_all_DD(input_struct, ...
 						bin_number_str = num2str(bin_number);
 						% load all micro variables into one struct 'micro_variables'
 						for k = 1:length(micro_variable_names)
-							micro_variables(1).([disc_method bin_number '_' micro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' disc_method bin_number '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+							micro_variables(1).([disc_method bin_number '_' micro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 								[disc_method bin_number '_' micro_variable_names{k}]));
 						end
 						
 						% load all macro variables into one struct 'macro_variables'
 						for k = 1:length(macro_variable_names)
-							macro_variables(1).([disc_method bin_number '_' macro_variable_names{k}]) = struct2array(load([pathout_data_sim_time_series network '_' disc_method bin_number '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+							macro_variables(1).([disc_method bin_number '_' macro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 								[disc_method bin_number '_' macro_variable_names{k}]));
 						end
 
@@ -112,7 +177,7 @@ function output_struct = get_all_DD(input_struct, ...
 					fprintf('get all DD - loop indices: time_step: %d, model_param1: %d, model_param2: %d\n', a, n, o);
 											
 					% get DD for all combinations of micro and top-level macro variables
-					DD = get_DD(micro_variables, macro_variables, method, time_lag, time_step, kraskov_param);
+					DD = get_DD(micro_variables, macro_variables, method, time_lag, time_step, 'kraskov_param', kraskov_param);
 					
 					%fieldnames_DD = fieldnames(DD);
 					
