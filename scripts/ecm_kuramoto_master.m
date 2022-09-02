@@ -88,7 +88,7 @@ addpath(genpath('/media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/Emerg
 
 directories = @get_all_kuramoto_directories;
 
-% initialize necessary paths and directories for generated data & plots
+% initialize necessary paths and dthe state space of joining 256 binary variables is just too large: 2^256 = 1.157920892×10⁷⁷. The estimator will fall over in trying to allocate memory to count each possible joint sample here, and whilst I do have code coming that will run the estimation without allocating such space it still won't work properly because that space is way too large for you to ever have enough samples to estimate properly. Roughly speaking, your number of samples should be 3x (minimum) or 10x (better) the number of joint states that you're likely to see.irectories for generated data & plots
 n_oscillators = '12';
 directories(); 
 
@@ -119,7 +119,7 @@ bins				= [1]; %, 3, 7];				% number of bins to do discretization for method 'qu
 % necessary input arguments
 
 measures			= {'DD'}; %, 'ShannonCE', 'PhiIDCE'};			% emergence measures
-methods			= {'Kraskov'}; %, 'Gaussian', 'Discrete'};		% to be expanded with 'Kraskov' for practCE
+methods			= {'Discrete'}; %, 'Gaussian', 'Discrete'};		% to be expanded with 'Kraskov' for practCE
 time_lags			= [3]; %, 3, 10];							% time-lags
 time_lengths		= [10000]; %, 2000];
 
@@ -178,7 +178,7 @@ pathout_emergence.pathout_data_phiid_ce = pathout_data_phiid_ce;
 pathout_emergence.pathout_data_dd = pathout_data_dd;
 
 % pathin
-pathout_input_sim_time_series.pathout_data_sim_time_series = pathout_data_sim_time_series;
+pathin_sim_time_series.pathout_data_sim_time_series = pathout_data_sim_time_series;
 
 % -------------------------------------------------------------------------
 % group names of variables generated in get_all_variables() into 
@@ -195,7 +195,7 @@ variable_name = 'standard';
 
 emergence_results = get_all_emergence(network, model_calc_params, measure_params, ...
 		micro_variable_names, macro_variable_names, variable_name, ...
-		pathout_input_sim_time_series, pathout_emergence, ...
+		pathin_sim_time_series, pathout_emergence, ...
 		'measure_params_phiid_ce', measure_params_phiid_ce, ...
 		'measure_params_dd', measure_params_dd);
 

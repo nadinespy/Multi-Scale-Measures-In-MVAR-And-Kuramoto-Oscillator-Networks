@@ -128,6 +128,7 @@ function output_struct = get_all_DD(network, ...
 	pathin = getfield(pathin_sim_time_series, fieldnames_pathin{1});
 	
 	time_length_str = num2str(time_length);
+	bin_number_str = num2str(bin_number);
 	
 	% loop over time_steps, model_params1, model_params2
 	for a = 1:length(time_steps)
@@ -161,14 +162,14 @@ function output_struct = get_all_DD(network, ...
 						bin_number_str = num2str(bin_number);
 						% load all micro variables into one struct 'micro_variables'
 						for k = 1:length(micro_variable_names)
-							micro_variables(1).([disc_method bin_number '_' micro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-								[disc_method bin_number '_' micro_variable_names{k}]));
+							micro_variables(1).([disc_method bin_number_str '_' micro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+								[disc_method bin_number_str '_' micro_variable_names{k}]));
 						end
 						
 						% load all macro variables into one struct 'macro_variables'
 						for k = 1:length(macro_variable_names)
-							macro_variables(1).([disc_method bin_number '_' macro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-								[disc_method bin_number '_' macro_variable_names{k}]));
+							macro_variables(1).([disc_method bin_number_str '_' macro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+								[disc_method bin_number_str '_' macro_variable_names{k}]));
 						end
 
 					end

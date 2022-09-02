@@ -55,15 +55,15 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 	fieldnames_macro = fieldnames(macro_variables);
 	fieldnames_micro = fieldnames(micro_variables);
 	
-	if strcmp(method, 'Kraskov')
-		teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov');
-		teCalc.setProperty('k', num2str(kraskov_param));
-	elseif strcmp(method, 'Gaussian');
-		teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorMultiVariateGaussian');
-	elseif strcmp(method, 'Discrete');
-		teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 4, time_lag);
-		% 4: base - number of symbols for each variable. E.g. binary variables are in base-2.
-	end 
+% 	if strcmp(method, 'Kraskov')
+% 		teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov');
+% 		teCalc.setProperty('k', num2str(kraskov_param));
+% 	elseif strcmp(method, 'Gaussian');
+% 		teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorMultiVariateGaussian');
+% 	elseif strcmp(method, 'Discrete');
+% 		teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 4, time_lag);
+% 		% 4: base - number of symbols for each variable. E.g. binary variables are in base-2.
+% 	end 
 
 	% loop over all micro and macro variables and calculate practical CE
 	for i = 1:n_micro_variables;
@@ -78,8 +78,10 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 			if strcmp(method, 'Kraskov') | strcmp(method, 'Gaussian');
 
 				
-				% "Specifically, this class implements the pairwise or apparent transfer entropy, i.e. we compute the
-				% transfer that appears to come from a single source variable, without examining any other potential sources"
+				% "Specifically, this class implements the pairwise
+				% or apparent transfer entropy, i.e. we compute the
+				% transfer that appears to come from a single source 
+				% variable, without examining any other potential sources"
 				teCalc.setProperty('k_HISTORY', num2str(time_lag));
 				teCalc.setProperty('k_TAU', num2str(time_step));
 				teCalc.initialise(1, micro_dim, macro_dim);
@@ -92,22 +94,57 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				
 				all_DD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = DD;
 				
-			elseif strcmp(method, 'Discrete')
+			elseif strcmp(method, 'Discrete');
 				
-				% Class TransferEntropyCalculatorDiscrete: http://lizier.me/joseph/software/jidt/javadocs/v1.5/
-				% Joe Lizier: "For discrete, the key is that we convert any of the Y_t , X_t-1 or Y_t-1 which are multi-
-				% variate into a univariate time series, by basically converting into a larger alphabet space, e.g.
-				% 2x binary variables convert into a base-4 univariate. This is done simply by using the utility
-				% computeCombinedValues method, and setting the base or alphabet appropriately in the constructor,
+				% we need the alphabet size / number of states for 
+				% each sample of the source (micro) and target (macro); 
+				% for a multivariate variable, this means the number 
+				% of states for each joint variable
+				number_of_micro_states = numel(unique(micro));
+				number_of_macro_states = numel(unique(macro));
+				number_of_joint_micro_states = number_of_micro_states^size(micro,1);
+				
+				% Joe Lizier on the problem of a too large state space: 
+				% "The state space of joining[, e. g.,] 256 binary 
+				% variables is just too large: 2^256 = 1.157920892×10⁷⁷. 
+				% The estimator will fall over in trying to allocate 
+				% memory to count each possible joint sample here, and 
+				% whilst I do have code coming that will run the 
+				% estimation without allocating such space it still 
+				% won't work properly because that space is way too 
+				% large for you to ever have enough samples to estimate 
+				% properly. Roughly speaking, your number of samples 
+				% should be 3x (minimum) or 10x (better) the number of 
+				% joint states that you're likely to see.
+				
+				% TE estimator is built using number of joint micro states
+				
+				% class TransferEntropyCalculatorDiscrete: 
+				% http://lizier.me/joseph/software/jidt/javadocs/v1.5/
+				%
+				% Joe Lizier: "For discrete, the key is that we convert 
+				% any of the Y_t , X_t-1 or Y_t-1 which are multi-
+				% variate into a univariate time series, by basically 
+				% converting into a larger alphabet space, e.g.
+				% 2x binary variables convert into a base-4 univariate. 
+				% This is done simply by using the utility
+				% computeCombinedValues method, and setting the base 
+				% or alphabet appropriately in the constructor,
 				% and then you just use the calculator as is."
 				
+				teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', ...
+					number_of_joint_micro_states, time_lag);
+
 				teCalc.initialise();
-				
-				% We need to construct the joint values of the dest and source before we pass them in,
-				% and need to use the matrix conversion routine when calling from Matlab/Octave:
+
+				% we need to construct the joint values of the dest 
+				% and source before we pass them in, so 
+				% mUtils.computeCombinedValues needs the number of 
+				% states of micro/macro, respectively
 				mUtils = javaObject('infodynamics.utils.MatrixUtils');
-				teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro'), micro_dim), ...
-					mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(macro'), macro_dim));
+				teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro), ...
+					number_of_micro_states), mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(macro), ...
+					number_of_macro_states));
 				DD = teCalc.computeAverageLocalOfObservations()
 				
 				all_DD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = DD;
