@@ -92,10 +92,6 @@ get_all_kuramoto_corr_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_hea
 % loop over all values of npoints, tau, A, beta
 
 % {
-micro_variable_names = {'raw', 'phase', 'sync'};
-macro_variable_names = {'mp_sync' 'chi'};
-
-ce_variable_name = 'standard';
 
 get_all_practCE_heatmaps(network, npoints, measure_params, x_axis_heatmaps, y_axis_heatmaps, ...
 	x_label_heatmaps, y_label_heatmaps, ce_variable_name, pathout_data_pract_ce, pathout_plots_pract_ce)
@@ -107,8 +103,6 @@ get_all_practCE_heatmaps(network, npoints, measure_params, x_axis_heatmaps, y_ax
 % loop over all values of npoints, tau, A, beta
 
 % {
-
-dd_variable_name = 'standard';
 
 get_all_DD_heatmaps(network, npoints, measure_params, x_axis_heatmaps, y_axis_heatmaps, ...
 	x_label_heatmaps, y_label_heatmaps, dd_variable_name, pathout_data_dd, pathout_plots_dd)

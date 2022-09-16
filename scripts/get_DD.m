@@ -14,7 +14,7 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 	%							variable names in fields, 
 	%							and macro variable 
 	%							time-series as values
-	%		method				char array
+	%		method				character array
 	%		time_lag				double
 	%		time_step				double
 	%
@@ -100,9 +100,9 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				% each sample of the source (micro) and target (macro); 
 				% for a multivariate variable, this means the number 
 				% of states for each joint variable
-				number_of_micro_states = numel(unique(micro));
-				number_of_macro_states = numel(unique(macro));
-				number_of_joint_micro_states = number_of_micro_states^size(micro,1);
+				n_micro_states = numel(unique(micro));				% number of micro states
+				n_macro_states = numel(unique(macro));				% number of macro states
+				n_joint_micro_states = n_micro_states^size(micro,1);		% number ofjoint micro states
 				
 				% Joe Lizier on the problem of a too large state space: 
 				% "The state space of joining[, e. g.,] 256 binary 
@@ -133,7 +133,7 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				% and then you just use the calculator as is."
 				
 				teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', ...
-					number_of_joint_micro_states, time_lag);
+					n_joint_micro_states, time_lag);
 
 				teCalc.initialise();
 
@@ -142,9 +142,9 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				% mUtils.computeCombinedValues needs the number of 
 				% states of micro/macro, respectively
 				mUtils = javaObject('infodynamics.utils.MatrixUtils');
-				teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro), ...
-					number_of_micro_states), mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(macro), ...
-					number_of_macro_states));
+				teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro'), ...
+					n_micro_states), mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(macro'), ...
+					n_macro_states));
 				DD = teCalc.computeAverageLocalOfObservations()
 				
 				all_DD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = DD;

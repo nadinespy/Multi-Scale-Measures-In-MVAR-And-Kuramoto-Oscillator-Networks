@@ -95,9 +95,7 @@ directories();
 %% model parameter specification 
 
 % model name for saving files (type and size of model)
-network =				'12km';
-
-%% model parameter specification 
+network			= '12km';
 
 % kuramoto parameter specification
 intra_comm_size		= 4;						% intra-community size
@@ -113,6 +111,11 @@ disc_methods		= {'quant'}; %, 'even', 'bin'};	% choose discretization method: 'q
 										% 'bin' for binarizing (scripts for latter two not yet modified)
 										
 bins				= [1]; %, 3, 7];				% number of bins to do discretization for method 'quant' and 'disc'
+
+get_coupling_matrix	= @get_km_coupling_matrix;
+get_coupling_matrices	= @get_km_coupling_matrices;		% specify function to generate coupling matrices
+get_all_variables		= @get_km_variables;			% specify function to generate micro and macro variables
+
 
 %% measure parameter specification
 % -------------------------------------------------------------------------
@@ -173,12 +176,13 @@ measure_params_phiid_ce.red_funcs = red_funcs;
 
 % -------------------------------------------------------------------------
 % pathouts for output
-pathout_emergence.pathout_data_shannon_ce = pathout_data_shannon_ce;
-pathout_emergence.pathout_data_phiid_ce = pathout_data_phiid_ce;
-pathout_emergence.pathout_data_dd = pathout_data_dd;
+pathout.pathout_data_shannon_ce = pathout_data_shannon_ce;
+pathout.pathout_data_phiid_ce = pathout_data_phiid_ce;
+pathout.pathout_data_dd = pathout_data_dd;
 
 % pathin
-pathin_sim_time_series.pathout_data_sim_time_series = pathout_data_sim_time_series;
+pathin.pathout_data_sim_time_series = pathout_data_sim_time_series;
+pathin.pathout_data_sync = pathout_data_sync;
 
 % -------------------------------------------------------------------------
 % group names of variables generated in get_all_variables() into 
@@ -188,6 +192,10 @@ micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', ...
 macro_variable_names = {'mp_sync', 'chi', 'sum_phase', ...
 	'sum_rica6_phase', 'sum_rica12_phase'};
 
+%% get variables
+
+ecm_get_variables();
+
 %% calculate emergence
 
 % file prefixes to distinguish different struct files, and not overwrite them
@@ -195,8 +203,7 @@ variable_name = 'standard';
 
 emergence_results = get_all_emergence(network, model_calc_params, measure_params, ...
 		micro_variable_names, macro_variable_names, variable_name, ...
-		pathin_sim_time_series, pathout_emergence, ...
-		'measure_params_phiid_ce', measure_params_phiid_ce, ...
+		pathin, pathout, 'measure_params_phiid_ce', measure_params_phiid_ce, ...
 		'measure_params_dd', measure_params_dd);
 
 %}

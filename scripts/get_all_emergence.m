@@ -2,11 +2,14 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 		measure_params, micro_variable_names, macro_variable_names, variable_name, ...
 		pathin_sim_time_series, pathout_emergence, varargin)
 
-	% Function description: get_all_emergence() takes as inputs arrays with 
-	% parameter values common to all emergence calculations (required), and arrays with 
-	% parameter values specific to measures (varargin). It then loops over parameter 
-	% values common to all emergence calculations, calling measure-specific
-	% functions which then loop over measure-specific parameters.
+	% Function description: get_all_emergence() takes as inputs, amongst others, 
+	% arrays with measure parameter values common to all emergence calculations 
+	% ([measure_params], required), model parameters to calculate emergence for 
+	% ([model_calc_params], required), and arrays with measure parameter values 
+	% specific to measures ([varargin]). 
+	% It then loops over parameter values common to all emergence calculations, 
+	% calling measure-specific functions which then loop over measure-
+	% specific parameters, and which then loop over model parameters.
 	
 	% Inputs:	
 	%
@@ -80,7 +83,8 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	%								     number of methods * 
 	%								     number of time-lags * 
 	%								     number of time-lengths * 
-	%								     number of K-nearest 
+	%								     numbermodel_params1	= model_calc_params.(model_calc_params_fieldnames{1});
+	model_params2	= model_calc_params.(model_calc_params_fieldnames{2}); of K-nearest 
 	%								     neighbours
 	
 	% use inputParser to declare required & optional variables
