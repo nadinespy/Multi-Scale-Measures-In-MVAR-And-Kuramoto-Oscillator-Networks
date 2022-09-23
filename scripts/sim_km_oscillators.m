@@ -22,7 +22,7 @@ N = n_communities*intra_comm_size;				% total number of oscillators: 256
 M = n_communities;						% number of lowest level communities (what's that?): 8
 	
 w = ones(1,N);	                                    % identical natural frequencies
-h = 0.05;			                              % Runge-Kutta method step size
+h = 0.05;			                              % Runge-Kutta minterethod step size
 T = npoints;		                              % number of time steps
 ws = 2;			                              % window size for downsampling synchrony data
 

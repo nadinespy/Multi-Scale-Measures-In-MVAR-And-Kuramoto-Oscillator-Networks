@@ -83,9 +83,8 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	%								     number of methods * 
 	%								     number of time-lags * 
 	%								     number of time-lengths * 
-	%								     numbermodel_params1	= model_calc_params.(model_calc_params_fieldnames{1});
-	model_params2	= model_calc_params.(model_calc_params_fieldnames{2}); of K-nearest 
-	%								     neighbours
+	%								     number of K-nearest 
+	%								     neighbours							     
 	
 	% use inputParser to declare required & optional variables
 	p = inputParser;

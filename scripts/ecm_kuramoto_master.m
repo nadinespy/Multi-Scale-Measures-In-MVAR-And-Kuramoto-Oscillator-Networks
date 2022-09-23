@@ -26,7 +26,7 @@
 
 %% KURAMOTO OSCILLATORS WITH DIFFERENT COUPLINGS, BETAS, MACRO & MICRO VARIABLES
 
-% DESSCRIPTION NEEDS TO BE UPDATED
+% DESCRIPTION NEEDS TO BE UPDATED
 
 % This script implements practical synergy capacity for 256-node Kuramoto oscillators with different couplings and phase lags, 
 % two different top-level macro variables (variance of synchronies & global average pairwise synchrony between communities), 
@@ -39,7 +39,7 @@
 %	- create coupling matrices & noise correlation vectors					--> get_kuramoto_coupling_matrix()
 %
 %	- simulate Kuramoto models, including all micro and macro variables,			--> get_all_kuramoto_variables();
-%	  for all values of model_param1 and all values of model_param2							    uses get_kuramoto_mean_pair_sync(),
+%	  for all values of model_param1 and all values of model_param2				    uses get_kuramoto_mean_pair_sync(),
 %															    sim_kuramoto_oscillators(), and
 %															    shuffle_rows()
 %
@@ -85,10 +85,11 @@ clc;
 
 cd /media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/EmergenceComplexityMeasuresComparison_Matlab/scripts
 addpath(genpath('/media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/kuramoto'))
+addpath(genpath('/media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/mutual_info_kNN'))
 
 directories = @get_all_kuramoto_directories;
 
-% initialize necessary paths and dthe state space of joining 256 binary variables is just too large: 2^256 = 1.157920892×10⁷⁷. The estimator will fall over in trying to allocate memory to count each possible joint sample here, and whilst I do have code coming that will run the estimation without allocating such space it still won't work properly because that space is way too large for you to ever have enough samples to estimate properly. Roughly speaking, your number of samples should be 3x (minimum) or 10x (better) the number of joint states that you're likely to see.irectories for generated data & plots
+% initialize necessary paths and directories
 n_oscillators = '12';
 directories(); 
 
@@ -112,9 +113,9 @@ disc_methods		= {'quant'}; %, 'even', 'bin'};	% choose discretization method: 'q
 										
 bins				= [1]; %, 3, 7];				% number of bins to do discretization for method 'quant' and 'disc'
 
-get_coupling_matrix	= @get_km_coupling_matrix;
+get_coupling_matrix	= @get_km_coupling_matrix;		% specify function to generate one coupling matrix
 get_coupling_matrices	= @get_km_coupling_matrices;		% specify function to generate coupling matrices
-get_all_variables		= @get_km_variables;			% specify function to generate micro and macro variables
+get_variables		= @get_km_variables;			% specify function to generate micro and macro variables
 
 
 %% measure parameter specification
@@ -122,7 +123,9 @@ get_all_variables		= @get_km_variables;			% specify function to generate micro a
 % necessary input arguments
 
 measures			= {'DD'}; %, 'ShannonCE', 'PhiIDCE'};			% emergence measures
-methods			= {'Discrete'}; %, 'Gaussian', 'Discrete'};		% to be expanded with 'Kraskov' for practCE
+methods			= {'Discrete'}; %, 'Gaussian'};				% to be expanded with 'Kraskov' for practCE; discrete method can practically 
+													% handle only systems with 10-12 binary variables; if variables are not binary,  
+													% then even less (as the joint state-space grows)
 time_lags			= [3]; %, 3, 10];							% time-lags
 time_lengths		= [10000]; %, 2000];
 
@@ -159,30 +162,30 @@ model_calc_params.beta			= beta;
 % put all common measure parameters common to Shannon CE, PhiID-CE & DD 
 % into one cell structure
 
-measure_params.measures = measures;
-measure_params.methods = methods;
-measure_params.time_lags = time_lags;
-measure_params.time_lengths = time_lengths;
-measure_params.kraskov_params = kraskov_params;
-measure_params.disc_methods = disc_methods;
-measure_params.bins = bins;
+measure_params.measures			= measures;
+measure_params.methods			= methods;
+measure_params.time_lags		= time_lags;
+measure_params.time_lengths		= time_lengths;
+measure_params.kraskov_params		= kraskov_params;
+measure_params.disc_methods		= disc_methods;
+measure_params.bins			= bins;
 
 % -------------------------------------------------------------------------
 % put measure parameters specific to DD into one cell structure
-measure_params_dd.time_steps = time_steps;
+measure_params_dd.time_steps		= time_steps;
 
 % put measure parameters specific to PhiID-CE into one cell structure
-measure_params_phiid_ce.red_funcs = red_funcs;
+measure_params_phiid_ce.red_funcs	= red_funcs;
 
 % -------------------------------------------------------------------------
 % pathouts for output
-pathout.pathout_data_shannon_ce = pathout_data_shannon_ce;
-pathout.pathout_data_phiid_ce = pathout_data_phiid_ce;
-pathout.pathout_data_dd = pathout_data_dd;
+pathout.pathout_data_shannon_ce	= pathout_data_shannon_ce;
+pathout.pathout_data_phiid_ce		= pathout_data_phiid_ce;
+pathout.pathout_data_dd			= pathout_data_dd;
 
 % pathin
 pathin.pathout_data_sim_time_series = pathout_data_sim_time_series;
-pathin.pathout_data_sync = pathout_data_sync;
+pathin.pathout_data_sync		= pathout_data_sync;
 
 % -------------------------------------------------------------------------
 % group names of variables generated in get_all_variables() into 
@@ -192,7 +195,7 @@ micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', ...
 macro_variable_names = {'mp_sync', 'chi', 'sum_phase', ...
 	'sum_rica6_phase', 'sum_rica12_phase'};
 
-%% get variables
+%% get variables (simulate data, and discretize them)
 
 ecm_get_variables();
 

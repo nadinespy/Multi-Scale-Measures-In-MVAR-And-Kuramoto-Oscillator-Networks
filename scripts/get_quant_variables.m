@@ -23,12 +23,12 @@ function [quantiles_matrix, quantilized_matrix] = get_quant_variables(matrix, qu
 			for f = 1:length(states);
 				
 				if matrix(k,q) <= quantiles_matrix(k,f)
-					quantilized_matrix(k,q) = states(f);
+					quantilized_matrix(k,q) = states(f)-1;
 					break
 				end 
 				
 				if f == length(states);
-					quantilized_matrix(k,q) = states(f)+1;
+					quantilized_matrix(k,q) = states(f);
 				end 
 			end 
 				

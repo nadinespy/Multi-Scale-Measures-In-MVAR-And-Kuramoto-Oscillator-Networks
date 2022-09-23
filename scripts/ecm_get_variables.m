@@ -30,7 +30,7 @@ coupling_matrices = get_coupling_matrices(get_coupling_matrix, model_sim_params)
 
 % {
 
-% get_all_kuramoto_variables() is the script to generate all micro and 
+% get_kuramoto_variables() is the script to generate all micro and 
 % macro variables; modify according to what micro and macro variables you 
 % wish to have
 

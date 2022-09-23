@@ -1,4 +1,4 @@
-function [ psi, v_mi, x_mi ] = EmergencePsi(X, V, tau, method)
+function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, method, varargin)
 %% EMERGENCEPSI Compute causal emergence criterion from data
 %
 %     PSI = EMERGENCEPSI(X, V) computes the causal emergence criterion psi for
@@ -23,45 +23,81 @@ function [ psi, v_mi, x_mi ] = EmergencePsi(X, V, tau, method)
 %
 % Pedro Mediano and Fernando Rosas, Aug 2020
 
-%% Parameter checks and initialisation
-if ~isvector(V) || ~ismatrix(X)
-  error("X has to be a 2D matrix and V a 1D vector.");
-end
-if length(V) ~= size(X,1)
-  error("X and V must have the same length.");
-end
-if nargin < 3 || isempty(tau)
-  tau = 1;
-end
-if nargin < 4 || isempty(method)
-  if exist('OCTAVE_VERSION', 'builtin')
-    isdiscrete =  (sum(abs(X(:) - round(X(:)))) + sum(abs(V - round(V)))) < 1e-10;
-  else
-    isdiscrete =  iscategorical(X) || (sum(abs(X(:) - round(X(:)))) + sum(abs(V - round(V)))) < 1e-10;
-  end
-  if isdiscrete
-    method = 'discrete';
-  else
-    method = 'gaussian';
-  end
-end
+%%
 
-if strcmp(lower(method), 'gaussian')
-  MI_fun = @GaussianMI;
-elseif strcmp(lower(method), 'discrete')
-  MI_fun = @DiscreteMI;
-else
-  error("Unknown method. Implemented options are 'gaussian' and 'discrete'.");
-end
+	% use inputParser to declare required & optional variables
+	p = inputParser;
+	
+	% required variables
+	addRequired(p,'X', @isdouble);
+	addRequired(p,'V', @isdouble);
+	
+	% optional positional arguments:
+	default_tau = 3;
+	addOptional(p,'tau', default_tau, @isdouble);
+	default_method = 'Gaussian';
+	addOptional(p,'method', default_method, @ischar);
+	
+	% optional name-value pair variables: 
+	default_kraskov_param = 3;
+	addParameter(p,'kraskov_param', default_kraskov_param, ...
+		@isdouble);
+	
+	parse(p, X, V, tau, method, varargin{:});
+	
+	X					= p.Results.X;
+	V					= p.Results.V;
+	tau					= p.Results.tau;
+	method				= p.Results.method;
+	kraskov_param			= p.Results.kraskov_param;
 
+	
+	% parameter checks
 
-%% Compute mutual infos and psi
-v_mi = MI_fun(V(1:end-tau), V(1+tau:end));
-x_mi = sum(arrayfun(@(j) MI_fun(X(1:end-tau,j), V(1+tau:end)), 1:size(X,2)));
-psi = v_mi - x_mi;
+	if ~isvector(V) || ~ismatrix(X)
+		error("X has to be a 2D matrix and V a 1D vector.");
+	end
+	if length(V) ~= size(X,1)
+		error("X and V must have the same length.");
+	end
 
+	if nargin < 4 || isempty(method)
+		if exist('OCTAVE_VERSION', 'builtin')
+			isdiscrete =  (sum(abs(X(:) - round(X(:)))) + sum(abs(V - round(V)))) < 1e-10;
+		else
+			isdiscrete =  iscategorical(X) || (sum(abs(X(:) - round(X(:)))) + sum(abs(V - round(V)))) < 1e-10;
+		end
+		if isdiscrete
+			method = 'discrete';
+		else
+			method = 'gaussian';
+		end
+	end
+	
+	if strcmp(lower(method), 'gaussian')
+		MI_fun = @GaussianMI;
+	elseif strcmp(lower(method), 'discrete')
+		MI_fun = @DiscreteMI;
+	elseif strcmp(lower(method), 'kraskov')
+		MI_fun = @KraskovMI;
+	else
+		error("Unknown method. Implemented options are 'gaussian' and 'discrete'.");
+	end
+	
+	%% Compute mutual infos and psi
+	
+	if strcmp(lower(method), 'kraskov')
+		v_mi = MI_fun(V(1:end-tau), V(1+tau:end), kraskov_param);
+		x_mi = sum(arrayfun(@(j) MI_fun(X(1:end-tau,j), V(1+tau:end), kraskov_param), 1:size(X,2)));
+	else
+		v_mi = MI_fun(V(1:end-tau), V(1+tau:end));
+		x_mi = sum(arrayfun(@(j) MI_fun(X(1:end-tau,j), V(1+tau:end)), 1:size(X,2)));
+	end 
 
-if nargout < 2
-  clearvars x_mi, v_mi;
+	psi = v_mi - x_mi;
+			
+	if nargout < 2
+		clearvars x_mi v_mi;
+	end
 end
 

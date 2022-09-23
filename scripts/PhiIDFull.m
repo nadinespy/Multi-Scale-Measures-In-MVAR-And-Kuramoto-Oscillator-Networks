@@ -119,7 +119,7 @@ p1 = str2num(mib.get(0).toString()) + 1;            % indices of partition 1, e.
 p2 = str2num(mib.get(1).toString()) + 1;            % indices of partition 2, e.g., in an 8-element system, [3,4,5,6]
 
 % Stack data and call full PhiID function
-atoms = private_FourVectorPhiID(sX(p1,1:end-tau), sX(p2,1:end-tau), ...			   % Here, we define X1, X2, Y1, and Y2, so the partitions at time t (X1, X2), and the partitions at time t+1 (Y1, Y2)
+atoms = private_FourVectorPhiID(sX(p1,1:end-tau), sX(p2,1:end-tau), ...			% Here, we define X1, X2, Y1, and Y2, so the partitions at time t (X1, X2), and the partitions at time t+1 (Y1, Y2)
                                 sX(p1,1+tau:end), sX(p2,1+tau:end), measure);
 
 end
@@ -129,7 +129,7 @@ end
 %*********************************************************
 
 % returns local PhiID atoms
-function [ atoms ] = private_FourVectorPhiID(X1, X2, Y1, Y2, measure)		    % X1: partition 1 at t
+function [ atoms ] = private_FourVectorPhiID(X1, X2, Y1, Y2, measure)			% X1: partition 1 at t
 																					% X2: partition 2 at t
 																					% Y1: partition 1 at t+1
 																					% Y2: partition 2 at t+1                                                                                                                  
@@ -158,47 +158,47 @@ else
 end
 
 % Indices of source and target variables in the joint covariance matrix
-p1 = 1:size(X1, 1);								% indices of first source partition (e.g., in an 8-element system [1,2,3,4])
-p2 = p1(end)+1:p1(end)+size(X2, 1);			     % indices of second source partition (e.g., in an 8-element system [5,6,7,8])
-t1 = p2(end)+1:p2(end)+size(Y1, 1);				% indices of first target partition (e.g., " [9,10,11,12])
-t2 = t1(end)+1:t1(end)+size(Y2, 1);				 % indices of second target partition (e.g., " [13,14,15,16])
-D = t2(end);									  % total number of indices
+p1 = 1:size(X1, 1);				% indices of first source partition (e.g., in an 8-element system [1,2,3,4])
+p2 = p1(end)+1:p1(end)+size(X2, 1);		% indices of second source partition (e.g., in an 8-element system [5,6,7,8])
+t1 = p2(end)+1:p2(end)+size(Y1, 1);		% indices of first target partition (e.g., " [9,10,11,12])
+t2 = t1(end)+1:t1(end)+size(Y2, 1);		% indices of second target partition (e.g., " [13,14,15,16])
+D = t2(end);					% total number of indices
 
 
 % Create copy of the data scaled to unit variance (for numerical stability)
-X = [X1; X2; Y1; Y2];							     % stack all variables from partitions row-wise
-sX = X./repmat(std(X')', [1, T]);				       % we again scale to unit variance, because the matrix has changed 
+X = [X1; X2; Y1; Y2];				% stack all variables from partitions row-wise
+sX = X./repmat(std(X')', [1, T]);		% we again scale to unit variance, because the matrix has changed 
 
 % Compute mean and covariance for all the data
 % (to be used by the local IT functions below)
-S = cov(sX');									   % e.g., in an 8-element system, the size will be 16x16, it's the time-lagged covariance matrix             
-mu = mean(sX');                                                  % e.g., " , the size will be 1x16
+S = cov(sX');					% e.g., in an 8-element system, the size will be 16x16, it's the time-lagged covariance matrix             
+mu = mean(sX');					% e.g., " , the size will be 1x16
 assert(all(size(mu) == [1, D]) && all(size(S) == [D, D]));
 
 % Define local information-theoretic functions
-h = @(idx) -log(mvnpdf(sX(idx,:)', mu(idx), S(idx,idx)));  % multivariate entropy, h() takes as an input the indices of the variables to consider in sX
-mi  = @(src, tgt) h(src) + h(tgt) - h([src, tgt]);			% mutual information (I(X;Y) = H(X) + H(Y) - H(X,Y)) (not further used below)
+h = @(idx) -log(mvnpdf(sX(idx,:)', mu(idx), S(idx,idx)));	% multivariate entropy, h() takes as an input the indices of the variables to consider in sX
+mi = @(src, tgt) h(src) + h(tgt) - h([src, tgt]);		% mutual information (I(X;Y) = H(X) + H(Y) - H(X,Y)) (not further used below)
 
 % Pre-compute entropies necessary for all IT quantities (all quantities
 % have as many rows as time-steps in the time-series)
-h_p1 = h(p1);												% entropy of partition 1 at t             H(1(t)) 
-h_p2 = h(p2);												% entropy pf partiiton 2 at t             H(2(t))
-h_t1 = h(t1);													% entropy of partition 1 at t+1         H(1(t+1))
-h_t2 = h(t2);													% entropy of partition 2 at t+1         H(2(t+1))
+h_p1 = h(p1);				% entropy of partition 1 at t             H(1(t)) 
+h_p2 = h(p2);				% entropy pf partiiton 2 at t             H(2(t))
+h_t1 = h(t1);				% entropy of partition 1 at t+1		H(1(t+1))
+h_t2 = h(t2);				% entropy of partition 2 at t+1		H(2(t+1))
 
-h_p1p2 = h([p1 p2]);											% multivariate entropy (ME) of partition 1 & 2 at t         H(1(t),      2(t)) 
-h_t1t2 = h([t1 t2]);											% ME of partition 1 & 2 at t+1                                       H(1(t+1), 2(t+1))
-h_p1t1 = h([p1 t1]);											% ME of partition 1 at t & t+1                                       H(1(t),      1(t+1)) 
-h_p1t2 = h([p1 t2]);											% ME of partition 1 at t & partition 2 at t+1                  H(1(t),      2(t+1)) 
-h_p2t1 = h([p2 t1]);											% ME of partition 2 at t & partition 1 at t+1                  H(2(t),      1(t+1)) 
-h_p2t2 = h([p2 t2]);											% ME of partition 2 at t & t+1                                       H(2(t),      2(t+1)) 
+h_p1p2 = h([p1 p2]);			% multivariate entropy (ME) of partition 1 & 2 at t         H(1(t),      2(t)) 
+h_t1t2 = h([t1 t2]);			% ME of partition 1 & 2 at t+1                              H(1(t+1),	 2(t+1))
+h_p1t1 = h([p1 t1]);			% ME of partition 1 at t & t+1                              H(1(t),      1(t+1)) 
+h_p1t2 = h([p1 t2]);			% ME of partition 1 at t & partition 2 at t+1               H(1(t),      2(t+1)) 
+h_p2t1 = h([p2 t1]);			% ME of partition 2 at t & partition 1 at t+1               H(2(t),      1(t+1)) 
+h_p2t2 = h([p2 t2]);			% ME of partition 2 at t & t+1                              H(2(t),      2(t+1)) 
 
-h_p1p2t1 = h([p1 p2 t1]);									% ME of partition 1 & 2 at t & partition 1 at t+1           H(1(t),       2(t),       1(t+1)) 
-h_p1p2t2 = h([p1 p2 t2]);									% ME of partition 1 & 2 at t & partition 2 at t+1           H(1(t),       2(t),        2(t+1)) 
-h_p1t1t2 = h([p1 t1 t2]);									 % ME of partition 1 at t & t+1 & partition 2 at t+1        H(1(t),       1(t+1),   2(t+1)) 
-h_p2t1t2 = h([p2 t1 t2]);									 % ME of partition 2 at t & t+1 & partition 1 at t            H(2(t),       2(t+1),   1(t+1))
+h_p1p2t1 = h([p1 p2 t1]);		% ME of partition 1 & 2 at t & partition 1 at t+1           H(1(t),      2(t),       1(t+1)) 
+h_p1p2t2 = h([p1 p2 t2]);		% ME of partition 1 & 2 at t & partition 2 at t+1           H(1(t),      2(t),        2(t+1)) 
+h_p1t1t2 = h([p1 t1 t2]);		% ME of partition 1 at t & t+1 & partition 2 at t+1         H(1(t),      1(t+1),   2(t+1)) 
+h_p2t1t2 = h([p2 t1 t2]);		% ME of partition 2 at t & t+1 & partition 1 at t           H(2(t),      2(t+1),   1(t+1))
 
-h_p1p2t1t2 = h([p1 p2 t1 t2]);							    % ME of partition 2 at t & t+1 & partition 1 at t & t+1  H(2(t),       2(t+1),   1(t),       (t+1))
+h_p1p2t1t2 = h([p1 p2 t1 t2]);	% ME of partition 2 at t & t+1 & partition 1 at t & t+1	H(2(t),      2(t+1),   1(t),       (t+1))
 
 % Compute local PhiID quantities as entropy combinations (all quantities have as many rows as time-steps in the time-series)
 % variable names: 
@@ -210,49 +210,49 @@ h_p1p2t1t2 = h([p1 p2 t1 t2]);							    % ME of partition 2 at t & t+1 & partit
 % b: target variable 2
 
 
-Ixytab = h_p1p2 + h_t1t2 - h_p1p2t1t2;					    % all 16 atoms (this is what we're trying to decompose): I(1(t),1(t+1);2(t),2(t+1))      H(1(t),2(t)) + H(1(t+1),2(t+1)) - H(1(t),1(t+1),2(t),2(t+1))          
+Ixytab = h_p1p2 + h_t1t2 - h_p1p2t1t2;	% all 16 atoms (this is what we're trying to decompose): I(1(t),1(t+1);2(t),2(t+1))      H(1(t),2(t)) + H(1(t+1),2(t+1)) - H(1(t),1(t+1),2(t),2(t+1))          
 
-Ixta = h_p1 + h_t1 - h_p1t1;									% {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1}:																					I(1(t);1(t+1))                          H(1(t)) + H(1(t+1)) - H(1(t),1(t+1))                                                                                        
-Ixtb = h_p1 + h_t2 - h_p1t2;									% {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}:																					I(1(t);2(t+1))                          H(1(t)) + H(2(t+1)) - H(1(t),2(t+1))
-Iyta = h_p2 + h_t1 - h_p2t1;									% {1}{2}-->{1}{2} + {1}{2}-->{1} + {2}-->{1}{2} + {2}-->{1}:																					I(2(t);1(t+1))                          H(2(t)) + H(1(t+1)) - H(2(t),1(t+1))
-Iytb = h_p2 + h_t2 - h_p2t2;									% {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}+ {2}-->{1}{2} + {2}-->{2} + {12}-->{1}{2} + {12}-->{2}:				     I(2(t);2(t+1))                         H(2(t)) + H(2(t+1)) - H(2(t),2(t+1))
+Ixta = h_p1 + h_t1 - h_p1t1;			% {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1}:																					I(1(t);1(t+1))                          H(1(t)) + H(1(t+1)) - H(1(t),1(t+1))                                                                                        
+Ixtb = h_p1 + h_t2 - h_p1t2;			% {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}:																					I(1(t);2(t+1))                          H(1(t)) + H(2(t+1)) - H(1(t),2(t+1))
+Iyta = h_p2 + h_t1 - h_p2t1;			% {1}{2}-->{1}{2} + {1}{2}-->{1} + {2}-->{1}{2} + {2}-->{1}:																					I(2(t);1(t+1))                          H(2(t)) + H(1(t+1)) - H(2(t),1(t+1))
+Iytb = h_p2 + h_t2 - h_p2t2;			% {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}+ {2}-->{1}{2} + {2}-->{2} + {12}-->{1}{2} + {12}-->{2}:				     I(2(t);2(t+1))                         H(2(t)) + H(2(t+1)) - H(2(t),2(t+1))
 
-Ixyta = h_p1p2 + h_t1 - h_p1p2t1;							 % {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1} + {2}-->{1}{2} + {2}-->{1} + {12}-->{1}{2} + {12}-->{1}:					 I(1(t),2(t);1(t+1))                  H(1(t),2(t)) + H(1(t+1)) - H(1(t),2(t),1(t+1))
-Ixytb = h_p1p2 + h_t2 - h_p1p2t2;							 % {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}+ {2}-->{1}{2} + {2}-->{2} + {12}-->{1}{2} + {12}-->{2}:					 I(1(t),2(t);2(t+1))                  H(1(t),2(t)) + H(2(t+1)) - H(1(t),2(t),2(t+1))
-Ixtab = h_p1 + h_t1t2 - h_p1t1t2;							  % {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {1}-->{1}{2} + {1}-->{1} + {1}-->{2} + {1}-->{12}:				        I(1(t);1(t+1),2(t+1))              H(1(t)) + H(1(t+1),2(t+1)) - H(1(t),1(t+1),2(t+1))
-Iytab = h_p2 + h_t1t2 - h_p2t1t2;							  % {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {2}-->{1}{2} + {2}-->{1} + {2}-->{2} + {2}-->{12}:					  I(2(t);1(t+1),2(t+1))              H(2(t)) + H(1(t+1),2(t+1)) - H(2(t),1(t+1),2(t+1))
+Ixyta = h_p1p2 + h_t1 - h_p1p2t1;		% {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1} + {2}-->{1}{2} + {2}-->{1} + {12}-->{1}{2} + {12}-->{1}:					 I(1(t),2(t);1(t+1))                  H(1(t),2(t)) + H(1(t+1)) - H(1(t),2(t),1(t+1))
+Ixytb = h_p1p2 + h_t2 - h_p1p2t2;		% {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}+ {2}-->{1}{2} + {2}-->{2} + {12}-->{1}{2} + {12}-->{2}:					 I(1(t),2(t);2(t+1))                  H(1(t),2(t)) + H(2(t+1)) - H(1(t),2(t),2(t+1))
+Ixtab = h_p1 + h_t1t2 - h_p1t1t2;		% {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {1}-->{1}{2} + {1}-->{1} + {1}-->{2} + {1}-->{12}:				        I(1(t);1(t+1),2(t+1))              H(1(t)) + H(1(t+1),2(t+1)) - H(1(t),1(t+1),2(t+1))
+Iytab = h_p2 + h_t1t2 - h_p2t1t2;		% {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {2}-->{1}{2} + {2}-->{1} + {2}-->{2} + {2}-->{12}:					  I(2(t);1(t+1),2(t+1))              H(2(t)) + H(1(t+1),2(t+1)) - H(2(t),1(t+1),2(t+1))
 
-Rxyta  = RedFun(sX, p1, p2, t1, Ixta, Iyta, Ixyta);			   % {1}{2}-->{1}{2} + {1}{2}-->{1}:																													MMI: min of I(1(t);1(t+1))               & I(2(t);1(t+1))                 CCS: I(1(t),1(t+1);2(t),2(t+1)) - I(1(t);1(t+1),2(t+1)) - I(2(t);1(t+1),2(t+1))
-Rxytb  = RedFun(sX, p1, p2, t2, Ixtb, Iytb, Ixytb);			   % {1}{2}-->{1}{2} + {1}{2}-->{2}:																													MMI: min of I(2(t);2(t+1))               & I(1(t);2(t+1))                 CCS: I(1(t),1(t+1);2(t),2(t+1)) - I(1(t),2(t);1(t+1)) - I(1(t),2(t);2(t+1))
-Rxytab = RedFun(sX, p1, p2, [t1 t2], Ixtab, Iytab, Ixytab);	    % {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12}:																				MMI: min of I(1(t);1(t+1),2(t+1))     & I(2(t);1(t+1),2(t+1))     CCS: I(1(t),2(t);1(t+1)) - I(1(t);1(t+1)) - I(2(t);1(t+1))
-Rabtx  = RedFun(sX, t1, t2, p1, Ixta, Ixtb, Ixtab);			    % {1}{2}-->{1}{2} + {1}-->{1}{2}:																													MMI: min of I(1(t);1(t+1))                & I(1(t);2(t+1))                CCS: I(1(t),2(t);2(t+1)) - I(2(t);2(t+1)) - I(1(t);2(t+1))
-Rabty  = RedFun(sX, t1, t2, p2, Iyta, Iytb, Iytab);			    % {1}{2}-->{1}{2} + {2}-->{1}{2}:																													MMI: min of I(2(t);1(t+1))                & I(2(t);2(t+1))                CCS: I(1(t);1(t+1),2(t+1)) - I(1(t);1(t+1)) - I(1(t);2(t+1))
-Rabtxy = RedFun(sX, t1, t2, [p1 p2], Ixyta, Ixytb, Ixytab);	    % {1}{2}-->{1}{2} + {1}-->{1}{2} + {2}-->{1}{2} + {12}-->{1}{2}:																				MMI: min of I(1(t),2(t);1(t+1))         & I(1(t),2(t);2(t+1))          CCS: I(2(t);1(t+1),2(t+1)) - I(2(t);1(t+1)) - I(2(t);2(t+1))
+Rxyta  = RedFun(sX, p1, p2, t1, Ixta, Iyta, Ixyta);			% {1}{2}-->{1}{2} + {1}{2}-->{1}:																													MMI: min of I(1(t);1(t+1))               & I(2(t);1(t+1))                 CCS: I(1(t),1(t+1);2(t),2(t+1)) - I(1(t);1(t+1),2(t+1)) - I(2(t);1(t+1),2(t+1))
+Rxytb  = RedFun(sX, p1, p2, t2, Ixtb, Iytb, Ixytb);			% {1}{2}-->{1}{2} + {1}{2}-->{2}:																													MMI: min of I(2(t);2(t+1))               & I(1(t);2(t+1))                 CCS: I(1(t),1(t+1);2(t),2(t+1)) - I(1(t),2(t);1(t+1)) - I(1(t),2(t);2(t+1))
+Rxytab = RedFun(sX, p1, p2, [t1 t2], Ixtab, Iytab, Ixytab);		% {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12}:																				MMI: min of I(1(t);1(t+1),2(t+1))     & I(2(t);1(t+1),2(t+1))     CCS: I(1(t),2(t);1(t+1)) - I(1(t);1(t+1)) - I(2(t);1(t+1))
+Rabtx  = RedFun(sX, t1, t2, p1, Ixta, Ixtb, Ixtab);			% {1}{2}-->{1}{2} + {1}-->{1}{2}:																													MMI: min of I(1(t);1(t+1))                & I(1(t);2(t+1))                CCS: I(1(t),2(t);2(t+1)) - I(2(t);2(t+1)) - I(1(t);2(t+1))
+Rabty  = RedFun(sX, t1, t2, p2, Iyta, Iytb, Iytab);			% {1}{2}-->{1}{2} + {2}-->{1}{2}:																													MMI: min of I(2(t);1(t+1))                & I(2(t);2(t+1))                CCS: I(1(t);1(t+1),2(t+1)) - I(1(t);1(t+1)) - I(1(t);2(t+1))
+Rabtxy = RedFun(sX, t1, t2, [p1 p2], Ixyta, Ixytb, Ixytab);		% {1}{2}-->{1}{2} + {1}-->{1}{2} + {2}-->{1}{2} + {12}-->{1}{2}:																				MMI: min of I(1(t),2(t);1(t+1))         & I(1(t),2(t);2(t+1))          CCS: I(2(t);1(t+1),2(t+1)) - I(2(t);1(t+1)) - I(2(t);2(t+1))
 
 
 
 % Compute double-redundancy (the remaining PhiID quantity, and, in this case, PhiID atom to compute) with corresponding function
 [~, rtr] = DoubleRedFun(sX(p1,:), sX(p2,:), sX(t1,:), sX(t2,:));     % MMI: min of MI between
 
-                                                                                                  % partition1 at t & partition1 at t+1
-                                                                                                  % partition1 at t & partition2 at t+1
-                                                                                                  % partition2 at t & partition1 at t+1
-                                                                                                  % partition2 at t & partition2 at t+1
+                                                                     % partition1 at t & partition1 at t+1
+                                                                     % partition1 at t & partition2 at t+1
+                                                                     % partition2 at t & partition1 at t+1
+                                                                     % partition2 at t & partition2 at t+1
                                                                                                   
-                                                                                                  % Example: we take the min between 
-												      	% I(X1(t),X2(t);X1(t+1),X2(t+1),
-													% I(X3(t),X4(t);X1(t+1),X2(t+1),
-													% I(X1(t),X2(t);X3(t+1),X4(t+1),
-													% I(X3(t),X4(t);X3(t+1),X4(t+1),
+                                                                     % Example: we take the min between 
+											   % I(X1(t),X2(t);X1(t+1),X2(t+1),
+											   % I(X3(t),X4(t);X1(t+1),X2(t+1),
+											   % I(X1(t),X2(t);X3(t+1),X4(t+1),
+											   % I(X3(t),X4(t);X3(t+1),X4(t+1),
 
-													% if for system X, [X1, X2] give one partition, and [X3, X4] give the other.
+											   % if for system X, [X1, X2] give one partition, and [X3, X4] give the other.
                                                                                                   
-                                                                                                  % CCS: calculating co-info: double_coinfo (redred - synsyn) = - Ixta - Ixtb - Iyta - Iytb + ...
-                                                                                                  %                                                                 Ixtab + Iytab + Ixyta + Ixytb - Ixytab + ...
-                                                                                                  %                                                                 + Rxyta + Rxytb - Rxytab + ...
-                                                                                                  %                                                                 + Rabtx + Rabty - Rabtxy;
-                                                                                                  %                                                                 signs = [sign(Ixta), sign(Ixtb), sign(Iyta), sign(Iytb), sign(double_coinfo)];
-                                                                                                  %                                                                 redred = all(signs == signs(:,1), 2).*double_coinfo;
+                                                                     % CCS: calculating co-info: double_coinfo (redred - synsyn) = - Ixta - Ixtb - Iyta - Iytb + ...
+                                                                     %                                                             Ixtab + Iytab + Ixyta + Ixytb - Ixytab + ...
+                                                                     %                                                             + Rxyta + Rxytb - Rxytab + ...
+                                                                     %                                                             + Rabtx + Rabty - Rabtxy;
+                                                                     %                                                             signs = [sign(Ixta), sign(Ixtb), sign(Iyta), sign(Iytb), sign(double_coinfo)];
+                                                                     %                                                             redred = all(signs == signs(:,1), 2).*double_coinfo;
 
 % Assemble and solve system of equations
 % PhiID atoms:
@@ -281,19 +281,19 @@ reds = [rtr Rxyta Rxytb Rxytab Rabtx Rabty Rabtxy ...
 M = [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;	% rtr
 	1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0;	% Rxyta:		 {1}{2}-->{1}{2} + {1}{2}-->{1};																											MMI: min of I(1(t);1(t+1)) & I(2(t);1(t+1))					CCS: I(1(t),1(t+1);2(t),2(t+1)) - I(1(t);1(t+1),2(t+1)) - I(2(t);1(t+1),2(t+1))
 	1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0;	% Rxytb:		 {1}{2}-->{1}{2} + {1}{2}-->{2};																											MMI: min of I(2(t);2(t+1)) & I(1(t);2(t+1))					CCS: I(1(t),1(t+1);2(t),2(t+1)) - I(1(t),2(t);1(t+1)) - I(1(t),2(t);2(t+1))
-	1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0;	% Rxytab:		{1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12};																		MMI: min of I(1(t);1(t+1),2(t+1)) & I(2(t);1(t+1),2(t+1))	  CCS: I(1(t),2(t);1(t+1)) - I(1(t);1(t+1)) - I(2(t);1(t+1))
+	1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0;	% Rxytab:		 {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12};																		MMI: min of I(1(t);1(t+1),2(t+1)) & I(2(t);1(t+1),2(t+1))	  CCS: I(1(t),2(t);1(t+1)) - I(1(t);1(t+1)) - I(2(t);1(t+1))
 	1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0;	% Rabtx:		 {1}{2}-->{1}{2} + {1}-->{1}{2};																											MMI: min of I(1(t);1(t+1)) & I(1(t);2(t+1))					CCS: I(1(t),2(t);2(t+1)) - I(2(t);2(t+1)) - I(1(t);2(t+1))
 	1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0;	% Rabty:		 {1}{2}-->{1}{2} + {2}-->{1}{2};																											MMI: min of I(2(t);1(t+1)) & I(2(t);2(t+1))					CCS: I(1(t);1(t+1),2(t+1)) - I(1(t);1(t+1)) - I(1(t);2(t+1))
-     1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0;	% Rabtxy:		{1}{2}-->{1}{2} + {1}-->{1}{2} + {2}-->{1}{2} + {12}-->{1}{2};																	     MMI: min of I(1(t),2(t);1(t+1)) & I(1(t),2(t);2(t+1))			CCS: I(2(t);1(t+1),2(t+1)) - I(2(t);1(t+1)) - I(2(t);2(t+1))
-     1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0;	% Ixta:		   {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1};																			I(1(t);1(t+1)) ✓         
-     1 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0;	% Ixtb:		   {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2};																			I(1(t);2(t+1)) ✓
-     1 1 0 0 0 0 0 0 1 1 0 0 0 0 0 0;	% Iyta:		   {1}{2}-->{1}{2} + {1}{2}-->{1} + {2}-->{1}{2} + {2}-->{1};																			I(2(t);1(t+1)) ✓
-     1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0;	% Iytb:		   {1}{2}-->{1}{2} + {1}{2}-->{2} + {2}-->{1}{2} + {2}-->{2};																			I(2(t);2(t+1)) ✓        
-     1 1 0 0 1 1 0 0 1 1 0 0 1 1 0 0;	% Ixyta:		  {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1} + {2}-->{1}{2} + {2}-->{1} + {12}-->{1}{2} + {12}-->{1};			I(1(t),2(t);1(t+1)) ✓
-     1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0;	% Ixytb:		  {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}+ {2}-->{1}{2} + {2}-->{2} + {12}-->{1}{2} + {12}-->{2};			I(1(t),2(t);2(t+1)) ✓
-     1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0;	% Ixtab:		  {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {1}-->{1}{2} + {1}-->{1} + {1}-->{2} + {1}-->{12};			I(1(t);1(t+1),2(t+1)) ✓
-     1 1 1 1 0 0 0 0 1 1 1 1 0 0 0 0;	% Iytab:		  {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {2}-->{1}{2} + {2}-->{1} + {2}-->{2} + {2}-->{12};			I(2(t);1(t+1),2(t+1)) ✓
-     1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1];	% Ixytab:		 all 16 atoms                                                                                                                                                                                                        I(1(t),1(t+1);2(t),2(t+1))
+      1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0;	% Rabtxy:		 {1}{2}-->{1}{2} + {1}-->{1}{2} + {2}-->{1}{2} + {12}-->{1}{2};																	     MMI: min of I(1(t),2(t);1(t+1)) & I(1(t),2(t);2(t+1))			CCS: I(2(t);1(t+1),2(t+1)) - I(2(t);1(t+1)) - I(2(t);2(t+1))
+      1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0;	% Ixta:		 {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1};																			I(1(t);1(t+1)) ✓         
+      1 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0;	% Ixtb:		 {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2};																			I(1(t);2(t+1)) ✓
+      1 1 0 0 0 0 0 0 1 1 0 0 0 0 0 0;	% Iyta:		 {1}{2}-->{1}{2} + {1}{2}-->{1} + {2}-->{1}{2} + {2}-->{1};																			I(2(t);1(t+1)) ✓
+      1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0;	% Iytb:		 {1}{2}-->{1}{2} + {1}{2}-->{2} + {2}-->{1}{2} + {2}-->{2};																			I(2(t);2(t+1)) ✓        
+      1 1 0 0 1 1 0 0 1 1 0 0 1 1 0 0;	% Ixyta:		 {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}-->{1}{2} + {1}-->{1} + {2}-->{1}{2} + {2}-->{1} + {12}-->{1}{2} + {12}-->{1};			I(1(t),2(t);1(t+1)) ✓
+      1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0;	% Ixytb:		 {1}{2}-->{1}{2} + {1}{2}-->{2} + {1}-->{1}{2} + {1}-->{2}+ {2}-->{1}{2} + {2}-->{2} + {12}-->{1}{2} + {12}-->{2};			I(1(t),2(t);2(t+1)) ✓
+      1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0;	% Ixtab:		 {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {1}-->{1}{2} + {1}-->{1} + {1}-->{2} + {1}-->{12};			I(1(t);1(t+1),2(t+1)) ✓
+      1 1 1 1 0 0 0 0 1 1 1 1 0 0 0 0;	% Iytab:		 {1}{2}-->{1}{2} + {1}{2}-->{1} + {1}{2}-->{2} + {1}{2}-->{12} + {2}-->{1}{2} + {2}-->{1} + {2}-->{2} + {2}-->{12};			I(2(t);1(t+1),2(t+1)) ✓
+	1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1];	% Ixytab:		 all 16 atoms                                                                                                                                                                                                        I(1(t),1(t+1);2(t),2(t+1))
 
 partials = linsolve(M, reds');     % solve system of linear equations: M * X = reds (16*16 x 16*time-steps = 16*time-steps; result gives local PhiID atoms)
 
@@ -354,11 +354,11 @@ end
 
 function [ R ] = RedundancyCCS(S, src1, src2, tgt, mi1, mi2, mi12)
 
-  c = mi12 - mi1 - mi2;                                         % co-information (should be equivalent to interaction information)
+  c = mi12 - mi1 - mi2;                                     % co-information (should be equivalent to interaction information)
   signs = [sign(mi1), sign(mi2), sign(mi12), sign(-c)];
   R = all(signs == signs(:,1), 2).*(-c);                    % all() determines if the elements are all nonzero or logical 1 (true)
-                                                                             % signs == signs(:,1) --> creates new matrix indicating whether columns in signs are equal to the first column of signs (all elements of first column in the new matrix would trivially be 1)
-                                                                             % all(signs == signs(:,1), 2) --> determines whether all elements of a given row in the new matrix are nonzero or 1 
+                                                            % signs == signs(:,1) --> creates new matrix indicating whether columns in signs are equal to the first column of signs (all elements of first column in the new matrix would trivially be 1)
+                                                            % all(signs == signs(:,1), 2) --> determines whether all elements of a given row in the new matrix are nonzero or 1 
 
 end
 

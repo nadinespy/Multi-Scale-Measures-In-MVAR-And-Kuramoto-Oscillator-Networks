@@ -142,10 +142,18 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				% mUtils.computeCombinedValues needs the number of 
 				% states of micro/macro, respectively
 				mUtils = javaObject('infodynamics.utils.MatrixUtils');
-				teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro'), ...
+				
+				% no need to use mUtils.computeCombinedValues(), if macro variable has only dimensions
+				if size(macro, 1) > 1
+					teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro'), ...
 					n_micro_states), mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(macro'), ...
 					n_macro_states));
-				DD = teCalc.computeAverageLocalOfObservations()
+				else 
+					teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro'), ...
+					n_micro_states), octaveToJavaDoubleMatrix(macro'));
+				end 
+				
+				DD = teCalc.computeAverageLocalOfObservations();
 				
 				all_DD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = DD;
 			end
