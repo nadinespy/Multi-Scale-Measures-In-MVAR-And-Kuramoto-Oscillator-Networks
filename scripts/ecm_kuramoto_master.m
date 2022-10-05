@@ -122,7 +122,8 @@ get_variables		= @get_km_variables;			% specify function to generate micro and m
 % -------------------------------------------------------------------------
 % necessary input arguments
 
-measures			= {'DD'}; %, 'ShannonCE', 'PhiIDCE'};			% emergence measures
+measures			= {'DD'};	%, 'ShannonCE', 'ShannonDC', 'ShannonCD', % emergence measures
+						% 'PhiIDCE'};					
 methods			= {'Discrete'}; %, 'Gaussian'};				% to be expanded with 'Kraskov' for practCE; discrete method can practically 
 													% handle only systems with 10-12 binary variables; if variables are not binary,  
 													% then even less (as the joint state-space grows)

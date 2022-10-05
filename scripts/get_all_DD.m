@@ -10,7 +10,7 @@ function output_struct = get_all_DD(network, ...
 		macro_variable_names, ...
 		input_struct, ...
 		pathin_sim_time_series, ...
-		varargin);
+		varargin)
 	
 	% Function description: get_all_DD() takes as inputs scalar parameter 
 	% values common to all emergence calculations, and arrays with 
@@ -63,7 +63,8 @@ function output_struct = get_all_DD(network, ...
 	%
 	% Outputs: output_struct			same struct as input_struct,
 	%							but with DD values (as 
-	%							opposed to zeros) in where							where 'results' contains
+	%							opposed to zeros) in where
+	%							where 'results' contains
 	%							fieldnames according to
 	%							micro-macro combinations,
 	%							each of which contain a 
@@ -109,6 +110,7 @@ function output_struct = get_all_DD(network, ...
 	model_params1			= p.Results.model_params1;
 	model_params2			= p.Results.model_params2;
 	measure				= p.Results.measure;
+	method				= p.Results.method;
 	time_length				= p.Results.time_length;
 	time_lag				= p.Results.time_lag;
 	time_steps				= p.Results.time_steps;

@@ -24,9 +24,9 @@ function [ mi ] = KraskovMI(X, Y, kraskov_param)
 %%	compute MI
 
 	if isfloat(X) && isdiscrete(Y)
-		mi_discrete_cont(X, Y, k)
+		mi = mi_discrete_cont(X, Y, k);
 	elseif isfloat(Y) && isdiscrete(X)
-		mi_discrete_cont(Y, X, k)
+		mi = mi_discrete_cont(Y, X, k);
 	else
 		mi = mi_cont_cont(X, Y, kraskov_param);
 	end 

@@ -136,6 +136,16 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	time_steps		= measure_params_dd.time_steps;
 	red_funcs		= measure_params_phiid_ce.red_funcs;
 	
+	% put PhiID-measures into separate cell array for get_all_phiidCE_DC_CD()
+	phiidMeasures = {};
+	for z = 1:length(measures)
+		if strcmp(measures{z}, 'phiidCE') || strcmp(measures{z}, 'phiidDC') || strcmp(measures{z}, 'phiidCD')
+			phiidMeasures = {phiidMeasures, measures{z}};
+			measures = strrep(measures, measures{z},'');
+		end 
+	end 
+	measures = [measures, phiidMeasures];
+	
 	if length(measure_params_fieldnames) > 4
 		for g = 1:length(measure_params_fieldnames)
 			if strcmp(measure_params_fieldnames{g}, 'kraskov_params') == true;
@@ -168,7 +178,8 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	% initialise fields with 'micro_variable_name_macro_variable_name' in  
 	% [emergence_struct.results] as well as tables with model parameters 
 	% in rows and columns for each 
-	% [emergence_struct.results.('micro_variable_name_macro_variable_name')] 
+	% [emergence_struct.results.('micro_variable_name_macro_variable_name')];
+	% same for fields with 'micro_variable_name' for macro-independent PhiID
 	for u = 1:length(micro_variable_names);
 		
 		for w = 1:length(macro_variable_names);
@@ -184,16 +195,25 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 				'VariableNames', model_params2_str);
 			
 		end
+		
+		emergence_struct(1,1).results(1,1).(micro_variable_names{u}) = ...
+			zeros(length(model_params1),length(model_params2));
+		
+		emergence_struct(1,1).results(1,1).(micro_variable_names{u}) = ...
+			array2table(emergence_struct(1,1).results(1,1).(micro_variable_names{u}), 'RowNames', model_params1_str, ...
+			'VariableNames', model_params2_str);
 	end
 
-	% placeholder structs to fill in emergence results for measure specific parameters
+	% placeholder structs to fill in emergence results for measure specific parameters; placeholder
+	% struct for PhiID-measures must have space not only for red_funcs, but also for different
+	% PhiID-measures
 	temp_emergence_struct_time_steps(1,1:length(time_steps)) = emergence_struct;
-	temp_emergence_struct_red_funcs(1,1:length(red_funcs)) = emergence_struct;
+	temp_emergence_struct_red_funcs(1,1:length(red_funcs)*length(phiidMeasures)) = emergence_struct;
 	
 	% run the big loop over time lengths, measures, time lags, methods, 
 	% discretization methods & number of bins (for method 'discrete'), 
 	% K-nearest neighbours (for method 'kraskov'), time steps (in DD), 
-	% and reduncancy functions (in PhiIDCE);
+	% and reduncancy functions (in PhiID-CE);
 	% emergence_struct is appended with emergence results for each 
 	% parameter combination (excluding model parameters which are stored 
 	% in [emergence_struct.results.('micro_variable_name_macro_variable_name')])
@@ -226,22 +246,46 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 								% ------------------------------------------------------
 								% PhiID CE
 								% ------------------------------------------------------
-								if strcmp(measure, 'PhiIDCE');
+								if iscell(measure) == true
 									
-									% do calculation for PhiID CE
+									if strcmp(measure, 'phiidCE') || strcmp(measure, 'phiidDC') || strcmp(measure, 'phiidCD');
 									
-									% ------------------------------------------------------
-									% Shannon CE
-									% ------------------------------------------------------
-								elseif strcmp(measure, 'ShannonCE');
+										emergence_struct(1,end:length(red_func)*length(phiidMeasures)) = get_all_phiidCE_DC_CD(network, ...
+											model_params1, ...
+											model_params2, ...
+											time_length, ...
+											measure, ...
+											method, ...
+											time_lag, ...
+											red_funcs, ...
+											micro_variable_names, ...
+											temp_emergence_struct_red_funcs(1,1:length(red_funcs)*length(phiidMeasures)), ...
+											pathin_sim_time_series);
+										
+									end 
 									
-									% do calculation for Shannon Ce
+								% ------------------------------------------------------
+								% Shannon-CE, Shannon-DC, or Shannon-CD
+								% ------------------------------------------------------
+								elseif strcmp(measure, 'ShannonCE') || strcmp(measure, 'ShannonDC') || strcmp(measure, 'ShannonCD');
 									
-									% ------------------------------------------------------
-									% dynamical dependence
-									% ------------------------------------------------------
+									emergence_struct(1,end:length(time_steps)) = get_all_ShannonCE_DC_CD(network, ...
+										model_params1, ...
+										model_params2, ...
+										time_length, ...
+										measure, ...
+										method, ...
+										time_lag, ...
+										micro_variable_names, ...
+										macro_variable_names, ...
+										pathin_sim_time_series);
+									
+								% ------------------------------------------------------
+								% dynamical dependence
+								% ------------------------------------------------------
 								elseif strcmp(measure, 'DD');
 									
+									get_all_measure = @get_all_DD;
 									% loop over time_steps, model_params1, and model_params2, and append
 									% results to emergence_struct
 									emergence_struct(1,end:length(time_steps)) = get_all_DD(network, ...
@@ -263,9 +307,9 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 							end
 						end
 						
-						% ------------------------------------------------------
-						% method 'kraskov'
-						% ------------------------------------------------------
+					% ------------------------------------------------------
+					% method 'kraskov'
+					% ------------------------------------------------------
 					elseif strcmp(lower(method), 'kraskov');
 						
 						for h = 1:length(kraskov_params);
@@ -279,16 +323,26 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 								
 								% do calculation for PhiID CE
 								
-								% ------------------------------------------------------
-								% Shannon CE
-								% ------------------------------------------------------
-							elseif strcmp(measure, 'ShannonCE');
+							% ------------------------------------------------------
+							% Shannon-CE, Shannon-DC, or Shannon-CD
+							% ------------------------------------------------------
+							elseif strcmp(measure, 'ShannonCE') || strcmp(measure, 'ShannonDC') || strcmp(measure, 'ShannonCD');
 								
-								% do calculation for Shannon Ce
+								emergence_struct(1,end:length(time_steps)) = get_all_ShannonCE_DC_CD(network, ...
+									model_params1, ...
+									model_params2, ...
+									time_length, ...
+									measure, ...
+									method, ...
+									time_lag, ...
+									micro_variable_names, ...
+									macro_variable_names, ...
+									pathin_sim_time_series, ...
+									'kraskov_param', kraskov_param);
 								
-								% ------------------------------------------------------
-								% dynamical dependence
-								% ------------------------------------------------------
+							% ------------------------------------------------------
+							% dynamical dependence
+							% ------------------------------------------------------
 							elseif strcmp(measure, 'DD');
 								
 								% loop over time_steps, model_params1, and model_params2, and append
@@ -310,9 +364,9 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 							end
 						end
 						
-						% ------------------------------------------------------
-						% method 'gaussian'
-						% ------------------------------------------------------
+					% ------------------------------------------------------
+					% method 'gaussian'
+					% ------------------------------------------------------
 					elseif strcmp(lower(method), 'gaussian')
 						
 						fprintf('get all emergence - loop indices: time_length: %d, measure: %d, method: %d, time_lag: %d, ', j, q, z, i);
@@ -324,19 +378,40 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 							
 							% do calculation for PhiID CE
 							
-							% ------------------------------------------------------
-							% Shannon CE
-							% ------------------------------------------------------
-						elseif strcmp(measure, 'ShannonCE')
+						% ------------------------------------------------------
+						% Shannon-CE, Shannon-DC, or Shannon-CD
+						% ------------------------------------------------------
+						elseif strcmp(measure, 'ShannonCE') || strcmp(measure, 'ShannonDC') || strcmp(measure, 'ShannonCD');
 							
-							% do calculation for Shannon Ce
-							
-							% ------------------------------------------------------
-							% dynamical dependence
-							% ------------------------------------------------------
+							emergence_struct(1,end:length(time_steps)) = get_all_ShannonCE_DC_CD(network, ...
+								model_params1, ...
+								model_params2, ...
+								time_length, ...
+								measure, ...
+								method, ...
+								time_lag, ...
+								micro_variable_names, ...
+								macro_variable_names, ...
+								pathin_sim_time_series);
+						% ------------------------------------------------------
+						% dynamical dependence
+						% ------------------------------------------------------
 						elseif strcmp(measure, 'DD')
 							
-							% do calculation for DD
+							% loop over time_steps, model_params1, and model_params2, and append
+							% results to emergence_struct
+							emergence_struct(1,end:length(time_steps)) = get_all_DD(network, ...
+								model_params1, ...
+								model_params2, ...
+								time_length, ...
+								measure, ...
+								method, ...
+								time_lag, ...
+								time_steps, ...
+								micro_variable_names, ...
+								macro_variable_names, ...
+								temp_emergence_struct_time_steps(1,1:length(time_steps)), ...
+								pathin_sim_time_series);
 						end
 						
 						% alternative
@@ -347,5 +422,4 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 			end
 		end
 	end
-
 end	
