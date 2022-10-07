@@ -7,6 +7,7 @@ function output_struct = get_all_ShannonCE_DC_CD(network, ...
 		time_lag, ...
 		micro_variable_names, ...
 		macro_variable_names, ...
+		input_struct, ...
 		pathin_sim_time_series, ...
 		varargin)
 	
@@ -17,7 +18,31 @@ function output_struct = get_all_ShannonCE_DC_CD(network, ...
 	
 	% Inputs:	
 	%
-	% Required: model_params1			float array
+	% Required: input_struct			1x(length(time_steps))struct 
+	%							with fields 
+	%
+	%							'time_length',
+	%							'measure', 
+	%							'method', 
+	%							'time_lag', 
+	%							'disc_method', 
+	%							'bin_number', 
+	%							'kraskov_param',
+	%							'time_step',
+	%							'red_func',
+	%							'results'
+	%
+	%							where 'results' contains
+	%							fieldnames according to
+	%							micro-macro combinations,
+	%							each of which is valued with  
+	%							a table with model_params1
+	%							and model_params2 as rows/
+	%							columns, initialized with 
+	%							zeros; all other fields
+	%							are empty
+	%
+	%		model_params1			float array
 	%		model_params2			float array
 	%		measure				char array
 	%		time_length				double
@@ -96,7 +121,44 @@ function output_struct = get_all_ShannonCE_DC_CD(network, ...
 	
 	
 	output_struct = input_struct;
-	fieldnames_results = fieldnames(input_struct(1,1).results(1,1));
+	
+	% get row and column names for table in 
+	% [emergence_struct.results.('micro_variable_name_macro_variable_name')]
+	model_params1_str = {};
+	for t = 1:length(model_params1)
+		model_params1_str{t} = num2str(model_params1(t));
+	end 
+		
+	for e = 1:length(model_params2)
+		model_params2_str{e} = num2str(model_params1(e));
+	end 
+	
+	% initialise fields with 'micro_variable_name_macro_variable_name' in
+	% [output_struct.results] as well as tables with model parameters
+	% in rows and columns for each
+	% [output_struct.results.('micro_variable_name_macro_variable_name')];
+	% same for fields with 'micro_variable_name' for macro-independent PhiID
+	
+	for u = 1:length(micro_variable_names);
+		
+		for w = 1:length(macro_variable_names);
+			
+			output_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]) = ...
+				zeros(length(model_params1),length(model_params2));
+			
+			output_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]) = ...
+				array2table(output_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]), 'RowNames', model_params1_str, ...
+				'VariableNames', model_params2_str);
+			
+		end
+		
+	end
+	
+	% output_struct = input_struct;
+	fieldnames_results = fieldnames(output_struct(1,1).results(1,1));
 	
 	fieldnames_pathin = fieldnames(pathin_sim_time_series);
 	pathin = getfield(pathin_sim_time_series, fieldnames_pathin{1});
@@ -127,48 +189,61 @@ function output_struct = get_all_ShannonCE_DC_CD(network, ...
 						macro_variable_names{k}));
 				end
 				
-			else
+			elseif strcmp(lower(method), 'discrete')
 				
 				bin_number_str = num2str(bin_number);
 				% load all micro variables into one struct 'micro_variables'
 				for k = 1:length(micro_variable_names)
-					micro_variables(1).([disc_method bin_number_str '_' micro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+					micro_variables(1).([micro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 						[disc_method bin_number_str '_' micro_variable_names{k}]));
 				end
 				
 				% load all macro variables into one struct 'macro_variables'
 				for k = 1:length(macro_variable_names)
-					macro_variables(1).([disc_method bin_number_str '_' macro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+					macro_variables(1).([macro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 						[disc_method bin_number_str '_' macro_variable_names{k}]));
 				end
 				
 			end
 			
 			% calculate Shannon-CE, Shannon-DC, or Shannon-CD
-			fprintf('get all Shannon-CE - loop indices: time_step: %d, model_param1: %d, model_param2: %d\n', a, n, o);
+			fprintf('get all Shannon-CE - loop indices: model_param1: %d, model_param2: %d\n', n, o);
 			
 			% get Shannon-CE, Shannon-DC, or Shannon-CD for all combinations of micro and top-level macro variables
-			ShannonMeasure = get_ShannonCE_DC_CD(micro_variables, macro_variables, measure, method, time_lag, 'kraskov_param', kraskov_param);
+			if strcmp(lower(method), 'kraskov') || strcmp(lower(method), 'gaussian')
+				
+				shannonMeasure = get_shannonCE_DC_CD(micro_variables, macro_variables, measure, method, time_lag, 'kraskov_param', kraskov_param);
+				
+			elseif strcmp(lower(method), 'kraskov')
+				
+				shannonMeasure = get_shannonCE_DC_CD(micro_variables, macro_variables, measure, method, time_lag, 'bin_number', bin_number);
 			
 			% big_struct(1,y).results(1,1).([micro_variable_names{u} '_' macro_variable_names{w}]) = [];
 			
-			for f = 1:length(fieldnames(input_struct(1,1).results))
-				output_struct(1,a).results(1,1).([fieldnames_results{f}])(n,o) = {ShannonMeasure.([fieldnames_results{f}])};
+			for f = 1:length(fieldnames_results)
+				output_struct(1,1).results(1,1).([fieldnames_results{f}])(n,o) = {shannonMeasure.([fieldnames_results{f}])};
 			end
 			
-			clear ShannonMeasure;
+			clear shannonMeasure;
 			clear macro_variables;
 			clear micro_variables;
 		end
 	end
 			
-	output_struct(1,a).measure		= measure;
-	output_struct(1,a).method		= method;
-	output_struct(1,a).time_lag		= time_lag;
-	output_struct(1,a).time_length	= time_length;
-	output_struct(1,a).kraskov_param	= kraskov_param;
-	output_struct(1,a).disc_method	= disc_method;
-	output_struct(1,a).bin_number		= bin_number;
+	output_struct(1,1).measure		= measure;
+	output_struct(1,1).method		= method;
+	output_struct(1,1).time_lag		= time_lag;
+	output_struct(1,1).time_length	= time_length;
+	
+	if strcmp(lower(method), 'discrete')
+	
+		output_struct(1,1).disc_method	= disc_method;
+		output_struct(1,1).bin_number		= bin_number;
+		
+	elseif strcmp(lower(method), 'kraskov')
+		
+		output_struct(1,1).kraskov_param	= kraskov_param;
+	end 
 
 end 
 								

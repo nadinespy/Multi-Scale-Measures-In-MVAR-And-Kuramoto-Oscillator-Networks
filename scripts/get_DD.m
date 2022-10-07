@@ -55,15 +55,12 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 	fieldnames_macro = fieldnames(macro_variables);
 	fieldnames_micro = fieldnames(micro_variables);
 	
-% 	if strcmp(method, 'Kraskov')
-% 		teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov');
-% 		teCalc.setProperty('k', num2str(kraskov_param));
-% 	elseif strcmp(method, 'Gaussian');
-% 		teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorMultiVariateGaussian');
-% 	elseif strcmp(method, 'Discrete');
-% 		teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 4, time_lag);
-% 		% 4: base - number of symbols for each variable. E.g. binary variables are in base-2.
-% 	end 
+	if strcmp(method, 'Kraskov')
+		teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov');
+		teCalc.setProperty('k', num2str(kraskov_param));
+	elseif strcmp(method, 'Gaussian');
+		teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorMultiVariateGaussian');
+	end 
 
 	% loop over all micro and macro variables and calculate practical CE
 	for i = 1:n_micro_variables;
@@ -75,7 +72,7 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 			micro_dim = size(micro, 1);
 			macro_dim = size(macro, 1);
 	
-			if strcmp(method, 'Kraskov') | strcmp(method, 'Gaussian');
+			if strcmp(lower(method), 'kraskov') | strcmp(lower(method), 'gaussian');
 
 				
 				% "Specifically, this class implements the pairwise
@@ -94,15 +91,16 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				
 				all_DD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = DD;
 				
-			elseif strcmp(method, 'Discrete');
+			elseif strcmp(lower(method), 'discrete');
 				
 				% we need the alphabet size / number of states for 
 				% each sample of the source (micro) and target (macro); 
 				% for a multivariate variable, this means the number 
 				% of states for each joint variable
-				n_micro_states = numel(unique(micro));				% number of micro states
-				n_macro_states = numel(unique(macro));				% number of macro states
-				n_joint_micro_states = n_micro_states^size(micro,1);		% number ofjoint micro states
+				
+				n_micro_states = numel(unique(micro));			% number of micro states
+				n_macro_states = numel(unique(macro));			% number of macro states
+				n_joint_micro_states = n_micro_states^size(micro,1);	% number ofjoint micro states
 				
 				% Joe Lizier on the problem of a too large state space: 
 				% "The state space of joining[, e. g.,] 256 binary 
@@ -150,7 +148,7 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 					n_macro_states));
 				else 
 					teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(micro'), ...
-					n_micro_states), octaveToJavaDoubleMatrix(macro'));
+					n_micro_states), macro');
 				end 
 				
 				DD = teCalc.computeAverageLocalOfObservations();

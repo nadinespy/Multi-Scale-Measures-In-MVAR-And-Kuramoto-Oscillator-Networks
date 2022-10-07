@@ -122,9 +122,45 @@ function output_struct = get_all_DD(network, ...
 	disc_method				= p.Results.disc_method;
 	bin_number				= p.Results.bin_number;
 	
-	
 	output_struct = input_struct;
-	fieldnames_results = fieldnames(input_struct(1,1).results(1,1));
+	
+	% get row and column names for table in 
+	% [emergence_struct.results.('micro_variable_name_macro_variable_name')]
+	model_params1_str = {};
+	for t = 1:length(model_params1)
+		model_params1_str{t} = num2str(model_params1(t));
+	end 
+		
+	for e = 1:length(model_params2)
+		model_params2_str{e} = num2str(model_params1(e));
+	end 
+	
+		% initialise fields with 'micro_variable_name_macro_variable_name' in
+	% [output_struct.results] as well as tables with model parameters
+	% in rows and columns for each
+	% [output_struct.results.('micro_variable_name_macro_variable_name')];
+	% same for fields with 'micro_variable_name' for macro-independent PhiID
+	
+	for u = 1:length(micro_variable_names);
+		
+		for w = 1:length(macro_variable_names);
+			
+			output_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]) = ...
+				zeros(length(model_params1),length(model_params2));
+			
+			output_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]) = ...
+				array2table(output_struct(1,1).results(1,1).([micro_variable_names{u} ...
+				'_' macro_variable_names{w}]), 'RowNames', model_params1_str, ...
+				'VariableNames', model_params2_str);
+			
+		end
+		
+	end
+	
+	% output_struct = input_struct;
+	fieldnames_results = fieldnames(output_struct(1,1).results(1,1));
 	
 	fieldnames_pathin = fieldnames(pathin_sim_time_series);
 	pathin = getfield(pathin_sim_time_series, fieldnames_pathin{1});
@@ -159,19 +195,28 @@ function output_struct = get_all_DD(network, ...
 								macro_variable_names{k}));
 						end
 
-					else
+					elseif strcmp(lower(method), 'discrete');
 						
-						bin_number_str = num2str(bin_number);
+						n_features = 2;
+						
 						% load all micro variables into one struct 'micro_variables'
 						for k = 1:length(micro_variable_names)
-							micro_variables(1).([disc_method bin_number_str '_' micro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-								[disc_method bin_number_str '_' micro_variable_names{k}]));
+							micro_variables(1).(micro_variable_names{k}) = struct2array(load([pathin network '_' micro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+								micro_variable_names{k}));
+							
+							% do dimensionality reduction using RICA, then binarize to be able to use JIDT for the discrete case
+							reconstruction_ica = rica(micro_variables(1).(micro_variable_names{k})', n_features);
+							rica_micro = (micro_variables(1).(micro_variable_names{k})' * reconstruction_ica.TransformWeights)';
+							[quantiles_rica_micro, quantilized_rica_micro] = get_quant_variables(rica_micro, 1);
+							micro_variables(1).(micro_variable_names{k}) = quantilized_rica_micro;
 						end
 						
 						% load all macro variables into one struct 'macro_variables'
 						for k = 1:length(macro_variable_names)
-							macro_variables(1).([disc_method bin_number_str '_' macro_variable_names{k}]) = struct2array(load([pathin network '_' disc_method bin_number_str '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
-								[disc_method bin_number_str '_' macro_variable_names{k}]));
+							macro_variables(1).(macro_variable_names{k}) = struct2array(load([pathin network '_' macro_variable_names{k} '_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
+								macro_variable_names{k}));
+							[quantiles_macro, quantilized_macro] = get_quant_variables(macro_variables(1).(macro_variable_names{k}), 1);
+							macro_variables(1).(macro_variable_names{k}) = quantilized_macro;
 						end
 
 					end
@@ -186,7 +231,7 @@ function output_struct = get_all_DD(network, ...
 					
 					% big_struct(1,y).results(1,1).([micro_variable_names{u} '_' macro_variable_names{w}]) = [];
 					
-					for f = 1:length(fieldnames(input_struct(1,1).results))
+					for f = 1:length(fieldnames_results)
 						output_struct(1,a).results(1,1).([fieldnames_results{f}])(n,o) = {DD.([fieldnames_results{f}])};
 					end
 					
@@ -196,13 +241,20 @@ function output_struct = get_all_DD(network, ...
 				end
 			end
 			
+			if strcmp(lower(method), 'discrete')
+				
+				output_struct(1,a).disc_method	= disc_method;
+				output_struct(1,a).bin_number		= bin_number;
+				
+			elseif strcmp(lower(method), 'kraskov')
+				
+				output_struct(1,a).kraskov_param	= kraskov_param;
+			end 
+				
 			output_struct(1,a).measure		= measure;
 			output_struct(1,a).method		= method;
 			output_struct(1,a).time_lag		= time_lag;
 			output_struct(1,a).time_length	= time_length;
-			output_struct(1,a).kraskov_param	= kraskov_param;
-			output_struct(1,a).disc_method	= disc_method;
-			output_struct(1,a).bin_number		= bin_number;
 			output_struct(1,a).time_step		= time_step;
 			
 		else

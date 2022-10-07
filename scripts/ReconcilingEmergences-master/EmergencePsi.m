@@ -1,4 +1,4 @@
-function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, method, varargin)
+function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, varargin)
 %% EMERGENCEPSI Compute causal emergence criterion from data
 %
 %     PSI = EMERGENCEPSI(X, V) computes the causal emergence criterion psi for
@@ -13,6 +13,9 @@ function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, method, varargin)
 %     particular METHOD. Can be 'discrete' or 'gaussian'. If empty, it will
 %     try to infer the most suitable method.
 %
+%     PSI = EMERGENCEPSI(X, V, TAU, METHOD, KRASKOV_PARAM) estimates mutual 
+%     info using KRASKOV_PARAM.
+%
 %     [PSI, V_MI, X_MI] = EMERGENCEPSI(X, V, ...) also returns the mutual
 %     info in macro and micro variables, such that PSI = V_MI - X_MI.
 %
@@ -22,6 +25,7 @@ function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, method, varargin)
 %     multivariate data. https://arxiv.org/abs/2004.08220
 %
 % Pedro Mediano and Fernando Rosas, Aug 2020
+% Adapted by Nadine Spychala, Oct 2022
 
 %%
 
@@ -31,10 +35,9 @@ function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, method, varargin)
 	% required variables
 	addRequired(p,'X', @isdouble);
 	addRequired(p,'V', @isdouble);
+	addRequired(p,'tau', @isdouble);
 	
 	% optional positional arguments:
-	default_tau = 3;
-	addOptional(p,'tau', default_tau, @isdouble);
 	default_method = 'Gaussian';
 	addOptional(p,'method', default_method, @ischar);
 	
@@ -43,7 +46,7 @@ function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, method, varargin)
 	addParameter(p,'kraskov_param', default_kraskov_param, ...
 		@isdouble);
 	
-	parse(p, X, V, tau, method, varargin{:});
+	parse(p, X, V, tau, varargin{:});
 	
 	X					= p.Results.X;
 	V					= p.Results.V;
@@ -53,7 +56,6 @@ function [ psi, v_mi, x_mi ] = EmergencePsi_2(X, V, tau, method, varargin)
 
 	
 	% parameter checks
-
 	if ~isvector(V) || ~ismatrix(X)
 		error("X has to be a 2D matrix and V a 1D vector.");
 	end

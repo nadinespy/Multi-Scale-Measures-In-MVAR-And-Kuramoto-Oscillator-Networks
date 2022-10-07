@@ -1,4 +1,4 @@
-function all_ShannonCE_DC_CD = get_ShannonCE_DC_CD(micro_variables, macro_variables, ...
+function all_shannonCE_DC_CD = get_shannonCE_DC_CD(micro_variables, macro_variables, ...
 		measure, method, time_lag, varargin);
 	
 	% Function description: get_ShannonCE_DC_CD() calculates Shannon-CE, or 
@@ -58,7 +58,7 @@ function all_ShannonCE_DC_CD = get_ShannonCE_DC_CD(micro_variables, macro_variab
 	% get names of micro and macro variables, respectively
 	fieldnames_macro = fieldnames(macro_variables);
 	fieldnames_micro = fieldnames(micro_variables);
-	
+							
 	% loop over all micro and macro variables and calculate practical CE
 	for i = 1:n_micro_variables;
 		micro = micro_variables.(fieldnames_micro{i});
@@ -66,18 +66,32 @@ function all_ShannonCE_DC_CD = get_ShannonCE_DC_CD(micro_variables, macro_variab
 		for j = 1:n_macro_variables;
 			macro = macro_variables.(fieldnames_macro{j});
 			
-			if strcmp(measure, 'ShannonCE')
-				ShannonMeasure = EmergencePsi(micro', macro', time_lag, method);
-			elseif strcmp(measure, 'ShannonDC')
-				ShannonMeasure = EmergenceDelta(micro', macro', time_lag, method);
-			elseif strcmp(measure, 'ShannonCD')
-				ShannonMeasure = EmergenceGamma(micro', macro', time_lag, method);
+			if strcmp(lower(method), 'kraskov')
+				
+				if strcmp(measure, 'shannonCE')
+					shannonMeasure = EmergencePsi(micro', macro', time_lag, method, 'kraskov_param', kraskov_param);
+				elseif strcmp(measure, 'shannonDC')
+					shannonMeasure = EmergenceDelta(micro', macro', time_lag, method, 'kraskov_param', kraskov_param);
+				elseif strcmp(measure, 'shannonCD')
+					shannonMeasure = EmergenceGamma(micro', macro', time_lag, method, 'kraskov_param', kraskov_param);
+				end
+				
+			else
+				
+				if strcmp(measure, 'shannonCE')
+					shannonMeasure = EmergencePsi(micro', macro', time_lag, method);
+				elseif strcmp(measure, 'shannonDC')
+					shannonMeasure = EmergenceDelta(micro', macro', time_lag, method);
+				elseif strcmp(measure, 'shannonCD')
+					shannonMeasure = EmergenceGamma(micro', macro', time_lag, method);
+				end
+				
 			end
 				
 			% calculate practical CE, DC, and CE for a given micro-macro combination, and store 
 			% results in struct
 				
-			all_ShannonCE_DC_CD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = ShannonMeasure;
+			all_shannonCE_DC_CD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = shannonMeasure;
 		end 
 	end 
 end 

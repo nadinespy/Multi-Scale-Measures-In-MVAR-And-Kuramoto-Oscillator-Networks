@@ -122,9 +122,9 @@ get_variables		= @get_km_variables;			% specify function to generate micro and m
 % -------------------------------------------------------------------------
 % necessary input arguments
 
-measures			= {'DD'};	%, 'ShannonCE', 'ShannonDC', 'ShannonCD', % emergence measures
-						% 'PhiIDCE'};					
-methods			= {'Discrete'}; %, 'Gaussian'};				% to be expanded with 'Kraskov' for practCE; discrete method can practically 
+measures			= {'phiidCE', 'phiidDC', 'phiidCD', 'shannonCE', 'shannonDC', 'shannonCD', 'DD'};	%, 'ShannonCE', 'ShannonDC', 'ShannonCD', % emergence measures
+						% 'phiidCE', 'phiidDC', 'phiidCD'};					
+methods			= {'Kraskov', 'Gaussian', 'Discrete'};				% to be expanded with 'Kraskov' for practCE; discrete method can practically 
 													% handle only systems with 10-12 binary variables; if variables are not binary,  
 													% then even less (as the joint state-space grows)
 time_lags			= [3]; %, 3, 10];							% time-lags
@@ -191,14 +191,20 @@ pathin.pathout_data_sync		= pathout_data_sync;
 % -------------------------------------------------------------------------
 % group names of variables generated in get_all_variables() into 
 % micro and macro variabels
-micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', ...
-	'rica12_phase'};
-macro_variable_names = {'mp_sync', 'chi', 'sum_phase', ...
-	'sum_rica6_phase', 'sum_rica12_phase'};
+
+% micro_variable_names = {'raw', 'phase', 'sync', 'rica6_phase', ...
+% 	'rica12_phase'};
+% macro_variable_names = {'mp_sync', 'chi', 'sum_phase', ...
+% 	'sum_rica6_phase', 'sum_rica12_phase'};
+
+micro_variable_names = {'phase'};
+macro_variable_names = {'mp_sync', 'chi'};
 
 %% get variables (simulate data, and discretize them)
 
+%{
 ecm_get_variables();
+%}
 
 %% calculate emergence
 

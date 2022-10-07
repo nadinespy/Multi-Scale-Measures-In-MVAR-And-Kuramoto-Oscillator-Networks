@@ -14,19 +14,31 @@ function [ mi ] = KraskovMI(X, Y, kraskov_param)
 %	Outputs:	mi				mutual information between X & Y
 %
 % Nadine Spychala, Sep 2022 
-% adapted from Pedro Mediano and Fernando Rosas, Aug 2020
 
-%%	parameter checks
+	% use inputParser to declare variables
+	p = inputParser;
+	
+	% required arguments:
+	addRequired(p,'X', @isdouble);
+	addRequired(p,'Y', @isdouble);
+	addRequired(p, 'kraskov_param', @isdouble);
+	
+	parse(p, X, Y, kraskov_param);
+	
+	X					= p.Results.X;
+	Y					= p.Results.Y;
+	kraskov_param			= p.Results.kraskov_param;
+
+	% parameter checks
 	if ~(isvector(X) && isvector(Y) && length(X) == length(Y))
 		error("X and Y must be vectors of the same length.");
 	end
 
-%%	compute MI
-
-	if isfloat(X) && isdiscrete(Y)
-		mi = mi_discrete_cont(X, Y, k);
-	elseif isfloat(Y) && isdiscrete(X)
-		mi = mi_discrete_cont(Y, X, k);
+	%compute MI
+	if isfloat(X) && isinteger(Y)
+		mi = mi_discrete_cont(X, Y, kraskov_param);
+	elseif isfloat(Y) && isinteger(X)
+		mi = mi_discrete_cont(Y, X, kraskov_param);
 	else
 		mi = mi_cont_cont(X, Y, kraskov_param);
 	end 
