@@ -1,4 +1,4 @@
-function output_struct = get_all_ShannonCE_DC_CD(network, ...
+function output_struct = get_all_shannonCE_DC_CD(network, ...
 		model_params1, ...
 		model_params2, ...
 		time_length, ...
@@ -10,70 +10,74 @@ function output_struct = get_all_ShannonCE_DC_CD(network, ...
 		input_struct, ...
 		pathin_sim_time_series, ...
 		varargin)
-	
-	% Function description: get_all_ShannonCE_DC_CD() takes as inputs scalar parameter 
-	% values common to all emergence calculations, and arrays with 
-	% parameter values specific to DD. It then loops over the Shannon-CE-, or Shannon-CD-,
-	% or Shannon-DC-specific parameters.
-	
-	% Inputs:	
-	%
-	% Required: input_struct			1x(length(time_steps))struct 
-	%							with fields 
-	%
-	%							'time_length',
-	%							'measure', 
-	%							'method', 
-	%							'time_lag', 
-	%							'disc_method', 
-	%							'bin_number', 
-	%							'kraskov_param',
-	%							'time_step',
-	%							'red_func',
-	%							'results'
-	%
-	%							where 'results' contains
-	%							fieldnames according to
-	%							micro-macro combinations,
-	%							each of which is valued with  
-	%							a table with model_params1
-	%							and model_params2 as rows/
-	%							columns, initialized with 
-	%							zeros; all other fields
-	%							are empty
-	%
-	%		model_params1			float array
-	%		model_params2			float array
-	%		measure				char array
-	%		time_length				double
-	%		method				char array
-	%		time_lag				double
-	%		micro_variable_names		cell array with chars
-	%		macro_variable_names		cell array with chars
-	%		network				char array
-	%		pathin_sim_time_series		1x1 struct with field 
-	%							indicating path to input, 
-	%							and char array as value
-	%
-	% Optional: kraskov_param			double
-	%		disc_method				char array
-	%		bin_number				double	
-	%
-	% Outputs: output_struct			same struct as input_struct,
-	%							but with Shannon-CE-, or 
-	%							Shannon-CD-, or Shannon-DC 
-	%							values (as opposed to zeros)
-	%							where 'results' contains
-	%							fieldnames according to
-	%							micro-macro combinations,
-	%							each of which contain a 
-	%							table with emergence results,
-	%							with model_params1
-	%							and model_params2 as rows/
-	%							columns; all other fields
-	%							contain one value from the 
-	%							structs' variables 
-	%							described above;
+% get_all_ShannonCE_DC_CD() calculates Shannon-based Causal Emergence (CE), 
+% Downward Causation (DC), and Causal Decoupling (CD) for all micro-macro 
+% variable combinations and all model parameters.
+%
+% Takes as inputs the measure (CE, DC, or CD), scalar measure parameter values 
+% ([time_length], [method], [time_lag]), model parameters ([model_params1], 
+% [model_params2]), and names of the micro and macro variables ([micro_variable_names],
+% [macro_variable_names]).
+%	
+% Inputs - required:
+%    input_struct           -             1x(length(time_steps))struct
+%                                         with fields
+%
+%                                         'time_length',
+%                                         'measure',
+%                                         'method',
+%							'time_lag',
+%                                         'disc_method',
+%                                         'bin_number',
+%                                         'kraskov_param',
+%                                         'time_step',
+%                                         'red_func',
+%                                         'results'
+%
+%                                         where 'results' contains
+%                                         fieldnames according to
+%                                         micro-macro combinations,
+%                                         each of which is valued with
+%                                         a table with model_params1
+%                                         and model_params2 as rows/
+%                                         columns, initialized with
+%                                         zeros; all other fields
+%                                         are empty
+%
+%    model_params1          -             float array
+%    model_params2          -             float array
+%    measure                -             char array
+%    time_length            -             double
+%    method                 -             char array
+%    time_lag               -             double
+%    micro_variable_names   -             cell array with chars
+%    macro_variable_names   -             cell array with chars
+%    network                -             char array
+%    pathin_sim_time_series -             1x1 struct with field
+%                                         indicating path to input,
+%                                         and char array as value
+%
+% Inputs - optional: 
+%    kraskov_param          -             double
+%    disc_method            -             char array
+%    bin_number             -             double
+%
+% Outputs: 
+%    output_struct          -             same struct as input_struct,
+%                                         but with Shannon-CE-, or
+%                                         Shannon-CD-, or Shannon-DC
+%                                         values (as opposed to zeros)
+%                                         where 'results' contains
+%                                         fieldnames according to
+%                                         micro-macro combinations,
+%                                         each of which contain a
+%                                         table with emergence results,
+%                                         with model_params1
+%                                         and model_params2 as rows/
+%                                         columns; all other fields
+%                                         contain one value from the
+%                                         structs' variables
+%                                         described above;
 	
 	% use inputParser to declare required & optional variables
 	p = inputParser;
@@ -166,7 +170,7 @@ function output_struct = get_all_ShannonCE_DC_CD(network, ...
 	time_length_str = num2str(time_length);
 	bin_number_str = num2str(bin_number);
 	
-	% loop over time_steps, model_params1, model_params2
+	% loop over model_params1, model_params2
 			
 	for n = 1:length(model_params1)
 		model_param1_str = param2str(model_params1(n));
@@ -214,9 +218,9 @@ function output_struct = get_all_ShannonCE_DC_CD(network, ...
 				
 				shannonMeasure = get_shannonCE_DC_CD(micro_variables, macro_variables, measure, method, time_lag, 'kraskov_param', kraskov_param);
 				
-			elseif strcmp(lower(method), 'kraskov')
+			elseif strcmp(lower(method), 'discrete')
 				
-				shannonMeasure = get_shannonCE_DC_CD(micro_variables, macro_variables, measure, method, time_lag, 'bin_number', bin_number);
+				shannonMeasure = get_shannonCE_DC_CD(micro_variables, macro_variables, measure, method, time_lag);
 			
 			% big_struct(1,y).results(1,1).([micro_variable_names{u} '_' macro_variable_names{w}]) = [];
 			

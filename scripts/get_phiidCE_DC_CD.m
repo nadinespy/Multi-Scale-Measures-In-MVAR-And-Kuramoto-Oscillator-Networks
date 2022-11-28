@@ -87,12 +87,14 @@ function all_phiidCE_DC_CD = get_phiidCE_DC_CD(micro_variables, ...
 	all_phiidCE_DC_CD = [];
 	for p = 1:length(measure)
 		
-		if strcmp(measure{p}, 'phiidCE')
-			all_phiidCE_DC_CD = [all_phiidCE_DC_CD, all_phiidCE];
-		elseif strcmp(measure{p}, 'phiidDC')
-			all_phiidCE_DC_CD = [all_phiidCE_DC_CD, all_phiidDC];
-		elseif strcmp(measure{p}, 'phiidCD')
-			all_phiidCE_DC_CD = [all_phiidCE_DC_CD, all_phiidCD];
+		if any(strcmp(measure, 'phiidCE'))
+			all_phiidCE_DC_CD.all_phiidCE = all_phiidCE;
+		end
+		if any(strcmp(measure, 'phiidDC'))
+			all_phiidCE_DC_CD.all_phiidDC = all_phiidDC;
+		end
+		if any(strcmp(measure, 'phiidCD'))
+			all_phiidCE_DC_CD.all_phiidCD = all_phiidCD;
 		end 
 	end 
 end 

@@ -1,90 +1,95 @@
 function emergence_struct = get_all_emergence(network, model_calc_params, ...
-		measure_params, micro_variable_names, macro_variable_names, variable_name, ...
+		measure_params, micro_variable_names, macro_variable_names, struct_name, ...
 		pathin_sim_time_series, pathout_emergence, varargin)
-
-	% Function description: get_all_emergence() takes as inputs, amongst others, 
-	% arrays with measure parameter values common to all emergence calculations 
-	% ([measure_params], required), model parameters to calculate emergence for 
-	% ([model_calc_params], required), and arrays with measure parameter values 
-	% specific to measures ([varargin]). 
-	% It then loops over parameter values common to all emergence calculations, 
-	% calling measure-specific functions which then loop over measure-
-	% specific parameters, and which then loop over model parameters.
-	
-	% Inputs:	
-	%
-	% Required:	network				char array
-	%		model_calc_params			1x1 struct with fields 
-	%							model_params1, model_params2, 
-	%							each of which contain 
-	%							float arrays
-	%
-	%		measure_params			1x1 struct with fields
-	%							'measures', 'methods',
-	%							'time_lags', 'time_lengths',
-	%							'kraskov_params', 'disc_methods',
-	%							' bins'
-	%
-	%							'measures': cell array with chars
-	%							'methods': cell array with chars
-	%							'time_lags': double array
-	%							'time_lengths': double array
-	%							'kraskov_params': double array
-	%							'disc_methods': cell arrays with chars
-	%							'bins': int array
-	%
-	%		micro_variable_names		cell array with chars
-	%		macro_variable_names		cell array with chars
-	%		variable_name			char array
-	%		pathin_sim_time_series		1x1 struct with field 
-	%							indicating path to input, 
-	%							and char array as value
-	%		pathout_emergence			1x1 struct with fields 
-	%							indicating paths to results, e. g., 
-	%							'pathout_data_shannon_ce',
-	%							'pathout_data_phiid_ce', or
-	%							'pathout_data_dd', each of
-	%							which has char array as value
-	%
-	% Optional: measure_params_dd			1x1 struct with fields 
-	%							'time_steps': double array
-	%		measure_params_phiid_ce		1x1 struct with fields 
-	%							'red_funcs': cell array with chars
-	%
-	% Outputs: emergence_results			1xN struct with fields 
-	%
-	%							'time_length',
-	%							'measure', 
-	%							'method', 
-	%							'time_lag', 
-	%							'disc_method', 
-	%							'bin_number', 
-	%							'kraskov_param',
-	%							'time_step',
-	%							'red_func',
-	%							'results'
-	%
-	%							where 'results' contains
-	%							fieldnames according to
-	%							micro-macro combinations,
-	%							each of which is valued with 
-	%							a table with emergence results,
-	%							with model_params1
-	%							and model_params2 as rows/
-	%							columns; all other fields
-	%							contain one value from the 
-	%							structs' variables 
-	%							described above; N is the 
-	%							total number of parameter 
-	%							combinations (excluding 
-	%							model parameters) for which 
-	%							emergence shall be calculated, 
-	%							e. g., N = number of measures * 
-	%								     number of methods * 
-	%								     number of time-lags * 
-	%								     number of time-lengths * 
-	%								     number of K-nearest 
-	%								     neighbours							     
+% get_all_emergence() - calculates one or more measures of emergence for one or more
+% models for one or more micro and macro variables, respectively. 
+% 
+% Takes as inputs arrays with measure parameter values common to all emergence measures 
+% ([measure_params], required), model parameters ([model_calc_params], required), and 
+% arrays with measure parameter values specific to measures ([varargin]). It loops over 
+% measure parameter values common to all emergence measures, calling measure-specific 
+% functions and looping over measure-specific parameters which then loop over model 
+% parameters.
+% 
+% Example: emergence_results = get_all_emergence(network, model_calc_params, ...
+%		measure_params, micro_variable_names, macro_variable_names, ...
+%		struct_name, pathin, pathout, 'measure_params_phiid_ce', ...
+%		measure_params_phiid_ce, 'measure_params_dd', measure_params_dd);
+%
+% Inputs - required:	
+%    network                -             char array
+%    model_calc_params      -             1x1 struct with fields 
+%                                         model_params1, model_params2, 
+%                                         each of which contain 
+%                                         float arrays
+%
+%    measure_params         -             1x1 struct with fields
+%                                         'measures', 'methods',
+%                                         'time_lags', 'time_lengths',
+%                                         'kraskov_params', 'disc_methods',
+%                                         ' bins'
+%
+%                                         'measures': cell array with chars
+%                                         'methods': cell array with chars
+%                                         'time_lags': double array
+%                                         'time_lengths': double array
+%                                         'kraskov_params': double array
+%                                         'disc_methods': cell arrays with chars
+%                                         'bins': int array
+%
+%   micro_variable_names    -             cell array with chars
+%   macro_variable_names    -             cell array with chars
+%   struct_name             -             char array
+%   pathin_sim_time_series  -             1x1 struct with field 
+%                                         indicating path to input, 
+%                                         and char array as value
+%   pathout_emergence       -             1x1 struct with fields 
+%                                         indicating paths to results, e. g., 
+%                                         'pathout_data_shannon_ce',
+%                                         'pathout_data_phiid_ce', or
+%                                         'pathout_data_dd', each of
+%                                         which has char array as value
+%
+% Inputs - optional: 
+%   measure_params_dd       -             1x1 struct with fields 
+%                                         'time_steps': double array
+%   measure_params_phiid_ce -             1x1 struct with fields 
+%                                         'red_funcs': cell array with chars
+%
+% Outputs: 
+%   emergence_results       -             1xN struct with fields: 
+%                                         'time_length',
+%                                         'measure', 
+%                                         'method', 
+%                                         'time_lag', 
+%                                         'disc_method', 
+%                                         'bin_number', 
+%                                         'kraskov_param',
+%                                         'time_step',
+%                                         'red_func',
+%                                         'results'
+%
+%                                         where 'results' contains
+%                                         fieldnames according to
+%                                         micro-macro combinations,
+%                                         each of which is valued with 
+%                                         a table with emergence results,
+%                                         with model_params1
+%                                         and model_params2 as rows/
+%                                         columns; all other fields
+%                                         contain one value from the 
+%                                         structs' variables 
+%                                         described above; N is the 
+%                                         total number of parameter 
+%                                         combinations (excluding 
+%                                         model parameters) for which 
+%                                         emergence is calculated, 
+%                                         e. g., N = number of measures * 
+%                                                    number of methods * 
+%                                                    number of time-lags * 
+%                                                    number of time-lengths * 
+%                                                    number of K-nearest 
+%                                                    neighbours							     
 	
 	% use inputParser to declare required & optional variables
 	p = inputParser;
@@ -95,7 +100,7 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	addRequired(p,'measure_params', @isstruct);
 	addRequired(p,'micro_variable_names', @iscell);
 	addRequired(p,'macro_variable_names', @iscell);
-	addRequired(p,'variable_name', @ischar);
+	addRequired(p,'struct_name', @ischar);
 	addRequired(p,'pathin_sim_time_series', @isstruct);
 	addRequired(p,'pathout_emergence', @isstruct);
 	
@@ -108,7 +113,7 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 		default_measure_params_phiid_ce, @isstruct);
 	
 	parse(p, network, model_calc_params, measure_params, ...
-		micro_variable_names, macro_variable_names, variable_name, ...
+		micro_variable_names, macro_variable_names, struct_name, ...
 		pathin_sim_time_series, pathout_emergence, varargin{:});
 	
 	network				= p.Results.network;
@@ -116,7 +121,7 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	measure_params			= p.Results.measure_params;
 	micro_variable_names		= p.Results.micro_variable_names;
 	macro_variable_names		= p.Results.macro_variable_names;
-	variable_name			= p.Results.variable_name;
+	struct_name				= p.Results.struct_name;
 	pathin_sim_time_series		= p.Results.pathin_sim_time_series;
 	pathout_emergence			= p.Results.pathout_emergence;
 	measure_params_dd			= p.Results.measure_params_dd;

@@ -83,11 +83,11 @@ clear java;
 close all;
 clc;
 
-cd /media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/EmergenceComplexityMeasuresComparison_Matlab/scripts
-addpath(genpath('/media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/kuramoto'))
-addpath(genpath('/media/nadinespy/NewVolume1/my_stuff/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/mutual_info_kNN'))
+cd /media/nadinespy/NewVolume1/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/EmergenceComplexityMeasuresComparison_Matlab/scripts
+addpath(genpath('/media/nadinespy/NewVolume1/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/kuramoto'))
+addpath(genpath('/media/nadinespy/NewVolume1/work/PhD/my_projects/EmergenceComplexityMeasuresComparisonSimulations/mutual_info_kNN'))
 
-directories = @get_all_kuramoto_directories;
+directories = @get_km_directories;
 
 % initialize necessary paths and directories
 n_oscillators = '12';
@@ -101,8 +101,8 @@ network			= '12km';
 % kuramoto parameter specification
 intra_comm_size		= 4;						% intra-community size
 n_communities		= 3;						% number of communities		
-A				= linspace(0.08, 0.8, 1);		% vector with different values for A
-beta				= linspace(0.08, 0.8, 1);		% vector with different values for noise correlation: use beta values only 
+A				= linspace(0.08, 0.8, 2);		% vector with different values for A
+beta				= linspace(0.08, 0.8, 2);		% vector with different values for noise correlation: use beta values only 
 										% up to 0.4, as sigma met & sigma chi turn out to be zero for greater 
 										% values of beta; in these cases, sigma chi will be a non-varying 
 										% zero macro variable, yielding erroneous values for emergence 
@@ -111,10 +111,12 @@ disc_methods		= {'quant'}; %, 'even', 'bin'};	% choose discretization method: 'q
 										% 'even' for discretizing into evenly spaced sections of the state space, 
 										% 'bin' for binarizing (scripts for latter two not yet modified)
 										
-bins				= [1]; %, 3, 7];				% number of bins to do discretization for method 'quant' and 'disc'
+bins				= [1]; %, 3, 7];				% number of quantiles or bins to do discretization for methods 'quant' and 'disc', 
+										% e. g., using only one quantile would result in two groups - 
+										% one below and one above the quantile
 
 get_coupling_matrix	= @get_km_coupling_matrix;		% specify function to generate one coupling matrix
-get_coupling_matrices	= @get_km_coupling_matrices;		% specify function to generate coupling matrices
+get_coupling_matrices	= @get_km_coupling_matrices;		% specify function to generate multiple coupling matrices
 get_variables		= @get_km_variables;			% specify function to generate micro and macro variables
 
 
@@ -122,11 +124,16 @@ get_variables		= @get_km_variables;			% specify function to generate micro and m
 % -------------------------------------------------------------------------
 % necessary input arguments
 
-measures			= {'phiidCE', 'phiidDC', 'phiidCD', 'shannonCE', 'shannonDC', 'shannonCD', 'DD'};	%, 'ShannonCE', 'ShannonDC', 'ShannonCD', % emergence measures
-						% 'phiidCE', 'phiidDC', 'phiidCD'};					
-methods			= {'Kraskov', 'Gaussian', 'Discrete'};				% to be expanded with 'Kraskov' for practCE; discrete method can practically 
-													% handle only systems with 10-12 binary variables; if variables are not binary,  
-													% then even less (as the joint state-space grows)
+% caveats: 
+% - discrete method:
+%		- works only for dimensionality reduced systems when using PhiID-CE and DD
+%		- can practically handle only systems with 10-12 binary variables; 
+%		- if variables are not binary, then even less (as the joint state-space grows)
+% - Kraskov method works only for systems with even-sized number of variables
+% (don’t know why that is the case!)
+
+measures			= {'phiidCE', 'phiidDC', 'phiidCD', 'shannonCE', 'shannonDC', 'shannonCD', 'DD'};
+methods			= {'Discrete'};			% 'Kraskov', 'Gaussian', 
 time_lags			= [3]; %, 3, 10];							% time-lags
 time_lengths		= [10000]; %, 2000];
 
@@ -139,7 +146,7 @@ kraskov_params		= [2]; %, 3, 4];
 % input arguments specific to measures
 
 % PhiID-CE
-red_funcs			= {'MMI'}; %, 'CCS'};
+red_funcs			= {'MMI'}; %, 'CCS'}; % to be expanded with CCS
 
 % DD
 time_steps			= [1, 3]; %, 3, 10]; 
@@ -208,11 +215,11 @@ ecm_get_variables();
 
 %% calculate emergence
 
-% file prefixes to distinguish different struct files, and not overwrite them
-variable_name = 'standard';
+% file prefixes to distinguish and not overwrite different struct files
+struct_name = 'standard';
 
 emergence_results = get_all_emergence(network, model_calc_params, measure_params, ...
-		micro_variable_names, macro_variable_names, variable_name, ...
+		micro_variable_names, macro_variable_names, struct_name, ...
 		pathin, pathout, 'measure_params_phiid_ce', measure_params_phiid_ce, ...
 		'measure_params_dd', measure_params_dd);
 
