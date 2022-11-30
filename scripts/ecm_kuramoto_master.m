@@ -133,14 +133,14 @@ get_variables		= @get_km_variables;			% specify function to generate micro and m
 % (don’t know why that is the case!)
 
 measures			= {'phiidCE', 'phiidDC', 'phiidCD', 'shannonCE', 'shannonDC', 'shannonCD', 'DD'};
-methods			= {'Discrete'};			% 'Kraskov', 'Gaussian', 
-time_lags			= [3]; %, 3, 10];							% time-lags
+methods			= {'Discrete', 'Kraskov', 'Gaussian'};
+time_lags			= [3, 10]; %, 3, 10];							% time-lags
 time_lengths		= [10000]; %, 2000];
 
 % -------------------------------------------------------------------------
 % optional input arguments (depending on method)
 
-kraskov_params		= [2]; %, 3, 4];							
+kraskov_params		= [2, 3]; %, 3, 4];							
 
 % -------------------------------------------------------------------------
 % input arguments specific to measures
@@ -167,7 +167,7 @@ model_calc_params.A			= A ;
 model_calc_params.beta			= beta;																					
 
 % -------------------------------------------------------------------------														
-% put all common measure parameters common to Shannon CE, PhiID-CE & DD 
+% put all measure parameters common to Shannon CE, PhiID-CE & DD 
 % into one cell structure
 
 measure_params.measures			= measures;
@@ -216,11 +216,12 @@ ecm_get_variables();
 %% calculate emergence
 
 % file prefixes to distinguish and not overwrite different struct files
-struct_name = 'standard';
+struct_prefix = 'standard';
 
 emergence_results = get_all_emergence(network, model_calc_params, measure_params, ...
-		micro_variable_names, macro_variable_names, struct_name, ...
+		micro_variable_names, macro_variable_names, struct_prefix, ...
 		pathin, pathout, 'measure_params_phiid_ce', measure_params_phiid_ce, ...
 		'measure_params_dd', measure_params_dd);
 
+% save emergence_results...
 %}

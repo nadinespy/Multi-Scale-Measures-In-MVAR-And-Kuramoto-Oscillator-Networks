@@ -34,23 +34,35 @@ nbins = 100;
 % axes ticks for heatmaps with beta on x-axis, and A on y-axis
 
 %x_axis_heatmaps = {'0.04', '', '', '0.16', '', '', '0.28', '', '', '0.4'};
-x_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
-y_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
+%x_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
+%y_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
+x_axis_heatmaps = {'0.08','0.32'};
+y_axis_heatmaps = {'0.08','0.32'};
 
 y_label_heatmaps = 'A';
 x_label_heatmaps = 'beta';
 
-% axes ticks for scatterplots with beta on x-axis, and practical CE on y-axis
-y_label_practCE_scatterplots = 'practical CE';
+% axes ticks for scatterplots with beta on x-axis, and Shannon-CE/DC/CD on y-axis
+y_label_practCE_scatterplots = 'Shannon-CE';
 x_label_practCE_scatterplots = 'beta';
 
 % axes ticks for scatterplots with beta on x-axis, and dynamical dependence on y-axis
 y_label_DD_scatterplots = 'dynamical dependence';
 x_label_DD_scatterplots = 'beta';
 
+% axes ticks for scatterplots with beta on x-axis, and PhiID-CE/DC/CD on y-axis
+y_label_DD_scatterplots = 'PhiID-CE';
+x_label_DD_scatterplots = 'beta';
+
 % axes ticks for scatterplots with beta on x-axis, and sigma chi/sigma met on y-axis
 y_label_chi_met = ' ';
 x_label_chi_met = 'beta';
+
+%% load struct
+struct_prefix = 'standard';
+
+% load struct...
+
 
 %% plotting
 %% distribution plots of micro and macro variables (selected nodes)
@@ -93,8 +105,18 @@ get_all_kuramoto_corr_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_hea
 
 % {
 
-get_all_practCE_heatmaps(network, npoints, measure_params, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, ce_variable_name, pathout_data_pract_ce, pathout_plots_pract_ce)
+% choose all instances of Shannon-CE/DC/CD
+
+emergence_results_shannonCE_DC_CD = [];
+for g = 1:length(emergence_results)
+	if strfind(emergence_results(1,g).measure, 'shannon') == 1
+		emergence_results_shannonCE_DC_CD = [emergence_results_shannonCE_DC_CD, emergence_results(1,g)];
+	end 
+end
+
+
+get_all_heatmaps(network, emergence_results_shannonCE_DC_CD, x_axis_heatmaps, y_axis_heatmaps, ...
+	x_label_heatmaps, y_label_heatmaps, pathout_data_shannon_ce, pathout_plots_shannon_ce);
 
 %}
 
