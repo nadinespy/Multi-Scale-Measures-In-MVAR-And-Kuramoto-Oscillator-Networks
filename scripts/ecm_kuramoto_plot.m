@@ -1,9 +1,6 @@
 %% PLOTTING FOR KURAMOTO OSCILLATORS WITH DIFFERENT COUPLINGS, BETAS, MACRO & MICRO VARIABLES
 
-% This script implements practical synergy capacity for 256-node Kuramoto oscillators with different couplings and phase lags, 
-% two different top-level macro variables (variance of synchronies & global average pairwise synchrony between communities), 
-% two mid-level macro variables (synchronies & pairwise synchronies), and four different micro variables (phases, raw signal, 
-% synchronies, and pairwise synchronies).
+% SCRIPT DESCRIPTION
 
 % major sections in this script:
 %	- distributions of micro and macro variables						--> get_all_kuramoto_distr_plots()	
@@ -11,11 +8,7 @@
 %	- heatmaps for correlations between micro & macro variables				--> get_all_kuramoto_corr_heatmaps();
 %														    uses plot_heatmaps()
 %
-%	- heatmaps for practical CE, DC, and CD							--> get_all_kuramoto_practCE_heatmaps();
-%														    uses plot_heatmaps()
-%
-%	- heatmaps for dynamical independence							--> get_all_kuramoto_DD_heatmaps();
-%														    uses plot_heatmaps()
+%	- heatmaps for emergence measures								--> get_all_emergence_heatmaps();
 %
 %	- scatter plots for practical CE, with fixed A, and varying beta			--> get_all_kuramoto_practCE_scatterplots();
 %														    uses plot_scatterplos_measure()
@@ -34,10 +27,8 @@ nbins = 100;
 % axes ticks for heatmaps with beta on x-axis, and A on y-axis
 
 %x_axis_heatmaps = {'0.04', '', '', '0.16', '', '', '0.28', '', '', '0.4'};
-%x_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
-%y_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
-x_axis_heatmaps = {'0.08','0.32'};
-y_axis_heatmaps = {'0.08','0.32'};
+x_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
+y_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
 
 y_label_heatmaps = 'A';
 x_label_heatmaps = 'beta';
@@ -80,7 +71,7 @@ get_all_kuramoto_distr_plots(data, nbins, network, A_vec, beta_vec, all_npoints,
 
 %% heatmaps for metastability & chimera index
 
-% {
+%{
 
 get_km_met_chi_heatmaps(network, npoints, x_axis_heatmaps, y_axis_heatmaps, ...
 	x_label_heatmaps, y_label_heatmaps, pathout_data_sync, pathout_plots_sigma_chi, ...
@@ -99,11 +90,7 @@ get_all_kuramoto_corr_heatmaps(network, all_npoints, x_axis_heatmaps, y_axis_hea
 
 %}
 	
-%% practical CE, DC, and CD for discretized variables
-
-% loop over all values of npoints, tau, A, beta
-
-% {
+%% heatmaps for emergence measures
 
 % choose all instances of Shannon-CE/DC/CD
 
@@ -115,21 +102,11 @@ for g = 1:length(emergence_results)
 end
 
 
-get_all_heatmaps(network, emergence_results_shannonCE_DC_CD, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, pathout_data_shannon_ce, pathout_plots_shannon_ce);
+get_all_emergence_heatmaps(network, emergence_results, x_axis_heatmaps, y_axis_heatmaps, ...
+	x_label_heatmaps, y_label_heatmaps, pathout_plots_measures);
 
 %}
 
-%% dynamical dependence for non-Gaussian continuous variables
-
-% loop over all values of npoints, tau, A, beta
-
-% {
-
-get_all_DD_heatmaps(network, npoints, measure_params, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, dd_variable_name, pathout_data_dd, pathout_plots_dd)
-
-%}
 	
 %% scatter plots for practical CE for discretized variables, with fixed A, and varying beta
 
@@ -159,7 +136,7 @@ get_all_kuramoto_DD_scatterplots(network, A_vec, beta_vec, taus, all_npoints, x_
 
 % loop over all values of npoints 
 
-% {
+%{
 
 get_all_kuramoto_met_chi_scatterplots(network, A_vec, beta_vec, all_npoints, x_label_chi_met, y_label_chi_met, ...
 		pathout_data_sync, pathout_plots_sigma_chi, pathout_plots_sigma_met)

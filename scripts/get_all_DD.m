@@ -179,7 +179,7 @@ function output_struct = get_all_DD(network, ...
 				model_param1_str = param2str(model_params1(n));
 				
 				for o = 1:length(model_params2)
-					model_param2_str = param2str(model_params2(n));
+					model_param2_str = param2str(model_params2(o));
 					
 					
 					if strcmp(lower(method), 'kraskov') | strcmp(lower(method), 'gaussian');

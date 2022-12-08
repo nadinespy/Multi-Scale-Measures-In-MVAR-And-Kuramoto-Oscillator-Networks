@@ -176,7 +176,7 @@ function output_struct = get_all_phiidCE_DC_CD(network, ...
 		
 			% loop over second set of model parameters
 			for o = 1:length(model_params2)
-				model_param2_str = param2str(model_params2(n));
+				model_param2_str = param2str(model_params2(o));
 			
 				if strcmp(lower(method), 'kraskov') | strcmp(lower(method), 'gaussian');
 					

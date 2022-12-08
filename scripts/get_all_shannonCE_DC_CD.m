@@ -176,7 +176,7 @@ function output_struct = get_all_shannonCE_DC_CD(network, ...
 		model_param1_str = param2str(model_params1(n));
 		
 		for o = 1:length(model_params2)
-			model_param2_str = param2str(model_params2(n));
+			model_param2_str = param2str(model_params2(o));
 			
 			
 			if strcmp(lower(method), 'kraskov') | strcmp(lower(method), 'gaussian');
@@ -211,7 +211,7 @@ function output_struct = get_all_shannonCE_DC_CD(network, ...
 			end
 			
 			% calculate Shannon-CE, Shannon-DC, or Shannon-CD
-			fprintf('get all Shannon-CE - loop indices: model_param1: %d, model_param2: %d\n', n, o);
+			fprintf('get all Shannon-CE/DC/CD - loop indices: model_param1: %d, model_param2: %d\n', n, o);
 			
 			% get Shannon-CE, Shannon-DC, or Shannon-CD for all combinations of micro and top-level macro variables
 			if strcmp(lower(method), 'kraskov') || strcmp(lower(method), 'gaussian')
@@ -222,6 +222,7 @@ function output_struct = get_all_shannonCE_DC_CD(network, ...
 				
 				shannonMeasure = get_shannonCE_DC_CD(micro_variables, macro_variables, measure, method, time_lag);
 			
+			end
 			% big_struct(1,y).results(1,1).([micro_variable_names{u} '_' macro_variable_names{w}]) = [];
 			
 			for f = 1:length(fieldnames_results)

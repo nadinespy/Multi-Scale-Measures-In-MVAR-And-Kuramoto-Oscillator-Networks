@@ -1,49 +1,52 @@
 function get_km_variables(network, model_sim_params, measure_params, coupling_matrices, ...
 		pathout);
-	
-	% Function description: get_km_variables() takes as inputs, amongst others, 
-	% arrays with measure parameter values common to all emergence calculations 
-	% ([measure_params], required), model parameters used for simulation 
-	% ([model_sim_params], required), and coupling matrices (coupling_matrices,
-	% required). 
-	% It then loops over time-lengths and model parameters.
-	
-	% Inputs:	
-	%
-	% Required:	network				char array
-	%		model_sim_params			1x1 struct with fields 
-	%							A (vector with doubles), beta, 
-	%							(vector with doubles), 
-	%							intra_comm_size (int),
-	%							n_communities (int)
-	%
-	%		measure_params			1x1 struct with fields
-	%							'measures', 'methods',
-	%							'time_lags', 'time_lengths',
-	%							'kraskov_params', 'disc_methods',
-	%							' bins'
-	%
-	%							'measures': cell array with chars
-	%							'methods': cell array with chars
-	%							'time_lags': double array
-	%							'time_lengths': double array
-	%							'kraskov_params': double array
-	%							'disc_methods': cell arrays with chars
-	%							'bins': int array
-	%
-	%		coupling_matrices			3D double matrix of size 
-	%							[intra_comm_size*n_communities
-	%							 x intra_comm_size*n_communities
-	%							 x length(A)]
-	%
-	%		pathout				1x2 struct with field 
-	%							indicating path to output 
-	%							for simulated time-series, 
-	%							and synchronies
-	%
-	% Outputs: micro and macro variables	saved in pathout1 and 
-	%							pathout2
-	
+% get_km_variables() - generates micro and macro variables in Kuramoto oscillators.
+% 
+% Takes as inputs, amongst others, arrays with measure parameter values common to 
+% all emergence calculations ([measure_params], required), model parameters used 
+% for simulation ([model_sim_params], required), and coupling matrices (coupling_matrices,
+% required). It then loops over time-lengths and model parameters.
+%
+% Example: get_km_variables(network, model_sim_params, measure_params, ...
+%          coupling_matrices, pathout)
+% 
+% Inputs - required:	
+%    network                -             char array
+%    model_sim_params	    -		      1x1 struct with fields 
+%							A (vector with doubles), beta, 
+%							(vector with doubles), 	
+%							intra_comm_size (int),
+%							n_communities (int)
+%
+%    measure_params         -             1x1 struct with fields
+%							'measures', 'methods',
+%							'time_lags', 'time_lengths',
+%							'kraskov_params', 'disc_methods',
+%							' bins'
+%
+%							'measures': cell array with chars
+%							'methods': cell array with chars
+%							'time_lags': double array
+%							'time_lengths': double array
+%							'kraskov_params': double array
+%							'disc_methods': cell arrays with chars
+%							'bins': int array
+%
+%    coupling_matrices      -             3D double matrix of size 
+%							[intra_comm_size*n_communities
+%							 x intra_comm_size*n_communities
+%							 x length(A)]
+%
+%    pathout                -             1x2 struct with field 
+%							indicating path to output 
+%							for simulated time-series, 
+%							and synchronies
+%
+% Outputs: 
+%    micro and macro        -			saved in pathout
+%    variables	 
+%							
+
 	% use inputParser to declare required & optional variables
 	p = inputParser;
 	
@@ -57,7 +60,7 @@ function get_km_variables(network, model_sim_params, measure_params, coupling_ma
 	parse(p, network, model_sim_params, measure_params, coupling_matrices, pathout);
 	
 	network				= p.Results.network;
-	model_sim_params			= p.Results.model_calc_params;
+	model_sim_params			= p.Results.model_sim_params;
 	measure_params			= p.Results.measure_params;
 	coupling_matrices			= p.Results.coupling_matrices;
 	pathout				= p.Results.pathout;
@@ -95,7 +98,7 @@ function get_km_variables(network, model_sim_params, measure_params, coupling_ma
 			for j = 1:length(model_param2)
 				model_param2_str = param2str(model_params2(j));
 				
-				fprintf('get_all_kuramoto_variables - loop indices: time_series_length: %d, model_param1: %d, model_param2: %d\n', q, i, j);
+				fprintf('get_kuramoto_variables - loop indices: time_series_length: %d, model_param1: %d, model_param2: %d\n', q, i, j);
 		
 				% simulate km oscillators using Shanahan's code
 				[phase, chi, sync] = sim_km_oscillators(time_length(q), model_param2(j), model_param3, ...
@@ -148,7 +151,7 @@ function get_km_variables(network, model_sim_params, measure_params, coupling_ma
 				reconstruction_ica = rica(phase', n_features1); %,'IterationLimit',100);
 				rica_phase = (phase' * reconstruction_ica.TransformWeights)';
 				S.(['rica' num2str(n_features1) '_phase']) = rica_phase;
-				save([pathout1 network '_rica' num2str(n_features1) '_phase_' model_param1_str '_' model_param2_str '_' time_series_length_str '.mat'], ...
+				save([pathout1 network '_rica' num2str(n_features1) '_phase_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 					'-struct', 'S');
 				
 				clear S;
@@ -158,7 +161,7 @@ function get_km_variables(network, model_sim_params, measure_params, coupling_ma
 					sum_rica_phase = sum_rica_phase + rica_phase(k,:);
 				end 
 				S.(['sum_rica' num2str(n_features1) '_phase']) = sum_rica_phase;
-				save([pathout1 network '_sum_rica' num2str(n_features1) '_phase_' model_param1_str '_' model_param2_str '_' time_series_length_str '.mat'], ...
+				save([pathout1 network '_sum_rica' num2str(n_features1) '_phase_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 					'-struct', 'S');
 				
 				clear S;
@@ -167,7 +170,7 @@ function get_km_variables(network, model_sim_params, measure_params, coupling_ma
 				reconstruction_ica = rica(phase', n_features2); %,'IterationLimit',100);
 				rica_phase = (phase' * reconstruction_ica.TransformWeights)';
 				S.(['rica' num2str(n_features2) '_phase']) = rica_phase;
-				save([pathout1 network '_rica' num2str(n_features2) '_phase_' model_param1_str '_' model_param2_str '_' time_series_length_str '.mat'], ...
+				save([pathout1 network '_rica' num2str(n_features2) '_phase_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 					'-struct', 'S');
 				
 				clear S;
@@ -177,7 +180,7 @@ function get_km_variables(network, model_sim_params, measure_params, coupling_ma
 					sum_rica_phase = sum_rica_phase + rica_phase(k,:);
 				end 
 				S.(['sum_rica' num2str(n_features2) '_phase']) = sum_rica_phase;
-				save([pathout1 network '_sum_rica' num2str(n_features2) '_phase_' model_param1_str '_' model_param2_str '_' time_series_length_str '.mat'], ...
+				save([pathout1 network '_sum_rica' num2str(n_features2) '_phase_' model_param1_str '_' model_param2_str '_' time_length_str '.mat'], ...
 					'-struct', 'S');
 				
 				clear S;

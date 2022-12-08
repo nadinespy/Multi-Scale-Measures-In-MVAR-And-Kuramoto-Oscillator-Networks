@@ -1,6 +1,6 @@
 function emergence_struct = get_all_emergence(network, model_calc_params, ...
-		measure_params, micro_variable_names, macro_variable_names, struct_prefix, ...
-		pathin_sim_time_series, pathout_emergence, varargin)
+		measure_params, micro_variable_names, macro_variable_names, ...
+		pathin_sim_time_series, varargin)
 % get_all_emergence() - calculates one or more measures of emergence for one or more
 % models for one or more micro and macro variables, respectively. 
 % 
@@ -12,9 +12,9 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 % parameters.
 % 
 % Example: emergence_results = get_all_emergence(network, model_calc_params, ...
-%		measure_params, micro_variable_names, macro_variable_names, ...
-%		struct_prefix, pathin, pathout, 'measure_params_phiid_ce', ...
-%		measure_params_phiid_ce, 'measure_params_dd', measure_params_dd);
+%	     measure_params, micro_variable_names, macro_variable_names, ...
+%	     pathin, 'measure_params_phiid_ce', measure_params_phiid_ce, ...
+%	     'measure_params_dd', measure_params_dd);
 %
 % Inputs - required:	
 %    network                -             char array
@@ -39,11 +39,9 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 %
 %   micro_variable_names    -             cell array with chars
 %   macro_variable_names    -             cell array with chars
-%   struct_prefix             -             char array
 %   pathin_sim_time_series  -             1x1 struct with field 
 %                                         indicating path to input, 
 %                                         and char array as value
-%   pathout_emergence       -             1x1 struct with fields 
 %                                         indicating paths to results, e. g., 
 %                                         'pathout_data_shannon_ce',
 %                                         'pathout_data_phiid_ce', or
@@ -100,9 +98,7 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	addRequired(p,'measure_params', @isstruct);
 	addRequired(p,'micro_variable_names', @iscell);
 	addRequired(p,'macro_variable_names', @iscell);
-	addRequired(p,'struct_prefix', @ischar);
 	addRequired(p,'pathin_sim_time_series', @isstruct);
-	addRequired(p,'pathout_emergence', @isstruct);
 	
 	% optional name-value pair variables: 
 	default_measure_params_dd = struct('time_steps', [1]);
@@ -113,17 +109,15 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 		default_measure_params_phiid_ce, @isstruct);
 	
 	parse(p, network, model_calc_params, measure_params, ...
-		micro_variable_names, macro_variable_names, struct_prefix, ...
-		pathin_sim_time_series, pathout_emergence, varargin{:});
+		micro_variable_names, macro_variable_names, ...
+		pathin_sim_time_series, varargin{:});
 	
 	network				= p.Results.network;
 	model_calc_params			= p.Results.model_calc_params;
 	measure_params			= p.Results.measure_params;
 	micro_variable_names		= p.Results.micro_variable_names;
 	macro_variable_names		= p.Results.macro_variable_names;
-	struct_prefix			= p.Results.struct_prefix;
 	pathin_sim_time_series		= p.Results.pathin_sim_time_series;
-	pathout_emergence			= p.Results.pathout_emergence;
 	measure_params_dd			= p.Results.measure_params_dd;
 	measure_params_phiid_ce		= p.Results.measure_params_phiid_ce;
 	
@@ -149,18 +143,21 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 		
 		if strcmp(measures{z}, 'phiidCE') || strcmp(measures{z}, 'phiidDC') || strcmp(measures{z}, 'phiidCD')
 			phiidMeasure = measures{z};
-			phiidMeasures = [phiidMeasures, measures{z}];
-			measures(find(strcmp(measures, phiidMeasure))) = [];
+			phiidMeasures = [phiidMeasures, phiidMeasure];
+			measures(find(strcmp(measures, char(phiidMeasure)))) = [];
 		else 
 			z = z+1;
 		end 
 		
-		if z == length(measures)
+		if z >= length(measures)
 			break
 		end
 		
-	end 
-	measures = [measures, {phiidMeasures}];
+	end
+	
+	if isempty(phiidMeasures) == false 
+		measures = [measures, {phiidMeasures}];
+	end
 	
 	if length(measure_params_fieldnames) > 4
 		for g = 1:length(measure_params_fieldnames)
@@ -454,4 +451,5 @@ function emergence_struct = get_all_emergence(network, model_calc_params, ...
 	end
 	
 	emergence_struct = emergence_struct(1,2:end);
+	
 end	
