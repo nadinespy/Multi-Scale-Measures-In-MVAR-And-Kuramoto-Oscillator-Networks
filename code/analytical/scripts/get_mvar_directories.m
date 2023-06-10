@@ -1,0 +1,20 @@
+%% directories for MVAR models
+
+mvgc_path	= getenv('MVGC2_PATH');
+gpmat_path  = getenv('GPMAT_PATH');
+ssdi_path	= getenv('SSDI_PATH');
+run(fullfile(mvgc_path,'startup'));
+run(fullfile(ssdi_path,'startup'));
+
+cd '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code'
+addpath '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/common'
+addpath '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/analytical/functions'
+addpath '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/analytical/scripts'
+addpath '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/analytical/scripts/measures_random_couplings'
+
+% infodynamics.jar must be (also) located in the same folder as the script that is using it
+javaaddpath('/common/infodynamics.jar');
+
+pathout_plots_measures	= ['/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/results/plots/' num2str(n_nodes) 'node_mvar/analytical/measures_random_couplings/'];
+pathout_data_measures	= ['/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/results/analyses/' num2str(n_nodes) 'node_mvar/analytical/measures_random_couplings/'];
+
