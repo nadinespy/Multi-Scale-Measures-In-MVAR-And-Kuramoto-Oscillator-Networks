@@ -1,5 +1,6 @@
 clear all;
 close all;
+clear java;
 clc;
 
 cd '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/analytical/scripts'

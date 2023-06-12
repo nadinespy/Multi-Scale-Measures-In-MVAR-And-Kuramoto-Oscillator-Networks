@@ -59,7 +59,7 @@ for f = 1:size(cell2mat(table2array(measures_table)),1)
 	end
 end
 
-rmi_index = 5;
+rmi_index = 10;
 for g = 1:length(select_measures);
 
 	BIG_array = [];
