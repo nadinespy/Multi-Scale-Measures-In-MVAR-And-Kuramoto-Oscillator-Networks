@@ -3,20 +3,27 @@ close all;
 clear java;
 clc;
 
-cd '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/analytical/scripts'
+cd '/media/nadinespy/NewVolume1/work/current_projects/mec_experiments/mec_simulations/mec_simulations/code/analytical/scripts'
+javaaddpath('/media/nadinespy/NewVolume1/work/current_projects/mec_experiments/mec_simulations/mec_simulations/code/common/infodynamics.jar');
 directories = @get_mvar_directories;
 
-n_nodes			= 2;		% number of variables in network
-mdim				= 1;		% dimension of macro variable
-time_lag_for_model	= 1;		% number of time-lags
-n_samples_couplings	= 10;		% number of random samples for connectivity matrices
-n_samples_noise_corrs	= 2;		% number of random samples for noise correlation matrices
+n_nodes			= 2;					% number of variables in network
+mdim				= 1;					% dimension of macro variable
+dim_reduction		= {'pca', 'grassmanian'};	% dim reduction method: can be 'pca' or 'grassmanian' 
+time_lag_for_model	= 1;					% number of time-lags
+n_samples_couplings	= 10;					% number of random samples for connectivity matrices
+n_samples_noise_corrs	= 2;					% number of random samples for noise correlation matrices
 seed				= 1;
 
 network			= [num2str(n_nodes) 'mvar' ...	   % model name
 				  '_lag' num2str(time_lag_for_model)];
+
+% integrated information measures to be calculated (alongside multi-info, DD, & CE)
+calcNames = {'IntegratedInformation', 'IntegratedInteraction', 'AverageCorrelation', ...
+			'DecoderIntegration', 'CausalDensity', 'IntegratedSynergy', ...
+			'TimeDelayedMutualInfo'};
 			  
-rng_seed(seed) % seed random number generator
+rng(seed) % seed random number generator
 
 % variation of residuals' mutual information and matrix norms
 all_rmi		= linspace(0.0,1,10);		% array of rmi values 
@@ -95,12 +102,30 @@ for i = 1:length(all_norms);
 						
 						% run functions below without plotting and printing outputs (evalc() is a nasty solution)
 						evalc('get_ssi_from_var(n_nodes, time_lag_for_model, coupling_matrix, full_coupling_matrix, spectral_radius, all_rmi(j), noise_corr)');
+						
+						% generate linear macro variables from the Grassmanian manifold
 						evalc('get_preoptimised_dd(mdim)');
 						evalc('get_optimised_dd(mdim)');
-						evalc('[DD, CE] = get_ce_and_dd(mdim)');
 						
-						all_DD(k,p)		 = min(DD);
-						all_ShannonCE(k,p) = max(CE);
+						% calculate DD & CE
+						for z = 1:length(dim_reduction)
+							
+							evalc('[DD, CE] = get_ce_and_dd(mdim, dim_reduction{z}, cov_matrix)');
+							
+							if strcmp(dim_reduction{z}, 'pca')
+								
+								all_DD_pca(k,p)		      = min(DD);
+								all_ShannonCE_pca(k,p)	      = max(CE);
+								
+							elseif strcmp(dim_reduction{z}, 'grassmanian')
+								all_DD_grassmanian(k,p)		 = min(DD);
+								all_ShannonCE_grassmanian(k,p) = max(CE);
+								
+							end
+							
+							clear DD;
+							clear CE;
+						end
 						
 						%------------------------------------------------------------------------
 						% PHIID-BASED CAUSAL EMERGENCE, DOWNWARD CAUSATION, CAUSAL DECOUPLING
@@ -149,13 +174,9 @@ for i = 1:length(all_norms);
 						% INTEGRATED INFORMATION MEASURES
 						%------------------------------------------------------------------------
 						
-						calcNames = {'IntegratedInformation', 'IntegratedInteraction', 'AverageCorrelation', ...
-								 'DecoderIntegration', 'CausalDensity', 'IntegratedSynergy', ...
-								 'TimeDelayedMutualInfo'};
-						
-						% get full time-lagged correlation matrix	(makeLaggedCovariance calculates the covariance,
-						% but with ones in the diagonals, and values ranging from -1 to 1 in the off-diagonals;
-						% this full time-lagged covariance matrix will be different from the one above, as the one
+						% makeLaggedCovariance calculates the covariance, but with ones in the diagonals, 
+						% and values ranging from -1 to 1 in the off-diagonals; this full time-lagged 
+						% covariance matrix will be different from the one above, as the one
 						% above normalizes coupling matrices with a decay factor using specnorm()
 						% full_time_lagged_cov2 = makeLaggedCovariance(coupling_matrix, noise_corr(1,2));
 						
@@ -211,42 +232,49 @@ for i = 1:length(all_norms);
 			end
 		end
 		
-		new_struct.two_norm			= new_norms;
-		new_struct.spectral_radius		= spectral_radiuses;
-		new_struct.coupling_matrix		= coupling_matrices;
-		new_struct.noise_corr			= noise_corrs;
-		new_struct.multi_info			= multi_info;
+		new_struct.two_norm				= new_norms;
+		new_struct.spectral_radius			= spectral_radiuses;
+		new_struct.coupling_matrix			= coupling_matrices;
+		new_struct.noise_corr				= noise_corrs;
+		new_struct.multi_info				= multi_info;
 
-		new_struct.phiidDoubleRed_MMI		= phiidDoubleRed_MMI;
-		new_struct.phiidDoubleSyn_MMI		= phiidDoubleSyn_MMI;
-		new_struct.phiidCE_MMI			= phiidCE_MMI;
-		new_struct.phiidDC_MMI			= phiidDC_MMI;
-		new_struct.phiidCD_MMI			= phiidCD_MMI;
-		new_struct.phiidUC_MMI			= phiidUC_MMI;
-		new_struct.phiidSyn_MMI			= phiidSyn_MMI;
-		new_struct.phiidTransfer_MMI		= phiidTransfer_MMI;
+		new_struct.phiidDoubleRed_MMI			= phiidDoubleRed_MMI;
+		new_struct.phiidDoubleSyn_MMI			= phiidDoubleSyn_MMI;
+		new_struct.phiidCE_MMI				= phiidCE_MMI;
+		new_struct.phiidDC_MMI				= phiidDC_MMI;
+		new_struct.phiidCD_MMI				= phiidCD_MMI;
+		new_struct.phiidUC_MMI				= phiidUC_MMI;
+		new_struct.phiidSyn_MMI				= phiidSyn_MMI;
+		new_struct.phiidTransfer_MMI			= phiidTransfer_MMI;
 	
-		new_struct.phiidDoubleRed_CCS		= phiidDoubleRed_CCS;
-		new_struct.phiidDoubleSyn_CCS		= phiidDoubleSyn_CCS;
-		new_struct.phiidCE_CCS			= phiidCE_CCS;
-		new_struct.phiidDC_CCS			= phiidDC_CCS;
-		new_struct.phiidCD_CCS			= phiidCD_CCS;
-		new_struct.phiidUC_CCS			= phiidUC_CCS;
-		new_struct.phiidSyn_CCS			= phiidSyn_CCS;
-		new_struct.phiidTransfer_CCS		= phiidTransfer_CCS;
+		new_struct.phiidDoubleRed_CCS			= phiidDoubleRed_CCS;
+		new_struct.phiidDoubleSyn_CCS			= phiidDoubleSyn_CCS;
+		new_struct.phiidCE_CCS				= phiidCE_CCS;
+		new_struct.phiidDC_CCS				= phiidDC_CCS;
+		new_struct.phiidCD_CCS				= phiidCD_CCS;
+		new_struct.phiidUC_CCS				= phiidUC_CCS;
+		new_struct.phiidSyn_CCS				= phiidSyn_CCS;
+		new_struct.phiidTransfer_CCS			= phiidTransfer_CCS;
 		
-		new_struct.DD				= all_DD;
-		new_struct.ShannonCE			= all_ShannonCE;
+		if exist('all_DD_pca') && exist('all_ShannonCE_pca')
+			new_struct.DD_pca				= all_DD_pca;
+			new_struct.ShannonCE_pca		= all_ShannonCE_pca;
+		end
 		
-		new_struct.average_corr			= average_corr;
-		new_struct.integrated_info		= integrated_info;
-		new_struct.integrated_interaction	= integrated_interaction;
-		new_struct.decoder_integration	= decoder_integration;
-		new_struct.causal_density		= causal_density;
-		new_struct.integrated_synergy		= integrated_synergy;
-		new_struct.time_delayed_mi		= time_delayed_mi;
+		if exist('all_DD_grassmanian') && exist('all_ShannonCE_grassmanian')
+			new_struct.DD_grassmanian		= all_DD_grassmanian;
+			new_struct.ShannonCE_grassmanian	= all_ShannonCE_grassmanian;
+		end
 		
-		measures{i,j}				= new_struct;
+		new_struct.average_corr				= average_corr;
+		new_struct.integrated_info			= integrated_info;
+		new_struct.integrated_interaction		= integrated_interaction;
+		new_struct.decoder_integration		= decoder_integration;
+		new_struct.causal_density			= causal_density;
+		new_struct.integrated_synergy			= integrated_synergy;
+		new_struct.time_delayed_mi			= time_delayed_mi;
+		
+		measures{i,j}					= new_struct;
 		
 		clear new_struct;
 		clear new_norms;
@@ -273,8 +301,10 @@ for i = 1:length(all_norms);
 		clear phiidSyn_CCS;
 		clear phiidTransfer_CCS;
 		
-		clear all_DD;
-		clear all_ShannonCE; 
+		clear all_DD_pca;
+		clear all_ShannonCE_pca; 
+		clear all_DD_grassmanian;
+		clear all_ShannonCE_grassmanian; 
 		
 		clear average_corr;
 		clear integrated_info;
@@ -284,11 +314,11 @@ for i = 1:length(all_norms);
 		clear integrated_synergy;
 		clear time_delayed_mi;
 		
-		j_disp = ['j = ',num2str(j)];
+		j_disp = ['RMI index = ',num2str(j)];
 		disp(j_disp);
 	end
 	
-	i_disp = ['i = ',num2str(i)];
+	i_disp = ['NORM index = ',num2str(i)];
 	disp(i_disp);
 end
 

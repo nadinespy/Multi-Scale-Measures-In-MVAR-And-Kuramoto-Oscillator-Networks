@@ -1,4 +1,4 @@
-function [DD, CE] = get_ce_and_dd(mdim)
+function [DD, CE] = get_ce_and_dd(mdim, dim_reduction, cov_matrix)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Demonstrate calculation of Causal Emergence (CE)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -72,24 +72,37 @@ fprintf(' completed in %g seconds\n',et);
 % Random projections
 
 rstate = rng_seed(iseed);
-L = rand_orthonormal(n_nodes,mdim,nsamps); % (orthonormalised) untransformed random linear projections
+
+if strcmp(dim_reduction, 'grassmanian')
+	L = rand_orthonormal(n_nodes,mdim,nsamps); % (orthonormalised) untransformed random linear projections --> take a number of samples
+elseif strcmp(dim_reduction, 'pca')			 % do standard PCA
+	[coeff, latent, explained] = pcacov(cov_matrix(:,:,1));
+end 
+
 rng_restore(rstate);
 
 % Calculate CEs
 
-CE = zeros(nsamps,1);
-DD = zeros(nsamps,1);
 VRC = chol(noise_corr);
 npi = floor(nsamps/10); % for progress indicator
 
-fprintf('\nCalculating causal emergence and dynamical dependence ');
-st = tic;
-for i = 1:nsamps
-	[CE(i),DD(i)] = ces2ce(L(:,:,i),H,VRC,CESRC,CLC);
-	if ~mod(i,npi), fprintf('.'); end % progress indicator
+if strcmp(dim_reduction, 'grassmanian')
+	CE = zeros(nsamps,1);
+	DD = zeros(nsamps,1);
+	
+	fprintf('\nCalculating causal emergence and dynamical dependence ');
+	st = tic;
+	for i = 1:nsamps
+		[CE(i),DD(i)] = ces2ce(L(:,:,i),H,VRC,CESRC,CLC);
+		if ~mod(i,npi), fprintf('.'); end % progress indicator
+	end
+	et = toc(st);
+	fprintf(' completed in %g seconds\n\n',et);
+
+elseif strcmp(dim_reduction, 'pca')
+	[CE,DD] = ces2ce(latent,H,VRC,CESRC,CLC);
 end
-et = toc(st);
-fprintf(' completed in %g seconds\n\n',et);
+	
 
 % % Plot
 %

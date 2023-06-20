@@ -43,12 +43,7 @@ clear java;
 close all;
 clc;
 
-cd '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/empirical/';
-addpath '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/empirical/functions/'
-addpath '/media/nadinespy/NewVolume1/work/current_projects/emergence_complexity_experiments/emergence_complexity_simulations/emergence_complexity_simulations/code/empirical/scripts/'
-
-addpath(genpath('/media/nadinespy/NewVolume1/work/packages_and_code_repos/kuramoto'))
-addpath(genpath('/media/nadinespy/NewVolume1/work/packages_and_code_repos/mutual_info_kNN'))
+cd '/media/nadinespy/NewVolume1/work/current_projects/mec_experiments/mec_simulations/mec_simulations/code/empirical/scripts'
 
 % get model-specific directories, and determine model size
 
@@ -84,7 +79,8 @@ directories();
 network			= [n_oscillators 'km'];
 	
 A				= linspace(0.08, 0.8, 10);		% vector with different values for A
-beta				= linspace(0.08, 0.8, 10);		% vector with different values for phase lag
+beta				= linspace(0.4, 0.8, 10);		% vector with different values for phase lag 
+										% (range 0-0.4: metastable regime; range 0.4-0.8: non-metastable regime)
 
 get_coupling_matrix	= @get_km_coupling_matrix;		% specify function to generate one coupling matrix
 get_coupling_matrices	= @get_km_coupling_matrices;		% specify function to generate multiple coupling matrices
