@@ -187,10 +187,6 @@ function [ redred ] = private_FourVectorCCS(X1, X2, Y1, Y2, varargin)
 	addParameter(p, 'method', default_method, @ischar);
 	default_kraskov_param = 3;
 	addParameter(p, 'kraskov_param', default_kraskov_param, @isdouble);
-	
-	if strcmp(lower(method), 'kraskov');
-		error('Kraskov estimation not implemented yet.');
-	end
 
 	parse(p, X1, X2, Y1, Y2, varargin{:});
 	
@@ -200,6 +196,10 @@ function [ redred ] = private_FourVectorCCS(X1, X2, Y1, Y2, varargin)
 	Y2			= p.Results.Y2;
 	method		= p.Results.method;
 	kraskov_param	= p.Results.kraskov_param;
+	
+	if strcmp(lower(method), 'kraskov');
+		error('Kraskov estimation not implemented yet.');
+	end
 	
 	% argument checks and parameter initialisation
 	T = size(X1, 2);

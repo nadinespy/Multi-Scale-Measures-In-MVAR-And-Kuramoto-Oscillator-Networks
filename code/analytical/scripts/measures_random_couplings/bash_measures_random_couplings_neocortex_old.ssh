@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# base name of this script (without extension)
+scriptname=$(basename $0 .sh)
+
+echo -e "\n*** Running batch script '"$scriptname"' ***\n"
+
+# current directory (the directory this script is run in - log files will go here)
+currdir=$(pwd -P)
+
+n_nodes=8
+m_dim=1
+dim_reduction="pca,grassmanian"
+time_lag_for_model=1
+n_samples_couplings=100
+n_samples_noise_corrs=100
+seed=1
+measures="DD_CE_CO_INFO,phiid_based_measures_mmi,phiid_based_measures_ccs,integrated_info_measures,multi_info"
+calcNames="IntegratedInformation,IntegratedInteraction,DecoderIntegration,CausalDensity,IntegratedSynergy,AverageCorrelation,TimeDelayedMutualInfo"
+n_rmi=100
+n_norms=100
+spectral_radius=0.9
+filename_table="'results_all_measures_table'"
+filename="'results_all_measures'"
+
+#cmd="global MYSCRIPT_ARGS; MYSCRIPT_ARGS=[$n_nodes,$mdim,$dim_reduction,$time_lag_for_model,$n_samples_couplings,$n_samples_noise_corrs,$seed,$measures,$calcNames,$n_rmi,$n_norms,$spectral_radius,$filename_table,$filename]; measures_random_couplings_neocortex;"
+
+cmd="global MYSCRIPT_ARGS; MYSCRIPT_ARGS={'$n_nodes','$m_dim','$dim_reduction','$time_lag_for_model','$n_samples_couplings','$n_samples_noise_corrs','$seed','$measures','$calcNames','$n_rmi','$n_norms','$spectral_radius',$filename_table,$filename}; measures_random_couplings_neocortex;"
+
+# the log file
+logfile=$currdir/$scriptname.log
+    
+#matlab -nodisplay -r "rehash; $cmd; exit"
+
+# run the script in the background using nohup
+nohup matlab -nodisplay -r "rehash; $cmd; exit" > $logfile 2>&1 &
+ 
+# disown the background process to prevent it from being terminated when the SSH session ends
+disown
+
+echo "script is running in the background, you can log out now"
+
+

@@ -2,9 +2,39 @@
 
 function plot_heatmap(data, file_names, titles, x_axis, y_axis, x_label, y_label, pathout_plots) 
 	
+	% use inputParser to declare required & optional variables
+	p = inputParser;
+	
+	% required variables
+	addRequired(p,'data', @iscell);
+	addRequired(p,'file_names', @iscell)
+	addRequired(p,'titles', @iscell);
+	addRequired(p,'x_axis', @iscell);
+	addRequired(p,'y_axis', @iscell);
+	addRequired(p,'x_label', @ischar);
+	addRequired(p,'y_label', @ischar);
+	addRequired(p,'pathout_plots', @ischar);
+
+	parse(p, data, file_names, titles, x_axis, y_axis, x_label, ...
+		y_label, pathout_plots);
+	
+	data			= p.Results.data;
+	file_names		= p.Results.file_names;
+	titles		= p.Results.titles;
+	x_axis		= p.Results.x_axis;
+	y_axis		= p.Results.y_axis;
+	x_label		= p.Results.x_label;
+	y_label		= p.Results.y_label;
+	pathout_plots	= p.Results.pathout_plots;
+	
 	for i = 1:length(data)
-			
-		convert_data = table2array(data{i});
+		
+		convert_data = data{i};
+		
+		if istable(data{i})
+			convert_data = table2array(convert_data);
+		end
+		
 		fig = figure;
 		
 		imagesc(convert_data);

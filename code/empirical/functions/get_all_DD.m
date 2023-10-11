@@ -210,6 +210,11 @@ function output_struct = get_all_DD(network, ...
 								model_param2_str '_' ...
 								time_length_str '.mat'], ...
 								micro_variable_names{k}));
+							
+							% transpose micro variable, if datapoints are stored in rows, and variables in column
+							if size(micro_variables(1).(micro_variable_names{k}),1) > size(micro_variables(1).(micro_variable_names{k}),2)
+								micro_variables(1).(micro_variable_names{k}) = micro_variables(1).(micro_variable_names{k})';
+							end
 						end
 						
 						% load all macro variables into one struct 'macro_variables'
@@ -221,6 +226,12 @@ function output_struct = get_all_DD(network, ...
 								model_param2_str '_' ...
 								time_length_str '.mat'], ...
 								macro_variable_names{k}));
+							
+							% transpose macro variable, if datapoints are stored in rows, and variable(s) in column
+							if size(macro_variables(1).(macro_variable_names{k}),1) > size(macro_variables(1).(macro_variable_names{k}),2)
+								macro_variables(1).(macro_variable_names{k}) = macro_variables(1).(macro_variable_names{k})';
+							end
+						
 						end
 
 					elseif strcmp(lower(method), 'discrete');
@@ -263,6 +274,11 @@ function output_struct = get_all_DD(network, ...
 								model_param2_str '_' ...
 								time_length_str '.mat'], ...
 								macro_variable_names{k}));
+							
+							% transpose macro variable, if datapoints are stored in rows, and variable(s) in column
+							if size(macro_variables(1).(macro_variable_names{k}),1) > size(macro_variables(1).(macro_variable_names{k}),2)
+								macro_variables(1).(macro_variable_names{k}) = macro_variables(1).(macro_variable_names{k})';
+							end
 							
 							% if macro variable has more than three dimensions, reduce them to two to be able to use JIDT for discrete case
 							if size(macro_variables(1).(macro_variable_names{k}),1) > 1;

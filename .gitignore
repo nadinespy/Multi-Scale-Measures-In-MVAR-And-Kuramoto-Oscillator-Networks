@@ -1,3 +1,6 @@
 results/plots/*
 results/analyses/*
-scripts/old/*
+code/scripts/old/*
+code/Mediano_OriginalIntegratedInfoCode/*
+code/Mediano_OriginalPhiIDCode/*
+code/Mediano_OriginalPrivate/*

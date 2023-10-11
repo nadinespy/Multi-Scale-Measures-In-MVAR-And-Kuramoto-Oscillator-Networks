@@ -31,11 +31,11 @@ nbins = 100;
 % KURAMOTO OSCILLATORS
 %**************************************************************************
 
-%{
+% {
 % axes ticks for heatmaps with beta on x-axis, and A on y-axis
 %x_axis_heatmaps = {'0.04', '', '', '0.16', '', '', '0.28', '', '', '0.4'};
 x_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
-y_axis_heatmaps = {'0.08', '', '', '0.32', '', '', '0.56', '', '', '0.8'};
+y_axis_heatmaps = {'0.8', '', '', '0.56', '', '', '0.32', '', '', '0.08'};
 
 y_label_heatmaps = 'A';
 x_label_heatmaps = 'beta';
@@ -67,6 +67,7 @@ x_label_chi_met = 'beta';
 % MULTIVARIATE AUTOREGRESSIVE NETWORK 
 %**************************************************************************
 
+%{
 % axes ticks for heatmaps with beta on x-axis, and A on y-axis
 %x_axis_heatmaps = {'0.04', '', '', '0.16', '', '', '0.28', '', '', '0.4'};
 x_axis_heatmaps = {'0.09', '', '', '', '', '', '', '', '', '', '', '', ...
@@ -87,7 +88,7 @@ y_axis_heatmaps = {'0.0045', '', '', '', '', '', '', '', '', '', '', '', ...
 
 y_label_heatmaps = 'coupling';
 x_label_heatmaps = 'noise correlation';
-
+%}
 %% load struct
 struct_prefix = '';
 
@@ -110,11 +111,15 @@ get_all_kuramoto_distr_plots(data, nbins, network, A_vec, beta_vec, all_npoints,
 
 %% heatmaps for metastability & chimera index
 
-%{
+% {
 
-get_km_met_chi_heatmaps(network, npoints, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, pathout_data_sync, pathout_plots_sigma_chi, ...
-	pathout_plots_sigma_met)
+pathout_plots_measures_temp = '/home/nadinespy/Desktop/results/';
+
+metastability_results = {'mean_met', 'mean_chi', 'mean_full_system_sync'};
+
+get_km_met_chi_sync_heatmaps(network, metastability_results, time_lengths, ...
+	x_axis_heatmaps, y_axis_heatmaps, x_label_heatmaps, y_label_heatmaps, ...
+	pathout_data_metastability, pathout_plots_measures_temp);
 
 %}
 	
@@ -142,9 +147,11 @@ for g = 1:length(emergence_results)
 end
 %}
 
+pathout_plots_measures_temp = '/home/nadinespy/Desktop/results/';
+
 % make plots that have the same axes ticks and labels
 get_all_emergence_heatmaps(network, emergence_results, x_axis_heatmaps, y_axis_heatmaps, ...
-	x_label_heatmaps, y_label_heatmaps, pathout_plots_measures);
+	x_label_heatmaps, y_label_heatmaps, pathout_plots_measures_temp);
 
 %}
 

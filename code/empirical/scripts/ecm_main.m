@@ -17,6 +17,8 @@
 %		  (don’t know why that is the case!)
 %		- doesn't work for kraskov in continuous PhiID, as multivariate 
 %		  entropy is for normal Gaussians
+%     - Shannon-CE/DC/CD: for now, calculations can only consider 1D macro
+%       variables
 
 %% MAIN SCRIPT TO SPECIFY CALCULATIONS (LIKE A CONFIG FILE ^^)
 
@@ -44,6 +46,9 @@ close all;
 clc;
 
 cd '/media/nadinespy/NewVolume1/work/current_projects/mec_experiments/mec_simulations/mec_simulations/code/empirical/scripts'
+javaaddpath('/media/nadinespy/NewVolume1/work/current_projects/mec_experiments/mec_simulations/mec_simulations/code/empirical/functions/infodynamics.jar');
+javaaddpath('/media/nadinespy/NewVolume1/work/current_projects/mec_experiments/mec_simulations/mec_simulations/code/empirical/scripts/infodynamics.jar');
+
 
 % get model-specific directories, and determine model size
 
@@ -79,7 +84,7 @@ directories();
 network			= [n_oscillators 'km'];
 	
 A				= linspace(0.08, 0.8, 10);		% vector with different values for A
-beta				= linspace(0.4, 0.8, 10);		% vector with different values for phase lag 
+beta				= linspace(0.08, 0.8, 10);		% vector with different values for phase lag 
 										% (range 0-0.4: metastable regime; range 0.4-0.8: non-metastable regime)
 
 get_coupling_matrix	= @get_km_coupling_matrix;		% specify function to generate one coupling matrix
@@ -140,11 +145,13 @@ bins				= [1]; %, 3, 7];				% number of quantiles or bins to do discretization f
 
 %measures			= {'DD', 'shannonCE', 'shannonDC', 'shannonCD', ...
 %				   'phiidCE', 'phiidDC', 'phiidCD'}; 
-measures			= {'phiidCE', 'phiidDC', 'phiidCD'}; 
-%methods			= {'Kraskov', 'Discrete', 'Gaussian'};
-methods			= {'Discrete'};
+measures			= {'phiidCE', 'DD', 'shannonCE'}; 
+methods			= {'Discrete', 'Gaussian', 'Kraskov'};%'Kraskov', 'Discrete', 'Gaussian'};
+%methods			= {'Discrete'};
 time_lags_for_measure	= [1]; %, 3, 10];						
-time_lengths		= [2000]; %, 2000];
+time_lengths		= [2000]; %, 2000];  % for Kuramoto oscillators, this 
+							   % results in time_lengths(i)/0.05 
+							   % data points for the ith time-length
 
 % -------------------------------------------------------------------------
 % optional input arguments (depending on method)
@@ -157,7 +164,7 @@ kraskov_params		= [3]; %, 2, 4];
 % -------------------------------------------------------------------------
 
 % PhiID-CE
-red_funcs			= {'CCS', 'MMI'};%, 'MMI'}; % to be expanded with CCS
+red_funcs			= {'MMI', 'CCS'};%, 'MMI'}; % to be expanded with CCS
 
 % DD
 time_steps			= [1]; %, 3, 10]; 
@@ -186,6 +193,7 @@ model_calc_params.beta			= beta;
 
 % pathouts for output
 pathout.pathout_data_measures		= pathout_data_measures;
+pathout.pathout_data_metastability  = pathout_data_metastability;
 
 % pathin
 pathin.pathout_data_sim_time_series = pathout_data_sim_time_series;
@@ -194,10 +202,14 @@ pathin.pathout_data_sync		= pathout_data_sync;
 % group names of variables generated in get_all_variables() into 
 % micro and macro variabels
 
-% micro_variable_names			= {'raw', 'phase', 'sync', 'rica6_phase', ...
-%							'rica12_phase'};
-% macro_variable_names			= {'mp_sync', 'chi', 'sum_phase', ...
-%							'sum_rica6_phase', 'sum_rica12_phase'};
+% micro_variable_names			= {'raw', 'phase', 'community_sync', 'p_sync', ...
+% 						      'rica6_phase', 'rica12_phase'};
+% macro_variable_names			= {'mp_sync', 'chi', 'sum_phase', 'community_sync', ...
+% 							'full_system_sync' 'sum_rica6_phase', ...
+% 							'sum_rica12_phase'};
+
+micro_variable_names			= {'phase', 'community_sync'};
+macro_variable_names			= {'sum_phase', 'chi', 'mp_sync', 'community_sync', 'full_system_sync'};
 																				
 %}
 
@@ -232,22 +244,22 @@ macro_variable_names				= {'sum_nodes', 'sum_exp_nodes'};
 % into one cell structure
 % -------------------------------------------------------------------------
 
-measure_params.measures				= measures;
-measure_params.methods				= methods;
-measure_params.time_lags_for_measure	= time_lags_for_measure;
-measure_params.time_lengths			= time_lengths;
-measure_params.kraskov_params			= kraskov_params;
-measure_params.disc_methods			= disc_methods;
-measure_params.bins				= bins;
+measure_params.measures			  = measures;
+measure_params.methods			  = methods;
+measure_params.time_lags_for_measure  = time_lags_for_measure;
+measure_params.time_lengths		  = time_lengths;
+measure_params.kraskov_params		  = kraskov_params;
+measure_params.disc_methods		  = disc_methods;
+measure_params.bins			  = bins;
 
 % -------------------------------------------------------------------------
 % put measure parameters specific to DD into one cell structure
 % -------------------------------------------------------------------------
 
-measure_params_dd.time_steps			= time_steps;
+measure_params_dd.time_steps		  = time_steps;
 
 % put measure parameters specific to PhiID-CE into one cell structure
-measure_params_phiid_ce.red_funcs		= red_funcs;
+measure_params_phiid_ce.red_funcs	  = red_funcs;
 
 % -------------------------------------------------------------------------
 %% get variables (simulate data, and discretize them)
@@ -278,7 +290,7 @@ get_all_quant_variables(network, ...
 % -------------------------------------------------------------------------
 
 % file prefixes to distinguish and not overwrite different struct files
-struct_prefix = 'discrete_';
+struct_prefix = 'all_measures_';
 
 emergence_results = get_all_emergence(network, ...
 	model_calc_params, ...
@@ -293,3 +305,6 @@ emergence_results = get_all_emergence(network, ...
 save([pathout_data_measures struct_prefix network '_emergence_results.mat'], 'emergence_results'); 
 
 %}
+
+
+get_km_met_chi_sync(network, model_sim_params, time_lengths, pathin, pathout)

@@ -115,7 +115,7 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				n_joint_micro_states = n_micro_states^size(micro,1);	% number ofjoint micro states
 				
 				% Joe Lizier on the problem of a too large state space: 
-				% "The state space of joining[, e. g.,] 256 binary 
+				% "The state space of joining, e.g., 256 binary 
 				% variables is just too large: 2^256 = 1.157920892×10⁷⁷. 
 				% The estimator will fall over in trying to allocate 
 				% memory to count each possible joint sample here, and 
@@ -172,6 +172,7 @@ function all_DD = get_DD(micro_variables, macro_variables, method, time_lag, tim
 				
 				all_DD.([fieldnames_micro{i} '_' fieldnames_macro{j}]) = DD;
 			end
+			
 		end 
 	end 
 end 

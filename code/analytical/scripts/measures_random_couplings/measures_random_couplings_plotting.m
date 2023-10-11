@@ -1,16 +1,55 @@
 %% PLOT ALL MEASURES
 
-load([char(pathout_data_measures), network '_measures_table.mat'],'measures_table');
-load([char(pathout_data_measures), network '_measures.mat'],'measures');
+n_nodes			= 8;
+spectral_radius		= 0.9;
+time_lag_for_model	= 1;							% number of time-lags
+network			= [num2str(n_nodes) 'mvar' ...		% model name
+				  '_lag' num2str(time_lag_for_model)];
 
+% variation of residuals' mutual information and matrix norms
+all_norms		= linspace(0.01,1,10);		% array of norm-2 values
+all_norms_str = {};
+for t = 1:length(all_norms)
+	all_norms_str{t} = num2str(all_norms(t));
+end
+
+all_rmi		= linspace(0.0,1,10);		% array of rmi values 
+all_rmi_str = {};
+for e = 1:length(all_rmi)
+	all_rmi_str{e} = num2str(all_rmi(e));
+end
+
+directories = @get_mvar_directories;		  
+directories();
+
+% idiosyncratic filename for this particular simulation run
+filename_table = {'results_all_measures_table'};
+filename = {'results_all_measures'};
+
+load([char(pathout_data_measures), network '_' char(filename_table) '.mat'],'results_table');
+load([char(pathout_data_measures), network '_' char(filename) '.mat'],'results');
+
+% full set of possible entries in table: measures are not clustered, each single measure
+% and macro variable must be enumerated here
 select_measures = {'multi_info', 'phiidDoubleRed_MMI', 'phiidDoubleSyn_MMI', ...
 	'phiidCE_MMI', 'phiidDC_MMI', 'phiidCD_MMI', 'phiidUC_MMI', ...
 	'phiidSyn_MMI', 'phiidTransfer_MMI', 'phiidDoubleRed_CCS', ...
 	'phiidDoubleSyn_CCS', 'phiidCE_CCS', 'phiidDC_CCS', 'phiidCD_CCS', ...
 	'phiidUC_CCS', 'phiidSyn_CCS', 'phiidTransfer_CCS', 'DD_pca', 'ShannonCE_pca', ... 
-	'DD_grassmanian', 'ShannonCE_grassmanian', 'average_corr', 'integrated_info', ...
-	'integrated_interaction', 'decoder_integration', 'causal_density', ...
-	'integrated_synergy', 'time_delayed_mi'};		
+	'DD_grassmanian', 'ShannonCE_grassmanian', 'co_info_pca', 'co_info_grassmanian', ...
+	'average_corr', 'integrated_info', 'integrated_interaction', 'decoder_integration', ...
+	'causal_density', 'integrated_synergy', 'time_delayed_mi'};
+
+% select_measures = {'multi_info', 'phiidDoubleRed_MMI', 'phiidDoubleSyn_MMI', ...
+% 	'phiidCE_MMI', 'phiidDC_MMI', 'phiidCD_MMI', 'phiidUC_MMI', ...
+% 	'phiidSyn_MMI', 'phiidTransfer_MMI', 'phiidDoubleRed_CCS', ...
+% 	'phiidDoubleSyn_CCS', 'phiidCE_CCS', 'phiidDC_CCS', 'phiidCD_CCS', ...
+% 	'phiidUC_CCS', 'phiidSyn_CCS', 'phiidTransfer_CCS', 'DD_pca', 'ShannonCE_pca', ... 
+% 	'DD_grassmanian', 'ShannonCE_grassmanian', 'average_corr', 'integrated_info', ...
+% 	'time_delayed_mi', 'co_info_grassmanian', 'co_info_pca'};
+
+% select_measures = {'DD_grassmanian', 'ShannonCE_grassmanian', 'DD_pca', 'ShannonCE_pca', 'multi_info'};
+
 
 %% 3D SCATTERPLOT ACROSS 2-NORM & RMI
 
@@ -21,12 +60,12 @@ for g = 1:length(select_measures);
 		
 		for j = 1:length(all_rmi);
 			
-			temp_matrix = cell2mat(table2array(measures_table(i,j))).(select_measures{g});
+			temp_matrix = cell2mat(table2array(results_table(i,j))).(select_measures{g});
 			rmi = all_rmi(j)*ones(n_samples_couplings,1);
 			
 			for k = 1:n_samples_noise_corrs;
 				
-				norm = cell2mat(table2array(measures_table(i,j))).two_norm(:,k);
+				norm = cell2mat(table2array(results_table(i,j))).two_norm(:,k);
 				
 				big_array = [norm, rmi, temp_matrix(:,k)];
 				BIG_array = [BIG_array; big_array];
@@ -56,9 +95,9 @@ end
 % rearrange values for one measure by having one field per measure with all
 % values for different parameters
 big_struct = [];
-for f = 1:size(cell2mat(table2array(measures_table)),1)
-	for j = 1:size(cell2mat(table2array(measures_table)),2)
-		big_struct = [big_struct; cell2mat(table2array(measures_table(f,j)))];
+for f = 1:size(cell2mat(table2array(results_table)),1)
+	for j = 1:size(cell2mat(table2array(results_table)),2)
+		big_struct = [big_struct; cell2mat(table2array(results_table(f,j)))];
 	end
 end
 
@@ -74,12 +113,12 @@ for p = 1:length(rmi_index)
 			
 			for j = rmi_index(p);
 				
-				temp_matrix = cell2mat(table2array(measures_table(i,j))).(select_measures{g});
+				temp_matrix = cell2mat(table2array(results_table(i,j))).(select_measures{g});
 				rmi = all_rmi(j)*ones(n_samples_couplings,1);
 				
 				for k = 1:n_samples_noise_corrs;
 					
-					norm = cell2mat(table2array(measures_table(i,j))).two_norm(:,k);
+					norm = cell2mat(table2array(results_table(i,j))).two_norm(:,k);
 					
 					big_array = [norm, temp_matrix(:,k)];
 					BIG_array = [BIG_array; big_array];
@@ -99,13 +138,14 @@ for p = 1:length(rmi_index)
 		end
 		
 		max_measure = max(all_measure_values(:));
+		min_measure = min(all_measure_values(:));
 		
 		figure;
 		scatter(BIG_array(:,1), BIG_array(:,2), 20, "o", 'blue', 'filled');
 		title({[select_measures{g} ' across 2-norm for rmi-index = ' num2str(rmi_index(p)) ':'], 'for each pair of them, connectivities & noise correlations', 'were randmoly sampled'});
 		xlabel('2-norm');
 		ylabel(select_measures{g});
-		ylim([0 max_measure]);
+		ylim([min_measure max_measure]);
 		
 		location = [pathout_plots_measures, network '_' 'rmi_index' num2str(rmi_index(p)) '_' select_measures{g}, '.png'];
 		exportgraphics(gcf, location);
@@ -115,7 +155,7 @@ end
 
 %% LINE PLOT & HEATMAP FOR AVERAGE MEASURE FOR GIVEN RMI
 
-set(1,'DefaultFigureWindowStyle','docked')
+%set(1,'DefaultFigureWindowStyle','docked')
 
 	
 for g = 1:length(select_measures);
@@ -126,9 +166,9 @@ for g = 1:length(select_measures);
 		
 		for j = 1:length(all_rmi);
 			
-			mean_temp_matrix = mean(cell2mat(table2array(measures_table(i,j))).(select_measures{g}), 'all');
+			mean_temp_matrix = mean(cell2mat(table2array(results_table(i,j))).(select_measures{g}), 'all');
 			rmi = all_rmi(j);
-			norm = mean(cell2mat(table2array(measures_table(i,j))).two_norm, 'all');
+			norm = mean(cell2mat(table2array(results_table(i,j))).two_norm, 'all');
 			
 			% store values for all parameters in one big column for line plots
 			big_array = [norm, rmi, mean_temp_matrix];
@@ -150,7 +190,7 @@ for g = 1:length(select_measures);
 		
 		rmi_index = find(BIG_array(:,2)==all_rmi(j));
 		
-		plot3(BIG_array(rmi_index,1), BIG_array(rmi_index,2), BIG_array(rmi_index,3));
+		plot3(BIG_array(rmi_index,1), BIG_array(rmi_index,2), BIG_array(rmi_index,3), 'LineWidth', 2);
 		title(['average ' select_measures{g} ' across 2-norm for a given rmi']);
 		xlabel('2-norm');
 		ylabel('RMI');
@@ -189,7 +229,7 @@ for g = 1:length(select_measures);
 	% flip order of rows so that lowest 2-norm value is in the bottom
 	% left corner in heatmap
 	measure = flip(measure,1);
-	measure = array2table(measure, 'RowNames', new_norm_str,'VariableNames', all_rmi_str);
+	%measure = array2table(measure, 'RowNames', new_norm_str,'VariableNames', all_rmi_str);
 	measure = {measure};
 	
 	plot_heatmap(measure, file_names_heatmap, titles_heatmap, x_axis_norm, ...
@@ -228,7 +268,7 @@ for i = 1:length(all_norms);
 	
 	for j = length(all_rmi); 
 		
-		temp_norm = cell2mat(table2array(measures_table(i,j))).two_norm;
+		temp_norm = cell2mat(table2array(results_table(i,j))).two_norm;
 		for k = 1:n_samples_noise_corrs; 
 		
 			BIG_array = [BIG_array; temp_norm(:,k)];

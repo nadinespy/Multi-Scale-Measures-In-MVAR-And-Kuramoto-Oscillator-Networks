@@ -1,6 +1,6 @@
 function get_all_emergence_heatmaps(network, emergence_struct, x_axis, y_axis, x_label, y_label, pathout_plots)
 
-	set(0,'DefaultFigureVisible','off');
+	set(0,'DefaultFigureVisible','on');
 	
 	o = 1;
 	for q = 1:length(emergence_struct);
@@ -11,6 +11,9 @@ function get_all_emergence_heatmaps(network, emergence_struct, x_axis, y_axis, x
 			
 			time_length_str = num2str(emergence_struct(1,q).time_length);
 			data{o} = emergence_struct(1,q).results.(micro_macro_fieldnames{k});
+			
+			% flip rows in order
+			data{o} = flip(data{o},1);
 			
 			titles{1,o} = {[micro_macro_fieldnames{k,1}, ', npoints = ' num2str(emergence_struct(1,q).time_length), ', '] ...
 				['measure = ', emergence_struct(1,q).measure, ', ', ...

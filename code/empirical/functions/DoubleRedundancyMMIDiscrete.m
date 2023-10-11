@@ -171,10 +171,10 @@ function [ redred ] = private_FourVectorMMI(X1, X2, Y1, Y2, varargin)
 	p = inputParser;
 	
 	% required arguments
-	addRequired(p,'X1', @isint);
-	addRequired(p,'X2', @isint);
-	addRequired(p,'Y1', @isint);
-	addRequired(p,'Y2', @isint);
+	addRequired(p,'X1', @isdouble);
+	addRequired(p,'X2', @isdouble);
+	addRequired(p,'Y1', @isdouble);
+	addRequired(p,'Y2', @isdouble);
 	
 	% optional name value pairs:
 	default_red_func = 'mmi';

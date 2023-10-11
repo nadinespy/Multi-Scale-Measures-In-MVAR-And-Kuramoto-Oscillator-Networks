@@ -96,7 +96,7 @@ function [ redred ] = private_TDCCS(X, varargin)
 	p = inputParser;
 	
 	% required arguments:
-	addRequired(p,'X', @isint);
+	addRequired(p,'X', @isdouble);
 	
 	% optional name-value variables:
 	default_tau = 1;
@@ -157,10 +157,10 @@ function [ redred ] = private_FourVectorCCS(X1, X2, Y1, Y2, varargin)
 	p = inputParser;
 	
 	% required arguments:
-	addRequired(p,'X1', @isint);
-	addRequired(p,'X2', @isint);
-	addRequired(p,'Y1', @isint);
-	addRequired(p,'Y2', @isint);
+	addRequired(p,'X1', @isdouble);
+	addRequired(p,'X2', @isdouble);
+	addRequired(p,'Y1', @isdouble);
+	addRequired(p,'Y2', @isdouble);
 
 	% optional name-value variables
 	default_red_func = 'mmi';

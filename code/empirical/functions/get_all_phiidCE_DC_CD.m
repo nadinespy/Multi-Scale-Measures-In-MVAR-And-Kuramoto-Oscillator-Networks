@@ -193,6 +193,12 @@ function output_struct = get_all_phiidCE_DC_CD(network, ...
 							model_param2_str '_' ...
 							time_length_str '.mat'], ...
 							micro_variable_names{k}));
+						
+						% transpose micro variable, if datapoints are stored in rows, and variables in column
+						if size(micro_variables(1).(micro_variable_names{k}),1) > size(micro_variables(1).(micro_variable_names{k}),2)
+							micro_variables(1).(micro_variable_names{k}) = micro_variables(1).(micro_variable_names{k})';
+						end
+					
 					end
 					
 				else
@@ -208,6 +214,11 @@ function output_struct = get_all_phiidCE_DC_CD(network, ...
 							model_param2_str '_' ...
 							time_length_str '.mat'], ...
 							micro_variable_names{k}));
+						
+						% transpose macro variable, if datapoints are stored in rows, and variable(s) in column
+						if size(micro_variables(1).(micro_variable_names{k}),1) > size(micro_variables(1).(micro_variable_names{k}),2)
+							micro_variables(1).(micro_variable_names{k}) = micro_variables(1).(micro_variable_names{k})';
+						end
 						
 						% do dimensionality reduction of micro, then binarize to be able to use PhiIDFullDiscrete() 
 						try 

@@ -57,7 +57,7 @@ function [ A, L ] = PhiIDFullDiscrete(varargin)
 
 	% optional positional arguments
 	default_X = [];
-	addOptional(p,'X', default_X, @isint);
+	addOptional(p,'X', default_X, @isdouble);
 	default_tau = 1;
 	addOptional(p, 'tau', default_tau, @isint);
 	default_red_func = 'MMI';
@@ -65,13 +65,13 @@ function [ A, L ] = PhiIDFullDiscrete(varargin)
 	
 	% optional name-value pair variables: 
 	default_X1 = [];
-	addParameter(p,'X1', default_X1, @isint);
+	addParameter(p,'X1', default_X1, @isdouble);
 	default_X2 = [];
-	addParameter(p,'X2', default_X2, @isint);
+	addParameter(p,'X2', default_X2, @isdouble);
 	default_Y1 = [];
-	addParameter(p,'Y1', default_Y1, @isint);
+	addParameter(p,'Y1', default_Y1, @isdouble);
 	default_Y2 = [];
-	addParameter(p,'Y2', default_Y2, @isint);
+	addParameter(p,'Y2', default_Y2, @isdouble);
 
 	parse(p, varargin{:});
 	
@@ -112,7 +112,7 @@ function [ atoms ] = private_TDPhiID(X, varargin)
 	p = inputParser;
 	
 	% required arguments:
-	addRequired(p,'X', @isint);
+	addRequired(p,'X', @isdouble);
 	
 	% optional name-value pairs:
 	default_tau = 1;
@@ -180,10 +180,10 @@ function [ atoms ] = private_FourVectorPhiID(X1, X2, Y1, Y2, varargin)
 	p = inputParser;
 	
 	% required arguments:
-	addRequired(p,'X1', @isint);
-	addRequired(p,'X2', @isint);
-	addRequired(p,'Y1', @isint);
-	addRequired(p,'Y2', @isint);
+	addRequired(p,'X1', @isdouble);
+	addRequired(p,'X2', @isdouble);
+	addRequired(p,'Y1', @isdouble);
+	addRequired(p,'Y2', @isdouble);
 	
 	% optional positional arguments
 	default_red_func = 'MMI';
