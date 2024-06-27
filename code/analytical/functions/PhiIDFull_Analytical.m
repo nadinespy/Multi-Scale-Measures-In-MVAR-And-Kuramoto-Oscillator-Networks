@@ -133,7 +133,8 @@ function [ atoms ] = private_FourVectorPhiID(full_time_lagged_cov, ...
 	% % mutual information (I(X;Y) = H(X) + H(Y) - H(X,Y)) (not further used below)
 	% mi  = @(src, tgt) h(src) + h(tgt) - h([src, tgt]);
 	
-	% analytical solution for average multivariate entropy using the covariance matrix:
+	% analytical solution for average multivariate entropy using the covariance matrix,
+	% see https://math.stackexchange.com/questions/2029707/entropy-of-the-multivariate-gaussian which is equivalent to this:
 	h = @(idx) 0.5 * size(full_time_lagged_cov(idx, idx),1) * log(2 * pi * exp(1)) + ...
 		0.5 * log(det(full_time_lagged_cov(idx, idx)));
 	

@@ -20,11 +20,11 @@ function plot_heatmap(data, file_names, titles, x_axis, y_axis, x_label, y_label
 	
 	data			= p.Results.data;
 	file_names		= p.Results.file_names;
-	titles		= p.Results.titles;
-	x_axis		= p.Results.x_axis;
-	y_axis		= p.Results.y_axis;
-	x_label		= p.Results.x_label;
-	y_label		= p.Results.y_label;
+	titles			= p.Results.titles;
+	x_axis			= p.Results.x_axis;
+	y_axis			= p.Results.y_axis;
+	x_label			= p.Results.x_label;
+	y_label			= p.Results.y_label;
 	pathout_plots	= p.Results.pathout_plots;
 	
 	for i = 1:length(data)
@@ -43,8 +43,8 @@ function plot_heatmap(data, file_names, titles, x_axis, y_axis, x_label, y_label
 		
 		hColorbar = colorbar;
 		
-		xticks(1:size(x_axis, 2));
-		yticks(1:size(y_axis, 2));
+		xticks(1:(size(x_axis, 2)));
+		yticks(1:(size(y_axis, 2)));
 		
 		set(gca,'TickLength',[0 0])
 		yticklabels(y_axis);

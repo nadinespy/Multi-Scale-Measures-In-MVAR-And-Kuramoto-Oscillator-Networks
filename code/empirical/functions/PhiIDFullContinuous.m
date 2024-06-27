@@ -296,7 +296,8 @@ function [ atoms ] = private_FourVectorPhiID(X1, X2, Y1, Y2, varargin)
 	assert(all(size(mu) == [1, D]) && all(size(S) == [D, D]));
 	
 	% define local information-theoretic functions (lacking: Kraskov version of estimating non-Gaussian multivariate entropy)
-	% local multivariate entropy, h() takes as an input the indices of the variables to consider in sX
+	% local multivariate entropy, h() takes as an input the indices of the variables to consider in sX,
+	% see https://math.stackexchange.com/questions/2029707/entropy-of-the-multivariate-gaussian which is equivalent to this:
 	h = @(idx) -log(mvnpdf(sX(idx,:)', mu(idx), S(idx,idx)));
 	
 	% mutual information (I(X;Y) = H(X) + H(Y) - H(X,Y)) (not further used below)
