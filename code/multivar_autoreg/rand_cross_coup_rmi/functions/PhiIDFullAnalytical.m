@@ -1,4 +1,4 @@
-function atoms = PhiIDFull_Analytical(varargin)
+function atoms = PhiIDFullAnalytical(varargin)
 %%PHIIDFULL Computes full PhiID decomposition given a full time-lagged 
 % covariance matrix, assuming it follows a multivariate Gaussian distribution.
 %
@@ -33,7 +33,7 @@ function atoms = PhiIDFull_Analytical(varargin)
 % Nadine Spychala, Sep 2022
 
 	% Find JIDT and add relevant paths; calculate average PhiID atoms
-	p = strrep(mfilename('fullpath'), 'PhiIDFull', '');
+	p = strrep(mfilename('fullpath'), 'PhiIDFullAnalytical', '');
 	if exist([p, '../elph_base'], 'dir')
 		addpath([p, '../elph_base']);
 	end
@@ -110,10 +110,10 @@ function [ atoms ] = private_FourVectorPhiID(full_time_lagged_cov, ...
 	
 	if strcmp(lower(measure), 'ccs')
 		RedFun = @RedundancyCCS;
-		DoubleRedFun = @DoubleRedundancyCCS_Analytical;
+		DoubleRedFun = @DoubleRedundancyCCSAnalytical;
 	elseif strcmp(lower(measure), 'mmi')
 		RedFun = @RedundancyMMI;
-		DoubleRedFun = @DoubleRedundancyMMI_Analytical;
+		DoubleRedFun = @DoubleRedundancyMMIAnalytical;
 	else
 		error(['Unknown redundancy measure. Currently implemented measures are ''CCS'' and ''MMI''']);
 	end

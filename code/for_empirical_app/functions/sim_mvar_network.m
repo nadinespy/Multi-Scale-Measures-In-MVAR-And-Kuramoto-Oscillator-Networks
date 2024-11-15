@@ -84,7 +84,7 @@ empirical_corr_err = corrcoef(E(1,:), E(2,:));		% check correlation
 % SIM METHOD X: *only* the datapoint at t-time_lag influences the current datapoint
 % -------------------------------------------------------------------------
 
-% {
+%{
 X = zeros([nvar, time_length]);
 
 % incorporate correlation between nodes
@@ -121,7 +121,7 @@ corr_Z = corrcoef(Z(1,:), Z(2,:));
 % -------------------------------------------------------------------------
 
 % here, *only* the datapoint at t-time_lag influences the current datapoint
-%{
+% {
 lagged_cov = makeLaggedCovariance(coupling_matrix, noise_corr);			% get time-lagged covariance for a network		
 covariance = lagged_cov(1:(length(lagged_cov)/2), 1:(length(lagged_cov)/2));	% get same-time covariance of network 
 													% (by taking the first quadrant of S)

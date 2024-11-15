@@ -1,4 +1,4 @@
-function redred = DoubleRedundancyMMI_Analytical(varargin)
+function redred = DoubleRedundancyMMIAnalytical(varargin)
 %%DOUBLEREDUNDANCYMMI_ANALYTICAL Compute the PhiID double-redundancy given 
 % a full time-lagged covariance matrix, assuming it follows a Gaussian 
 % distribution and using the MMI PID.

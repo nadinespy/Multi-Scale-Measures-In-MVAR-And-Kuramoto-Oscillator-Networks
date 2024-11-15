@@ -56,8 +56,8 @@ javaaddpath('/media/nadinespy/NewVolume1/work/current_projects/mec_experiments/m
 % KURAMOTO OSCILLATORS
 %**************************************************************************
 % {
-directories		= @get_km_directories;
-n_oscillators	= '12';
+directories			= @get_km_directories;
+n_oscillators		= '12';
 intra_comm_size	= 4;	% intra-community size
 n_communities	= 3;	% number of communities	
 %}
@@ -81,31 +81,31 @@ directories();
 % KURAMOTO OSCILLATORS
 %**************************************************************************
 % {
-network			= [n_oscillators 'km'];
+network = [n_oscillators 'km'];
 	
-A				= linspace(0.08, 0.8, 10);		% vector with different values for A
-beta				= linspace(0.08, 0.8, 10);		% vector with different values for phase lag 
-										% (range 0-0.4: metastable regime; range 0.4-0.8: non-metastable regime)
+A		 = linspace(0.08, 0.8, 10);								% vector with different values for A
+beta	 = linspace(0.08, 0.8, 10);								% vector with different values for phase lag 
+																% (range 0-0.4: metastable regime; range 0.4-0.8: non-metastable regime)
 
-get_coupling_matrix	= @get_km_coupling_matrix;		% specify function to generate one coupling matrix
-get_coupling_matrices	= @get_km_coupling_matrices;		% specify function to generate multiple coupling matrices
-get_variables		= @get_km_variables;			% specify function to generate micro and macro variables
+get_coupling_matrix		= @get_km_coupling_matrix;		% specify function to generate one coupling matrix
+get_coupling_matrices	= @get_km_coupling_matrices;	% specify function to generate multiple coupling matrices
+get_variables				= @get_km_variables;			% specify function to generate micro and macro variables
 %}
 
 %**************************************************************************
 % MULTIVARIATE AUTOREGRESSIVE NETWORK
 %**************************************************************************
 %{
-time_lag_for_model	= [1];					% time-lag to simulate MVAR process
-network			= [n_nodes 'mvar' ...			% model name
+time_lag_for_model	= [1];										% time-lag to simulate MVAR process
+network				= [n_nodes 'mvar' ...						% model name
 				  '_lag' num2str(time_lag_for_model)];
 
-couplings			= linspace(0.0045, 0.45, 100);	% vector with different coupling values 
-noise_corrs			= linspace(0.09, 0.9, 100);		% vector with different values for noise correlation 
+couplings				= linspace(0.0045, 0.45, 100);			% vector with different coupling values 
+noise_corrs			= linspace(0.09, 0.9, 100);				% vector with different values for noise correlation 
 
-get_coupling_matrix	= @get_mvar_coupling_matrix;		% specify function to generate one coupling matrix
+get_coupling_matrix		= @get_mvar_coupling_matrix;		% specify function to generate one coupling matrix
 get_coupling_matrices	= @get_mvar_coupling_matrices;	% specify function to generate multiple coupling matrices
-get_variables		= @get_mvar_variables;			% specify function to generate micro and macro variables
+get_variables				= @get_mvar_variables;				% specify function to generate micro and macro variables
 %}
 
 %**************************************************************************
@@ -113,13 +113,13 @@ get_variables		= @get_mvar_variables;			% specify function to generate micro and
 %**************************************************************************
 
 disc_methods		= {'quant'}; %, 'even', 'bin'};	% choose discretization method: 'quant' for using quantiles, 
-										% 'even' for discretizing into evenly spaced sections of the 
-										% state space, 'bin' for binarizing (scripts for latter two 
-										% not yet modified)
+													% 'even' for discretizing into evenly spaced sections of the 
+													% state space, 'bin' for binarizing (scripts for latter two 
+													% not yet modified)
 										
-bins				= [1]; %, 3, 7];				% number of quantiles or bins to do discretization for methods 
-										% 'quant' and 'disc', e. g., using only one quantile would 
-										% result in two groups - one below and one above the quantile
+bins				= [1]; %, 3, 7];					% number of quantiles or bins to do discretization for methods 
+													% 'quant' and 'disc', e. g., using only one quantile would 
+													% result in two groups - one below and one above the quantile
 
 % -------------------------------------------------------------------------
 %% measure parameter specification
@@ -143,13 +143,12 @@ bins				= [1]; %, 3, 7];				% number of quantiles or bins to do discretization f
 %		- PhiID-CE/DC/CD: not implemented yet, as multivariate entropy
 %		  is calculated only for Gaussian systems
 
-%measures			= {'DD', 'shannonCE', 'shannonDC', 'shannonCD', ...
+%measures				= {'DD', 'shannonCE', 'shannonDC', 'shannonCD', ...
 %				   'phiidCE', 'phiidDC', 'phiidCD'}; 
-measures			= {'phiidCE', 'DD', 'shannonCE'}; 
-methods			= {'Discrete', 'Gaussian', 'Kraskov'};%'Kraskov', 'Discrete', 'Gaussian'};
-%methods			= {'Discrete'};
+measures					= {'phiidCE', 'DD', 'shannonCE'}; 
+methods					= {'Discrete', 'Gaussian', 'Kraskov'};
 time_lags_for_measure	= [1]; %, 3, 10];						
-time_lengths		= [2000]; %, 2000];  % for Kuramoto oscillators, this 
+time_lengths				= [2000]; %, 2000];  % for Kuramoto oscillators, this 
 							   % results in time_lengths(i)/0.05 
 							   % data points for the ith time-length
 
@@ -182,34 +181,34 @@ time_steps			= [1]; %, 3, 10];
 %**************************************************************************
 % {
 % model parameters for simulating kuramoto oscillators; must be in that order
-model_sim_params.A			= A ;		 
-model_sim_params.beta			= beta;				
+model_sim_params.A						= A ;		 
+model_sim_params.beta					= beta;				
 model_sim_params.intra_comm_size	= intra_comm_size;
-model_sim_params.n_communities	= n_communities;
+model_sim_params.n_communities		= n_communities;
 
 % model parameters to calculate emergence for; must be in that order
-model_calc_params.A			= A ;		 
-model_calc_params.beta			= beta;	
+model_calc_params.A					= A ;		 
+model_calc_params.beta					= beta;	
 
 % pathouts for output
-pathout.pathout_data_measures		= pathout_data_measures;
-pathout.pathout_data_metastability  = pathout_data_metastability;
+pathout.pathout_data_measures			= pathout_data_measures;
+pathout.pathout_data_metastability		= pathout_data_metastability;
 
 % pathin
-pathin.pathout_data_sim_time_series = pathout_data_sim_time_series;
-pathin.pathout_data_sync		= pathout_data_sync;
+pathin.pathout_data_sim_time_series	= pathout_data_sim_time_series;
+pathin.pathout_data_sync					= pathout_data_sync;
 
 % group names of variables generated in get_all_variables() into 
 % micro and macro variabels
 
-% micro_variable_names			= {'raw', 'phase', 'community_sync', 'p_sync', ...
+% micro_variable_names					= {'raw', 'phase', 'community_sync', 'p_sync', ...
 % 						      'rica6_phase', 'rica12_phase'};
-% macro_variable_names			= {'mp_sync', 'chi', 'sum_phase', 'community_sync', ...
+% macro_variable_names				= {'mp_sync', 'chi', 'sum_phase', 'community_sync', ...
 % 							'full_system_sync' 'sum_rica6_phase', ...
 % 							'sum_rica12_phase'};
 
-micro_variable_names			= {'phase', 'community_sync'};
-macro_variable_names			= {'sum_phase', 'chi', 'mp_sync', 'community_sync', 'full_system_sync'};
+micro_variable_names					= {'phase', 'community_sync'};
+macro_variable_names					= {'sum_phase', 'chi', 'mp_sync', 'community_sync', 'full_system_sync'};
 																				
 %}
 
@@ -220,8 +219,8 @@ macro_variable_names			= {'sum_phase', 'chi', 'mp_sync', 'community_sync', 'full
 % model parameters for simulating MVAR networks; must be in that order
 model_sim_params.couplings			= couplings;		 
 model_sim_params.noise_corrs			= noise_corrs;	
-model_sim_params.n_nodes			= str2double(n_nodes);
-model_sim_params.time_lag_for_model		= time_lag_for_model;
+model_sim_params.n_nodes				= str2double(n_nodes);
+model_sim_params.time_lag_for_model	= time_lag_for_model;
 
 % model parameters to calculate emergence for; must be in that order
 model_calc_params.couplings			= couplings;		 
@@ -231,12 +230,12 @@ model_calc_params.noise_corrs			= noise_corrs;
 pathout.pathout_data_measures			= pathout_data_measures;
 
 % pathin
-pathin.pathout_data_sim_time_series		= pathout_data_sim_time_series;
+pathin.pathout_data_sim_time_series	= pathout_data_sim_time_series;
 
 % group names of variables generated in get_all_variables() into 
 % micro and macro variabels
-micro_variable_names				= {'nodes'};
-macro_variable_names				= {'sum_nodes', 'sum_exp_nodes'};
+micro_variable_names					= {'nodes'};
+macro_variable_names					= {'sum_nodes', 'sum_exp_nodes'};
 %}
 
 % -------------------------------------------------------------------------														
@@ -244,22 +243,22 @@ macro_variable_names				= {'sum_nodes', 'sum_exp_nodes'};
 % into one cell structure
 % -------------------------------------------------------------------------
 
-measure_params.measures			  = measures;
-measure_params.methods			  = methods;
-measure_params.time_lags_for_measure  = time_lags_for_measure;
-measure_params.time_lengths		  = time_lengths;
-measure_params.kraskov_params		  = kraskov_params;
-measure_params.disc_methods		  = disc_methods;
-measure_params.bins			  = bins;
+measure_params.measures					= measures;
+measure_params.methods					= methods;
+measure_params.time_lags_for_measure	= time_lags_for_measure;
+measure_params.time_lengths				= time_lengths;
+measure_params.kraskov_params			= kraskov_params;
+measure_params.disc_methods				= disc_methods;
+measure_params.bins						= bins;
 
 % -------------------------------------------------------------------------
 % put measure parameters specific to DD into one cell structure
 % -------------------------------------------------------------------------
 
-measure_params_dd.time_steps		  = time_steps;
+measure_params_dd.time_steps				= time_steps;
 
 % put measure parameters specific to PhiID-CE into one cell structure
-measure_params_phiid_ce.red_funcs	  = red_funcs;
+measure_params_phiid_ce.red_funcs		= red_funcs;
 
 % -------------------------------------------------------------------------
 %% get variables (simulate data, and discretize them)

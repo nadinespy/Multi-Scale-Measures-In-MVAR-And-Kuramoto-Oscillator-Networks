@@ -1,11 +1,13 @@
-function [X, Y, psi] = sim_km_oscillators_with_gc_test(coupling_matrix, phase_lag, time_length)
 % Default parameters (override on command line - see 'defvar.h')
 
 defvar('C',         tnet5   ); % connectivity matrix, or number of fully-connected oscillators if scalar
 defvar('wmean',     0       ); % oscillator frequencies mean
 defvar('wsdev',     1/7     ); % oscillator frequencies std. dev.
 defvar('wseed',     []      ); % oscillator frequencies random seed (empty for no seeding)
-defvar('phase_lag', 0       ); % oscillator phase lag constant
+defvar('Kmean',     0       ); % oscillator coupling constants mean
+defvar('Ksdev',     4.0     ); % oscillator coupling constants std. dev.
+defvar('Kseed',     []      ); % oscillator coupling constants random seed (empty for no seeding)
+defvar('a',         0       ); % oscillator phase lag constant
 defvar('hseed',     []      ); % oscillator initial phases random seed (empty for no seeding)
 defvar('T',         500     ); % simulation time
 defvar('Ts',        50      ); % stabilisation time
@@ -22,13 +24,11 @@ defvar('varmomax',  40      ); % maximum VAR model order for model order selecti
 defvar('varmosel', 'HQC'    ); % model order selection critierion: 'AIC', 'BIC', 'HQC', or 'LRT'
 defvar('stest',    'F'      ); % statistical test: 'LR' or 'F'
 defvar('mhtc',     'FDRD'   ); % multiple-hypothesis test correction
-defvar('sig_level', 0.05    ); % significance level
+defvar('alpha',     0.05    ); % significance level
 defvar('fignum',    1       ); % Matlab figure number
 
 % Connectivity
 
-C = length(coupling_matrix);
-T = time_length;
 if isscalar(C)  % fully connected
 	N = C;
 	C = ones(N);
@@ -43,6 +43,10 @@ C(1:N+1:N^2) = 0; % zeros on diagonal (no self-connections!)
 if ~isempty(wseed), rstate = rng(wseed); end
 w = wmean + wsdev*randn(N,1); % oscillator frequencies normally distributed with mean wmean and std. dev wsdev
 if ~isempty(wseed), rng(rstate); end
+
+if ~isempty(Kseed), rstate = rng(Kseed); end
+K = (Kmean + Ksdev*randn(N)).*C; % coupling constants normally distributed with mean Kmean and std. dev. Ksdev
+if ~isempty(Kseed), rng(rstate); end
 
 if ~isempty(hseed), rstate = rng(hseed); end
 h0 = pi*(2*rand(N,1)-1);      % initial phases uniform on [-pi,pi]
@@ -74,7 +78,7 @@ fprintf('\n');
 
 st = tic;
 %[h,r] = kuramoto(N,na,dt,w,K/N,a,h0,I,smode);
-[h,r, psi] = kuramoto(N,w,coupling_matrix,phase_lag,n,dt,I, 'Euler');
+[h,r] = kuramoto(N,w,K,a,n,dt,I, 'Euler');
 
 et = toc(st);
 fprintf('%s method : %g seconds\n',smode,et);
@@ -84,7 +88,6 @@ fprintf('%s method : %g seconds\n',smode,et);
 t = linspace(0,T,n-ns)';
 r = r(ns+1:end)';
 h = h(:,ns+1:end)';
-psi = psi(:,ns+1:end)';
 
 % Polynomial detrend and normalise by variance
 
@@ -144,9 +147,6 @@ for i = 1:N
 end
 X = demean(X,true);
 
-%Y = zeros(size(r,2),m);
-Y = downsample(r,dsf);
-
 % VAR model order selection
 
 [moaic,mobic,mohqc,molrt] = tsdata_to_varmo(X,varmomax,'LWR',[],[],2);
@@ -174,11 +174,9 @@ fprintf('\nPairwise-conditional GC =\n\n'); disp(F)
 
 tstat = var_to_pwcgc_tstat(X,V,varmo,'OLS',stest);
 pval  = mvgc_pval(tstat,stest,1,1,N-2,varmo,m,1); % for pairwise-conditional, nx = 1, ny = 1, nz = nvars-2
-sig   = significance(pval,sig_level,mhtc);
+sig   = significance(pval,alpha,mhtc);
 
-pdata = {abs(coupling_matrix),F,sig};
+pdata = {abs(K),F,sig};
 ptitle = {'Connectivity','PWCGC','Significant'};
-maxp = [nanmax(coupling_matrix(:)),nanmax(F(:)),1];
+maxp = [nanmax(K(:)),nanmax(F(:)),1];
 plot_gc(pdata,ptitle,[],maxp,3,[0.6,2.5]);
-
-end

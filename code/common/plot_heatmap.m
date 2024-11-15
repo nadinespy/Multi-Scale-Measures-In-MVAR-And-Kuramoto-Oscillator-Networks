@@ -20,11 +20,11 @@ function plot_heatmap(data, file_names, titles, x_axis, y_axis, x_label, y_label
 	
 	data			= p.Results.data;
 	file_names		= p.Results.file_names;
-	titles			= p.Results.titles;
-	x_axis			= p.Results.x_axis;
-	y_axis			= p.Results.y_axis;
-	x_label			= p.Results.x_label;
-	y_label			= p.Results.y_label;
+	titles		= p.Results.titles;
+	x_axis		= p.Results.x_axis;
+	y_axis		= p.Results.y_axis;
+	x_label		= p.Results.x_label;
+	y_label		= p.Results.y_label;
 	pathout_plots	= p.Results.pathout_plots;
 	
 	for i = 1:length(data)
