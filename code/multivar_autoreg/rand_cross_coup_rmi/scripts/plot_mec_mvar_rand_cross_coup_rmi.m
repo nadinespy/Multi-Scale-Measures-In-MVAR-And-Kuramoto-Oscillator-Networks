@@ -1,7 +1,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% mec_mvar_rand_cross_coup_rmi_plotting.m
+% plot_mec_mvar_rand_cross_coup_rmi.m
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -113,7 +113,7 @@ for g = 1:length(measure_in_table)
 	end
 	
 	% LINE PLOTS: ONE LINE FOR EACH RMI
-	% {
+	%{
 	figure;
 	
 	for j = 1:length(all_rmi)

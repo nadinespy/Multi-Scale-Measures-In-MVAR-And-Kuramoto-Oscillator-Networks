@@ -8,7 +8,7 @@
 % ([measure] as used in parameter specification scripts which start with
 % the prefix 'params'.
 % 
-% This script must be run in order to run 
+% This script must be run in order to run either of those scripts:
 % - mec_mvar_rand_cross_coup_rmi.m
 % - mec_mvar_rand_cross_coup_rmi_plotting.m
 %
@@ -17,7 +17,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % measure (as in the filenames - not in the Matlab structs)
-measure_in_filename = 'phiid_ccs_dc';
+measure_in_filename = 'multi_info';
 
 % directories for MVAR models
 basedir = ['/media/nadinespy/NewVolume1/work/phd/projects/' ...

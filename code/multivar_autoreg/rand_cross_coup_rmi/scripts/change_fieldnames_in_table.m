@@ -12,6 +12,9 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+old_fieldname = 'coupling_mag';
+new_fieldname = 'global_coupling_mag';
+
 all_cross_coup_mag = 2.^linspace(cross_coup_range(1),cross_coup_range(2), n_cross_coup); 
 all_rmi   = 2.^linspace(rmi_range(1), rmi_range(2),  n_rmi  ); 
 
@@ -30,8 +33,8 @@ for i=1:size(results_table,1)
     for j=1:size(results_table,2)
         current_struct = table2array(results_table(i,j));
         fnames = fieldnames(current_struct);
-        old_idx = strcmp(fnames, 'coupling_mag');
-        fnames{old_idx} = 'global_coupling_mag';
+        old_idx = strcmp(fnames, old_fieldname);
+        fnames{old_idx} = new_fieldname;
         current_struct = cell2struct(struct2cell(current_struct), fnames);
         new_struct(i,j) = current_struct;
     end
