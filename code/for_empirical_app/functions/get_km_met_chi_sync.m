@@ -35,8 +35,8 @@ function get_km_met_chi_sync(network, model_sim_params, time_lengths, pathin, pa
 		for p = 1:length(model_params1);
 			model_param1_str = param2str(model_params1(p));
 			
-			% load synchronies for a given value of model_param1 (A_vec) and across model_params{2} (beta_vec);
-			% rows: betas; columns: communities; 3rd dimension: time-points
+			% load synchronies for a given value of model_param1 (A_vec) and across model_params2 (beta_vec);
+			% rows: betas; columns: community synchronies; 3rd dimension: time-points
 
 			load([pathout_data_sync network '_synchronies_'  model_param1_str '_' num2str(time_lengths(q)) '.mat'], ...
 				'synchronies');

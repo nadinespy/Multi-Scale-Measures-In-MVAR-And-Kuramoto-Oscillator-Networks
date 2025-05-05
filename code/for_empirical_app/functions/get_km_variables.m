@@ -95,7 +95,7 @@ function get_km_variables(network, model_sim_params, measure_params, coupling_ma
 	for q = 1:length(time_lengths);
 		time_length_str = num2str(time_lengths(q));
 	
-		for i = 10%:size(coupling_matrices, 3);
+		for i = 1:size(coupling_matrices, 3);
 			coupling_matrix = coupling_matrices(:,:,i);
 			model_param1_str = param2str(model_params1(i));
 		
