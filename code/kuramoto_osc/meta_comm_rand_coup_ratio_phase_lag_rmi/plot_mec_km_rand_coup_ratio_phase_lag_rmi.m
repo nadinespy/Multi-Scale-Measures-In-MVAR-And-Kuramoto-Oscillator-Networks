@@ -184,4 +184,53 @@ for g = 1:length(measure_in_struct)
 	exportgraphics(gcf, location);
 end
 
+%% LINE PLOT FOR COUPLING RATIO MEAN = 0.2
+% Find the index corresponding to coupling ratio mean = 0.2
+target_coup_ratio_mean = 0.2;
+[~, coup_ratio_idx] = min(abs(all_coup_ratio_mean - target_coup_ratio_mean));
+actual_coup_ratio_mean = all_coup_ratio_mean(coup_ratio_idx);
+
+% Create line plots for each measure
+for g = 1:length(measure_in_struct)
+    figure;
+    
+    % Plot for each RMI value
+    for h = 1:n_rmi_to_plot
+        % Extract data for the specific coupling ratio mean across all phase lags
+        line_data = zeros(1, n_phase_lag);
+        for j = 1:n_phase_lag
+            line_data(j) = mean(mean(new_results(h, coup_ratio_idx, j).(measure_in_struct{g})));
+        end
+        
+        % Plot the line
+        plot(all_phase_lag, line_data, 'LineWidth', 1.5, 'DisplayName', ['RMI = ' num2str(all_rmi(h))]);
+        hold on;
+    end
+    
+    % Set x-axis limits to match the data range exactly
+    xlim([min(all_phase_lag), max(all_phase_lag)]);
+    
+    % Formatting
+    xlabel('Phase Lag', 'FontSize', 15, 'interpreter', 'latex');
+    ylabel(measure_in_title{g}, 'FontSize', 15, 'interpreter', 'latex');
+    title([measure_in_title{g} ' vs Phase Lag (Coupling Ratio Mean = ' num2str(actual_coup_ratio_mean, '%.1f') ')'], ...
+        'FontSize', 17, 'interpreter', 'latex');
+    
+    % Add legend if plotting multiple RMI values
+    if n_rmi_to_plot > 1
+        legend('Location', 'best', 'interpreter', 'latex', 'FontSize', 12);
+    end
+    
+    grid on;
+    set(gca, 'FontSize', 13, 'TickLabelInterpreter', 'latex');
+    
+    % Save the plot
+    filename_lineplot = [network '_lineplot_coup_ratio_0p2_phase_lag_' measure_in_struct{g}];
+    location = string(strcat(pathout_plots_measures, filename_lineplot, '.png'));
+    exportgraphics(gcf, location);
+end
+
+% Display the actual coupling ratio mean value used
+fprintf('Line plot created for coupling ratio mean = %.3f (closest to requested 0.2)\n', actual_coup_ratio_mean);
+
 clear results;

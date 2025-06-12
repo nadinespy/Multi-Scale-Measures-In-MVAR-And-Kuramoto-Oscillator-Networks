@@ -5,8 +5,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % In order to run this script, 
+% - mec_km_rand_coup_ratio_phase_lag_rmi_setup.m,
 % - params_phiid_mmi_rand_coup_ratio_phase_lag_rmi.m
-% - mec_km_rand_coup_ratio_phase_lag_rmi_local_dirs.m
 % (or any other script with the prefix 'params') must be run first
 % (in that order).
 %
