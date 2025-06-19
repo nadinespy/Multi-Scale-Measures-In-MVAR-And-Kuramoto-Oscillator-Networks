@@ -38,6 +38,11 @@ Both scripts use functions from the `functions` directory.
 ### Requirements
 
 - MATLAB
+- [Kuramoto oscillator implementation](https://github.com/lcbarnett/kuramoto) by Lionel Barnett (efficient C implementation of the standard Kuramoto coupled oscillators system)
+- Extended and heavily adapted version of [PhiID](https://github.com/pmediano/PhiID) (Integrated Information Decomposition)
+- [kvar](https://github.com/lcbarnett/kvar) (Vector autoregressive (VAR) analysis for Kuramoto oscillator networks)
+- [MVGC](https://github.com/lcbarnett/MVGC2) (Multivariate Granger Causality MATLAB software suite)
+- [ssdi](https://github.com/lcbarnett/ssdi) (An implementation of Dynamical Independence computation and optimisation for linear state-space systems)
 
 ### Setup
 
@@ -48,3 +53,4 @@ You'll need to configure local-specific directories in:
 ## Publication
 
 A publication titled "Making Sense of Measures of Emergence and Complexity in Autoregressive Networks and Kuramoto Oscillators" is in preparation. Corresponding updates to this repository will follow.
+
