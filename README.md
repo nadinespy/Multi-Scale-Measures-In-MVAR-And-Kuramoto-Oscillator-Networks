@@ -1,4 +1,4 @@
-# Making Sense of Measures of Emergence and Complexity in Autoregressive Networks and Kuramoto Oscillators
+# Multi-Scale Measures of Emergence and Complexity in Autoregressive Networks and Kuramoto Oscillators
 
 This repository contains code for calculating multi-scale measures of complexity and emergence in Multivariate Autoregressive (MVAR) networks and Kuramoto oscillators.
 
