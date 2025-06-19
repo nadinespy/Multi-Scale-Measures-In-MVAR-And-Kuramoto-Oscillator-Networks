@@ -40,7 +40,6 @@ Both scripts use functions from the `functions` directory.
 - MATLAB
 - [kuramoto](https://github.com/lcbarnett/kuramoto) (efficient C implementation of the standard Kuramoto coupled oscillators system)
 - [kvar](https://github.com/lcbarnett/kvar) (Vector autoregressive (VAR) analysis for Kuramoto oscillator networks)
-- Extended and heavily adapted version of [PhiID](https://github.com/pmediano/PhiID) (Integrated Information Decomposition)
 - [MVGC](https://github.com/lcbarnett/MVGC2) (Multivariate Granger Causality MATLAB software suite)
 - [ssdi](https://github.com/lcbarnett/ssdi) (An implementation of Dynamical Independence computation and optimisation for linear state-space systems)
 
